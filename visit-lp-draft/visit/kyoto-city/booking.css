@@ -1,0 +1,186 @@
+/* 京都市予約ステップUI。予約API未接続のため、本番操作はJS側でも無効にします。 */
+.visit-booking[hidden], .visit-booking [hidden] { display: none !important; }
+.visit-booking { background: #f8f7f1; }
+.visit-booking .visit-container { max-width: 930px; }
+.visit-booking .visit-section-heading { margin-bottom: 28px; }
+.visit-booking .visit-section-heading > p:last-child { margin: 0; color: #68746d; font-size: 13px; }
+.visit-booking-unavailable, .visit-booking-demo { display: grid; gap: 3px; margin: 0 auto 18px; padding: 14px 17px; border-radius: 10px; font-size: 12px; line-height: 1.65; }
+.visit-booking-unavailable { border: 1px solid #e8d3c3; background: #fff7ef; color: #705342; }
+.visit-booking-unavailable strong { color: #8d5238; font-size: 14px; }
+.visit-booking-demo { border: 1px solid #e5c889; background: #fff9e9; color: #775b22; }
+.visit-booking-progress { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; margin: 0 0 24px; padding: 0; list-style: none; }
+.visit-booking-progress li { position: relative; display: grid; justify-items: center; gap: 6px; color: #8a938c; font-size: 10px; }
+.visit-booking-progress li::before { position: absolute; top: 16px; right: 50%; width: 100%; height: 1px; background: #d8ded6; content: ""; }
+.visit-booking-progress li:first-child::before { display: none; }
+.visit-booking-progress li span { position: relative; z-index: 1; display: grid; width: 33px; height: 33px; place-items: center; border: 1px solid #d4dcd2; border-radius: 50%; background: #fff; color: #718076; font-size: 12px; font-weight: 750; }
+.visit-booking-progress li b { font-weight: 650; }
+.visit-booking-progress li.is-current, .visit-booking-progress li.is-done { color: #396b56; }
+.visit-booking-progress li.is-current span, .visit-booking-progress li.is-done span { border-color: #396b56; background: #396b56; color: #fff; }
+.visit-booking-step { padding: clamp(20px, 4vw, 34px); border: 1px solid #e1e6dd; border-radius: 5px 24px 5px 24px; background: #fff; box-shadow: 0 10px 26px rgba(38,56,50,.045); }
+.visit-booking-step__heading { margin-bottom: 19px; }
+.visit-booking-step__heading > span { color: #396b56; font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.visit-booking-step__heading h3 { margin: 2px 0 3px; font-size: clamp(1.15rem, 2.5vw, 1.4rem); }
+.visit-booking-step__heading p { margin: 0; color: #68746d; font-size: 12px; }
+.visit-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
+.visit-ward-options, .visit-handoff-options { display: grid; gap: 9px; margin: 0 0 20px; padding: 0; border: 0; }
+.visit-ward-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.visit-ward-options label { position: relative; cursor: pointer; }
+.visit-ward-options input, .visit-handoff-card > input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.visit-ward-options label > span { display: grid; min-height: 49px; place-items: center; padding: 8px; border: 1px solid #dce3d9; border-radius: 8px; background: #fff; color: #47594d; font-size: 13px; font-weight: 650; transition: .15s ease; }
+.visit-ward-options input:checked + span { border-color: #396b56; background: #eaf1e9; color: #294e3f; box-shadow: inset 0 0 0 1px #396b56; }
+.visit-ward-options input:focus-visible + span, .visit-handoff-card:has(input:focus-visible) { outline: 3px solid #e6a17e; outline-offset: 2px; }
+.visit-handoff-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.visit-handoff-card { position: relative; display: grid; min-height: 148px; grid-template-columns: 44px 1fr; align-items: start; gap: 13px; padding: 18px; border: 1px solid #dce3d9; border-radius: 4px 19px 4px 19px; background: #fff; cursor: pointer; }
+.visit-handoff-card:has(input:checked) { border-color: #396b56; background: #f5f8f3; box-shadow: inset 0 0 0 1px #396b56; }
+.visit-handoff-card__icon { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 14px; background: #e8efe8; color: #396b56; font-size: 15px; font-weight: 800; }
+.visit-handoff-card strong, .visit-handoff-card small { display: block; }
+.visit-handoff-card strong { margin-bottom: 5px; color: #263832; font-size: 14px; }
+.visit-handoff-card small { margin-top: 4px; color: #68746d; font-size: 11px; line-height: 1.65; }
+.visit-contactless-terms { margin: 0 0 20px; padding: 18px; border: 1px solid #e7d5c6; border-radius: 10px; background: #fffaf6; }
+.visit-contactless-terms h4 { margin: 0 0 12px; color: #8f573e; font-size: 15px; }
+.visit-contactless-terms ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 0; padding: 0; list-style: none; counter-reset: terms; }
+.visit-contactless-terms li { position: relative; padding: 12px 12px 11px 39px; border: 1px solid #f0e4da; border-radius: 8px; background: #fff; counter-increment: terms; }
+.visit-contactless-terms li::before { position: absolute; top: 11px; left: 12px; display: grid; width: 19px; height: 19px; place-items: center; border-radius: 50%; background: #f6e4d9; color: #9f6049; content: counter(terms); font-size: 10px; font-weight: 750; }
+.visit-contactless-terms li strong { font-size: 11px; }
+.visit-contactless-terms li p { margin: 4px 0 0; color: #69746d; font-size: 10px; line-height: 1.65; }
+.visit-consent { display: flex; align-items: flex-start; gap: 9px; margin-top: 14px; padding: 13px; border: 1px solid #d6e2d5; border-radius: 8px; background: #f5f8f3; color: #344c3d; font-size: 12px; font-weight: 700; cursor: pointer; }
+.visit-consent input { width: 19px; height: 19px; flex: 0 0 19px; margin: 0; accent-color: #396b56; }
+.visit-terms-draft-note { margin: 9px 0 0; color: #897c72; font-size: 10px; line-height: 1.6; }
+.visit-booking-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+.visit-button--quiet { border: 1px solid #cfd9ce; background: #fff; color: #45624f; cursor: pointer; }
+.visit-booking button:disabled { opacity: .48; cursor: not-allowed; transform: none; box-shadow: none; }
+.visit-calendar { max-width: 560px; margin: 0 auto; padding: 18px; border: 1px solid #e0e6dd; border-radius: 12px; background: #fcfdfb; }
+.visit-calendar__bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.visit-calendar__bar strong { font-size: 15px; }
+.visit-calendar__bar button { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #d8e1d7; border-radius: 50%; background: #fff; color: #396b56; font-size: 25px; cursor: pointer; }
+.visit-calendar__weekdays, .visit-calendar__days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.visit-calendar__weekdays { margin-bottom: 6px; color: #78847b; font-size: 10px; text-align: center; }
+.visit-calendar__weekdays span:first-child { color: #b16656; }
+.visit-calendar__days button, .visit-calendar__days span { display: grid; min-height: 43px; place-items: center; border: 1px solid transparent; border-radius: 7px; background: transparent; color: #617067; font-size: 12px; }
+.visit-calendar__days button { cursor: pointer; }
+.visit-calendar__days button.is-available { border-color: #cadacb; background: #edf5ed; color: #396b56; font-weight: 750; }
+.visit-calendar__days button.is-selected { border-color: #396b56; background: #396b56; color: #fff; }
+.visit-calendar__days button:disabled { color: #c4cbc5; cursor: not-allowed; }
+.visit-calendar__days button small { color: inherit; font-size: 8px; line-height: 1; }
+.visit-calendar__days button:focus-visible, .visit-calendar__bar button:focus-visible { outline: 3px solid #e6a17e; outline-offset: 2px; }
+.visit-calendar__caption { margin: 10px 0 0; color: #7b857d; font-size: 10px; text-align: right; }
+.visit-booking-demo .visit-calendar__caption { color: #775b22; }
+.visit-time-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; max-width: 560px; margin: 14px auto 0; }
+.visit-time-slots > p { grid-column: 1 / -1; margin: 0; color: #7c867e; font-size: 11px; text-align: center; }
+.visit-time-slots button { min-height: 46px; border: 1px solid #dbe3d9; border-radius: 8px; background: #fff; color: #45624f; font-size: 12px; cursor: pointer; }
+.visit-time-slots button.is-selected { border-color: #396b56; background: #e8efe8; box-shadow: inset 0 0 0 1px #396b56; font-weight: 750; }
+.visit-multi-slot-bonus { position: relative; display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; max-width: 560px; margin: 0 auto 12px; padding: 11px 14px; border: 1px solid #e9bf82; border-radius: 9px 16px 9px 16px; background: #fff8ec; color: #78400f; }
+.visit-multi-slot-bonus__spark { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 11px; background: #f3a04a; color: white; font-size: 19px; line-height: 1; }
+.visit-multi-slot-bonus__copy { display: grid; gap: 3px; }
+.visit-multi-slot-bonus__copy strong { color: #a34813; font-size: 13px; font-weight: 800; }
+.visit-multi-slot-bonus__copy p { margin: 0; color: #684a2b; font-size: 11px; font-weight: 650; line-height: 1.5; }
+.visit-multi-slot-bonus__copy small { color: #8f5c22; font-size: 10px; font-weight: 750; }
+.visit-multi-slot-bonus__tag { padding: 4px 8px; border-radius: 99px; background: #fcebd3; color: #904614; font-size: 9px; font-weight: 750; white-space: nowrap; }
+.visit-time-select-prompt { max-width: 560px; margin: 17px auto 8px; color: #30483a; font-size: 14px; font-weight: 800; }
+.visit-time-select-prompt[hidden] { display: none !important; }
+.visit-time-window-note { display: grid; gap: 4px; max-width: 560px; margin: 13px auto 0; padding: 12px 15px; border-left: 3px solid #dc8b55; border-radius: 2px 9px 9px 2px; background: #fff8f3; color: #6a5548; }
+.visit-time-window-note strong { color: #8c4e2b; font-size: 12px; }
+.visit-time-window-note span { font-size: 11px; line-height: 1.7; }
+.visit-booking-summary { margin: 0; border-top: 1px solid #e2e7e0; }
+.visit-booking-summary > div { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 13px 8px; border-bottom: 1px solid #e2e7e0; }
+.visit-booking-summary dt { color: #768178; font-size: 12px; }
+.visit-booking-summary dd { margin: 0; color: #30483a; font-size: 13px; font-weight: 700; }
+.visit-booking-submit-note, .visit-booking-live-message { margin: 10px 0 0; color: #78847b; font-size: 10px; }
+.visit-booking-live-message { min-height: 1.6em; color: #875238; font-weight: 700; }
+.visit-application-form { margin-top: 22px; }
+.visit-form-section { margin-top: 18px; padding: 20px; border: 1px solid #e4e9e2; border-radius: 12px; background: #fcfdfb; }
+.visit-form-section h4 { margin: 0 0 15px; color: #30483a; font-size: 15px; }
+.visit-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+.visit-form-grid > label { display: grid; align-content: start; gap: 6px; color: #4e5f54; font-size: 12px; font-weight: 700; }
+.visit-form-grid input, .visit-form-grid select, .visit-form-grid textarea { width: 100%; min-height: 45px; padding: 10px 12px; border: 1px solid #cfd9ce; border-radius: 7px; background: #fff; color: #263832; font: inherit; font-size: 14px; }
+.visit-form-grid input:focus, .visit-form-grid select:focus, .visit-form-grid textarea:focus { border-color: #396b56; outline: 3px solid #396b5626; }
+.visit-form-grid textarea { min-height: 108px; resize: vertical; line-height: 1.65; }
+.visit-form-grid input[readonly] { background: #f0f3ef; color: #66736a; }
+.visit-form-grid input[name="phone"]::placeholder, .visit-form-grid input[name="postal_code"]::placeholder, .visit-form-grid input[name="account_number"]::placeholder, .visit-pickup-place-details input::placeholder, .visit-nameplate-mismatch input::placeholder, .visit-pickup-notes textarea::placeholder { color: #8b968d; opacity: 1; font-size: 12px; font-weight: 400; }
+.visit-form-grid small { color: #79847c; font-size: 10px; font-weight: 400; line-height: 1.5; }
+.visit-form-grid__wide { grid-column: 1 / -1; }
+.visit-form-help { margin: 12px 0 0; color: #6f7a72; font-size: 11px; line-height: 1.7; }
+.visit-bank-select-group { margin-top: 18px; }
+.visit-bank-select-group > label { display: block; color: #4e5f54; font-size: 12px; font-weight: 750; }
+.visit-bank-select-group .visit-form-help { margin: 3px 0 10px; }
+.visit-kana-index { display: flex; flex-wrap: wrap; gap: 5px; margin: 9px 0 11px; }
+.visit-kana-index button { min-width: 34px; min-height: 34px; padding: 4px 7px; border: 1px solid #d6dfd5; border-radius: 6px; background: #fff; color: #42634e; font-size: 12px; font-weight: 700; cursor: pointer; }
+.visit-kana-index button:hover, .visit-kana-index button.is-active { border-color: #396b56; background: #396b56; color: #fff; }
+.visit-kana-index button:focus-visible { outline: 3px solid #e6a17e; outline-offset: 2px; }
+.visit-bank-select-group select { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #cfd9ce; border-radius: 7px; background: #fff; color: #263832; font: inherit; font-size: 14px; }
+.visit-bank-select-group select:disabled { background: #f0f3ef; color: #879189; }
+.visit-bank-message { min-height: 1.5em; margin: 6px 0 0; color: #768178; font-size: 10px; }
+.visit-bank-message.is-error { color: #a64235; }
+.visit-form-grid--bank-details { margin-top: 20px; }
+.visit-form-choice { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; border: 0; }
+.visit-form-choice legend { width: 100%; margin-bottom: 5px; color: #4e5f54; font-size: 12px; font-weight: 700; }
+.visit-form-choice label { display: inline-flex; min-height: 42px; align-items: center; gap: 8px; padding: 8px 13px; border: 1px solid #d6dfd5; border-radius: 8px; background: #fff; color: #42554a; font-size: 12px; cursor: pointer; }
+.visit-form-choice label:has(input:checked) { border-color: #396b56; background: #edf4ec; box-shadow: inset 0 0 0 1px #396b56; }
+.visit-form-choice input { width: 17px; height: 17px; margin: 0; accent-color: #396b56; }
+.visit-pickup-map-field { min-width: 0; }
+.visit-pickup-map-field__label { display: block; color: #4e5f54; font-size: 12px; font-weight: 750; }
+.visit-pickup-map { z-index: 0; width: 100%; height: clamp(280px, 42vw, 420px); margin-top: 9px; overflow: hidden; border: 1px solid #cfd9ce; border-radius: 9px; background: #edf1e9; }
+.visit-pickup-map-status { min-height: 1.6em; margin: 7px 0 0; color: #596c5e; font-size: 11px; line-height: 1.6; }
+.visit-pickup-map-status.is-error { color: #a64235; font-weight: 700; }
+.visit-pickup-map .leaflet-control-attribution { font-size: 10px; }
+.visit-pickup-map .leaflet-control-zoom a { color: #263832; }
+.visit-pickup-place-details { grid-column: 1 / -1; }
+.visit-pickup-place-details[hidden] { display: none !important; }
+.visit-form-consents { display: grid; gap: 11px; background: #fffaf5; border-color: #efdfd1; }
+.visit-pickup-code-panel { display: grid; justify-items: start; gap: 8px; margin-top: 18px; padding: 18px 20px; border: 1px solid #d8e4d4; border-radius: 12px; background: #f4f8f1; }
+.visit-pickup-code-panel h4 { margin: 0; color: #30483a; font-size: 15px; }
+.visit-pickup-code-panel p { margin: 0; color: #53645a; font-size: 12px; line-height: 1.7; }
+.visit-pickup-code-value { display: inline-block; padding: 9px 13px; border: 1px dashed #b9cbb6; border-radius: 7px; background: #fff; color: #788578; font-size: 13px; font-weight: 700; }
+.visit-pickup-code-panel small { color: #79847c; font-size: 10px; line-height: 1.5; }
+.visit-form-consents label { display: flex; align-items: flex-start; gap: 9px; color: #4f5c53; font-size: 12px; line-height: 1.6; cursor: pointer; }
+.visit-form-consents input { width: 18px; height: 18px; flex: 0 0 18px; margin: 1px 0 0; accent-color: #396b56; }
+.visit-form-consents p { margin: 0; color: #7d746c; font-size: 10px; line-height: 1.7; }
+.visit-honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
+.visit-application-result { margin-top: 16px; padding: 14px 16px; border: 1px solid #d4e1d4; border-radius: 9px; background: #f2f7f1; color: #34513e; font-size: 13px; line-height: 1.7; }
+.visit-application-result[hidden] { display: none !important; }
+.visit-application-waiting { margin-top: 20px; padding: clamp(20px, 4vw, 32px); border: 2px solid #d4a04a; border-radius: 14px; background: #fff9ec; color: #493b2a; }
+.visit-application-waiting__eyebrow { margin: 0 0 8px !important; color: #95631d !important; font-size: 10px !important; font-weight: 850; letter-spacing: .16em; }
+.visit-application-waiting h3 { margin: 0 0 12px; color: #6d4314; font-size: clamp(20px, 3vw, 27px); line-height: 1.4; }
+.visit-application-waiting p { margin: 8px 0; font-size: 13px; line-height: 1.8; }
+.visit-application-waiting > strong { display: block; margin: 14px 0; padding: 12px; border-radius: 8px; background: #fff; color: #8d3024; font-size: 14px; line-height: 1.7; }
+.visit-application-waiting [data-application-waiting-status] { color: #667067; font-size: 11px; }
+.visit-application-waiting[hidden] { display: none !important; }
+.visit-booking.is-awaiting-email .visit-booking-progress { display: none; }
+@media (max-width: 640px) {
+  .visit-booking .visit-section-heading { margin-bottom: 21px; }
+  .visit-booking-step { padding: 18px 15px; border-radius: 5px 18px 5px 18px; }
+  .visit-booking-progress li { font-size: 8px; }
+  .visit-booking-progress li span { width: 29px; height: 29px; font-size: 10px; }
+  .visit-booking-progress li::before { top: 14px; }
+  .visit-ward-options { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  .visit-ward-options label > span { min-height: 44px; font-size: 11px; }
+  .visit-handoff-options { grid-template-columns: 1fr; }
+  .visit-handoff-card { min-height: auto; padding: 14px; }
+  .visit-contactless-terms { padding: 13px; }
+  .visit-contactless-terms ol { grid-template-columns: 1fr; }
+  .visit-calendar { padding: 12px 9px; }
+  .visit-calendar__weekdays, .visit-calendar__days { gap: 3px; }
+  .visit-calendar__days button, .visit-calendar__days span { min-height: 39px; font-size: 11px; }
+  .visit-time-slots { grid-template-columns: 1fr; }
+  .visit-multi-slot-bonus { grid-template-columns: 30px 1fr; gap: 8px; margin-bottom: 10px; padding: 10px; }
+  .visit-multi-slot-bonus__spark { width: 29px; height: 29px; border-radius: 9px; font-size: 17px; }
+  .visit-multi-slot-bonus__copy p { font-size: 10px; }
+  .visit-multi-slot-bonus__copy small { font-size: 9px; }
+  .visit-multi-slot-bonus__tag { grid-column: 2; justify-self: start; padding: 3px 7px; font-size: 8px; }
+  .visit-time-select-prompt { margin-top: 14px; font-size: 12px; }
+  .visit-time-window-note { padding: 11px 12px; }
+  .visit-time-window-note span { font-size: 10px; }
+  .visit-booking-summary > div { grid-template-columns: 105px 1fr; gap: 8px; padding: 11px 4px; }
+  .visit-booking-summary dt, .visit-booking-summary dd { font-size: 11px; }
+  .visit-booking-actions .visit-button { min-height: 45px; padding-inline: 12px; font-size: 11px; }
+  .visit-form-section { padding: 15px 12px; }
+  .visit-form-grid { grid-template-columns: 1fr; gap: 11px; }
+  .visit-form-grid__wide { grid-column: auto; }
+  .visit-pickup-place-details { grid-column: auto; }
+  .visit-pickup-map { height: 300px; }
+  .visit-form-grid input, .visit-form-grid select { min-height: 46px; }
+  .visit-kana-index { gap: 4px; }
+  .visit-kana-index button { min-width: 31px; min-height: 34px; padding: 4px 6px; font-size: 11px; }
+  .visit-form-choice { gap: 7px; }
+  .visit-form-choice label { min-height: 40px; padding: 7px 11px; }
+}

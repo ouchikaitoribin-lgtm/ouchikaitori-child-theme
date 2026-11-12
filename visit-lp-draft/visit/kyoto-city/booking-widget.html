@@ -1,0 +1,171 @@
+<section class="visit-section visit-booking" id="kyoto-booking" aria-labelledby="kyoto-booking-title" data-visit-booking-widget>
+      <div class="visit-container">
+        <div class="visit-section-heading visit-section-heading--center">
+          <p class="visit-eyebrow">KYOTO CITY BOOKING</p><h2 id="kyoto-booking-title">京都市の出張買取を申し込む</h2>
+          <p>地域・受け渡し方法・日時を順に選択します。</p>
+        </div>
+        <div class="visit-booking-unavailable" data-booking-unavailable role="status" hidden>
+          <strong>お申し込み受付の準備中です</strong><span>仮申込の保存と確認メール送信は未接続のため、現在は受付できません。</span>
+        </div>
+        <div class="visit-booking-demo" data-booking-demo role="note" hidden>画面確認用のデモです。表示される空き枠は仮データで、予約は保存されません。</div>
+        <ol class="visit-booking-progress" aria-label="申し込みのステップ">
+          <li class="is-current" data-progress="1"><span>1</span><b>エリア</b></li><li data-progress="2"><span>2</span><b>受け渡し</b></li><li data-progress="3"><span>3</span><b>日時</b></li><li data-progress="4"><span>4</span><b>お客様情報</b></li><li data-progress="5"><span>5</span><b>振込口座</b></li><li data-progress="6"><span>6</span><b>申込設定</b></li>
+        </ol>
+
+        <div class="visit-booking-step" data-step="1">
+          <div class="visit-booking-step__heading"><span>STEP 01</span><h3>回収エリアを選択</h3><p>京都市内の11区からお選びください。</p></div>
+          <fieldset class="visit-ward-options"><legend class="visit-sr-only">京都市の回収エリア</legend>
+            <label><input type="radio" name="visit-area" value="北区"><span>北区</span></label><label><input type="radio" name="visit-area" value="上京区"><span>上京区</span></label><label><input type="radio" name="visit-area" value="左京区"><span>左京区</span></label><label><input type="radio" name="visit-area" value="中京区"><span>中京区</span></label><label><input type="radio" name="visit-area" value="東山区"><span>東山区</span></label><label><input type="radio" name="visit-area" value="下京区"><span>下京区</span></label><label><input type="radio" name="visit-area" value="南区"><span>南区</span></label><label><input type="radio" name="visit-area" value="右京区"><span>右京区</span></label><label><input type="radio" name="visit-area" value="伏見区"><span>伏見区</span></label><label><input type="radio" name="visit-area" value="山科区"><span>山科区</span></label><label><input type="radio" name="visit-area" value="西京区"><span>西京区</span></label>
+          </fieldset>
+          <button class="visit-button visit-button--primary" type="button" data-next-step="2" disabled>受け渡し方法を選ぶ <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="visit-booking-step" data-step="2" hidden>
+          <div class="visit-booking-step__heading"><span>STEP 02</span><h3>受け渡し方法を選択</h3><p>ご希望の方法をお選びください。</p></div>
+          <fieldset class="visit-handoff-options"><legend class="visit-sr-only">受け渡し方法</legend>
+            <label class="visit-handoff-card"><input type="radio" name="visit-handoff" value="face"><span class="visit-handoff-card__icon" aria-hidden="true">対</span><span><strong>対面で受け渡し</strong><small>スタッフが訪問し、直接商品をお預かりします。</small><small>回収時に本人確認書類の原本をご提示ください。その場では査定せず、商品を持ち帰って査定します。</small></span></label>
+            <label class="visit-handoff-card"><input type="radio" name="visit-handoff" value="contactless"><span class="visit-handoff-card__icon" aria-hidden="true">置</span><span><strong>非対面で受け渡し</strong><small>玄関前など、事前に指定した場所へ商品を置いていただき、スタッフが回収します。</small><small>スタッフと会う必要はなく、ご不在でも回収可能です。商品は持ち帰って査定します。</small></span></label>
+          </fieldset>
+          <div class="visit-contactless-terms" data-contactless-terms hidden>
+            <h4>非対面回収の注意事項</h4>
+            <ol>
+              <!-- VISIT_CONTACTLESS_TERMS -->
+            </ol>
+            <label class="visit-consent"><input type="checkbox" name="contactless-consent" value="yes"><span>非対面回収の注意事項を確認し、内容に同意します。</span></label>
+            <input type="hidden" name="contactless-consent-version" value="contactless-v1-draft">
+            <input type="hidden" name="contactless-consented-at" value="">
+            <p class="visit-terms-draft-note">免責文言は初期案です。公開前に法務確認が必要です。確認済みの文言・バージョンを管理画面で設定してください。</p>
+          </div>
+          <div class="visit-booking-actions"><button class="visit-button visit-button--quiet" type="button" data-previous-step="1">戻る</button><button class="visit-button visit-button--primary" type="button" data-next-step="3" disabled>回収日時を選ぶ <span aria-hidden="true">→</span></button></div>
+        </div>
+
+        <div class="visit-booking-step" data-step="3" hidden>
+          <div class="visit-booking-step__heading"><span>STEP 03</span><h3>回収日時を選択</h3><p>初期枠は10:00〜20:00、2時間単位です。希望時間帯は複数選択できます。</p></div>
+          <div class="visit-calendar">
+            <div class="visit-calendar__bar"><button type="button" data-calendar-prev aria-label="前の月">‹</button><strong data-calendar-month>年月</strong><button type="button" data-calendar-next aria-label="次の月">›</button></div>
+            <div class="visit-calendar__weekdays" aria-hidden="true"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>
+            <div class="visit-calendar__days" data-calendar-days role="group" aria-label="日付を選択"></div>
+            <p class="visit-calendar__caption">○ 予約可能　× 予約不可　－ 受付対象外</p>
+          </div>
+          <p class="visit-time-select-prompt" data-time-selection-prompt hidden>希望する時間帯を選択してください（複数選択できます）。</p>
+          <div class="visit-time-slots" data-time-slots aria-live="polite"><p>カレンダーから回収希望日を選択してください。</p></div>
+          <p class="visit-time-window-note" data-time-window-note hidden><strong>時間帯を複数選ぶ場合</strong><span>選択した時間帯はすべて回収候補になります。対面なら各時間帯で在宅できること、非対面なら各時間帯を通して指定場所に商品を置いておけることをご確認ください。スタッフは選択した時間帯のいずれかに伺います。</span></p>
+          <div class="visit-multi-slot-bonus" data-bonus-info hidden><span class="visit-multi-slot-bonus__spark" aria-hidden="true">✦</span><div class="visit-multi-slot-bonus__copy"><strong>複数枠選択で査定額UP</strong><p data-bonus-message></p><small data-bonus-calculation aria-live="polite">選択中の特典：+0%</small></div><span class="visit-multi-slot-bonus__tag">選択特典</span></div>
+          <div class="visit-booking-actions"><button class="visit-button visit-button--quiet" type="button" data-previous-step="2">戻る</button><button class="visit-button visit-button--primary" type="button" data-next-step="4" disabled>お客様情報を入力 <span aria-hidden="true">→</span></button></div>
+        </div>
+
+        <form class="visit-application-form h-adr" data-application-form novalidate>
+          <div class="visit-booking-step" data-step="4" hidden>
+            <div class="visit-booking-step__heading"><span>STEP 04</span><h3>お客様情報を入力</h3><p>氏名・ご連絡先・ご住所をご入力ください。</p></div>
+            <dl class="visit-booking-summary"><div><dt>回収エリア</dt><dd data-summary-area>未選択</dd></div><div><dt>受け渡し方法</dt><dd data-summary-handoff>未選択</dd></div><div><dt>回収希望日</dt><dd data-summary-date>未選択</dd></div><div><dt>回収希望時間帯</dt><dd data-summary-time>未選択</dd></div><div><dt>査定額アップ</dt><dd data-summary-bonus>対象外</dd></div></dl>
+            <div class="visit-form-section"><span class="p-country-name visit-sr-only">Japan</span><h4>お客様情報</h4>
+              <div class="visit-form-grid">
+                <label>姓（漢字）<input name="last_name" autocomplete="family-name" maxlength="40" data-name-kanji="last_name_kana" required></label>
+                <label>名（漢字）<input name="first_name" autocomplete="given-name" maxlength="40" data-name-kanji="first_name_kana" required></label>
+                <label>セイ（カナ）<input name="last_name_kana" autocomplete="off" inputmode="kana" maxlength="40" data-kana required></label>
+                <label>メイ（カナ）<input name="first_name_kana" autocomplete="off" inputmode="kana" maxlength="40" data-kana required></label>
+                <label>メールアドレス<input type="email" name="email" autocomplete="email" maxlength="254" required></label>
+                <label>メールアドレス（確認）<input type="email" name="email_confirm" autocomplete="email" maxlength="254" data-email-confirm required></label>
+                <label>電話番号<input type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="例：090-1234-5678" pattern="[0-9０-９+() -]{10,20}" required></label>
+                <label>郵便番号<input type="text" name="postal_code" class="p-postal-code" autocomplete="postal-code" inputmode="numeric" placeholder="例：600-0000" pattern="[0-9０-９-]{7,8}" required></label>
+                <label>都道府県<input type="text" name="prefecture" class="p-region" value="京都府" autocomplete="address-level1" readonly required></label>
+                <label>市区町村<input type="text" name="city" class="p-locality" data-city autocomplete="address-level2" maxlength="80" required></label>
+                <label>町名・番地<input type="text" name="street" class="p-street-address" autocomplete="address-line1" maxlength="120" required></label>
+                <label>建物名・部屋番号<input type="text" name="building" class="p-extended-address" autocomplete="address-line2" maxlength="80"></label>
+                <label>生年月日<input type="date" name="birth_date" autocomplete="bday" required><small>18歳未満の方はお申し込みいただけません。</small></label>
+                <label>ご職業<select name="occupation" required><option value="">選択してください</option><option>主婦・主夫</option><option>公務員</option><option>コンサルタント</option><option>コンピュータ関連技術職</option><option>コンピュータ関連以外の技術職</option><option>金融関係</option><option>医師</option><option>弁護士</option><option>総務・人事・事務</option><option>営業・販売</option><option>研究・開発</option><option>広報・宣伝</option><option>企画・マーケティング</option><option>デザイン関係</option><option>出版・マスコミ関係</option><option>会社員</option><option>会社経営・役員</option><option>自営業</option><option>学生・フリーター</option><option>その他</option></select></label>
+              </div>
+              <p class="visit-form-help">漢字入力中の読みをカナ欄へ反映します（必要に応じて修正してください）。郵便番号を入力すると住所が自動で補完されます。非対面回収の場合、申込住所と本人確認書類の住所が一致している必要があります。</p>
+            </div>
+            <div class="visit-booking-actions"><button class="visit-button visit-button--quiet" type="button" data-previous-step="3">日時選択に戻る</button><button class="visit-button visit-button--primary" type="button" data-next-step="5">振込口座を入力 <span aria-hidden="true">→</span></button></div>
+          </div>
+
+          <div class="visit-booking-step" data-step="5" hidden>
+            <div class="visit-booking-step__heading"><span>STEP 05</span><h3>お振込先口座を入力</h3><p>五十音から銀行・支店を絞り込んで選択してください。</p></div>
+            <div class="visit-form-section"><h4>銀行・支店</h4>
+              <div class="visit-bank-select-group">
+                <label for="visit-bank-select">銀行名</label><p class="visit-form-help">五十音を選んでから、銀行を選択してください。</p>
+                <div class="visit-kana-index" id="visit-bank-index" aria-label="銀行名の五十音選択"></div>
+                <select id="visit-bank-select" name="bank_code" autocomplete="off" required><option value="">五十音を選んでください</option></select>
+                <input type="hidden" name="bank_name" data-bank-name>
+                <p class="visit-bank-message" data-bank-message aria-live="polite">銀行一覧は読み込み後に選択できます。</p>
+              </div>
+              <div class="visit-bank-select-group">
+                <label for="visit-branch-select">支店名</label><p class="visit-form-help">銀行を選んでから、支店の五十音を選んでください。</p>
+                <div class="visit-kana-index" id="visit-branch-index" aria-label="支店名の五十音選択"></div>
+                <select id="visit-branch-select" name="branch_code" autocomplete="off" disabled required><option value="">先に銀行を選んでください</option></select>
+                <input type="hidden" name="branch_name" data-branch-name>
+              </div>
+              <div class="visit-form-grid visit-form-grid--bank-details">
+                <label>口座種別<select name="account_type" required><option value="">選択してください</option><option value="普通">普通</option><option value="当座">当座</option></select></label>
+                <label>口座番号（7桁）<input name="account_number" inputmode="numeric" autocomplete="off" pattern="[0-9]{7}" maxlength="7" placeholder="例：1234567" required></label>
+                <label class="visit-form-grid__wide">口座名義（カナ）<input name="account_holder_kana" inputmode="kana" maxlength="80" data-kana required><small>申込者ご本人の姓・名（カナ）と一致する名義をご入力ください。</small></label>
+              </div>
+            </div>
+            <div class="visit-booking-actions"><button class="visit-button visit-button--quiet" type="button" data-previous-step="4">お客様情報に戻る</button><button class="visit-button visit-button--primary" type="button" data-next-step="6">申込設定へ進む <span aria-hidden="true">→</span></button></div>
+          </div>
+
+          <div class="visit-booking-step" data-step="6" hidden>
+            <div class="visit-booking-step__heading"><span>STEP 06</span><h3>お申込み内容・集荷場所</h3><p>集荷場所とお申込み内容を入力してください。</p></div>
+            <div class="visit-form-section"><h4>集荷場所について</h4>
+              <div class="visit-form-grid">
+                <fieldset class="visit-form-choice visit-form-grid__wide"><legend>一軒家ですか、集合住宅ですか？</legend><label><input type="radio" name="building_type" value="detached" required><span>一軒家</span></label><label><input type="radio" name="building_type" value="multi_unit" required><span>集合住宅</span></label></fieldset>
+                <fieldset class="visit-form-choice visit-form-grid__wide"><legend>お申し込みの姓（苗字）の表札はありますか？</legend><label><input type="radio" name="nameplate" value="yes" required><span>ある</span></label><label><input type="radio" name="nameplate" value="no" required><span>ない</span></label></fieldset>
+                <label class="visit-nameplate-mismatch visit-form-grid__wide" data-nameplate-mismatch hidden>お申し込みのお名前と表札の表記が異なる場合のみ、表札に書かれたお名前をご記入ください<input type="text" name="nameplate_name" maxlength="80" placeholder="例：表札に記載されているお名前" autocomplete="off"></label>
+                <label class="visit-pickup-place-details visit-form-grid__wide" data-contactless-pickup-details hidden>非対面の場合の荷物の置き場所<input type="text" name="pickup_place_details" data-pickup-place-details maxlength="240" placeholder="例：玄関ドア横の屋根がある場所" autocomplete="off"><small>玄関のドアは開けず、事前に指定した屋外の場所へ置いてください。建物の外からスタッフが安全に回収できる場所をご記入ください。</small></label>
+                <label class="visit-pickup-notes visit-form-grid__wide">備考<small>回収について、事前にお伝えしておきたいことがあれば記入してください。</small><textarea name="pickup_notes" rows="4" maxlength="1000" placeholder="ご記入ください"></textarea></label>
+                <div class="visit-pickup-map-field visit-form-grid__wide">
+                  <span class="visit-pickup-map-field__label">地図で集荷場所を指定</span>
+                  <p class="visit-form-help">地図の初期位置を設定するため、入力住所（建物名を除く）を国土地理院の住所検索サービスへ送信して位置を検索します。検索結果は目安です。地図をクリックしてピンを置き、必要に応じてドラッグして集荷場所に調整してください。ピンの選択は必須です。</p>
+                  <button class="visit-map-address-search" type="button" data-map-address-search>入力住所を地図に表示</button>
+                  <div class="visit-pickup-map" data-pickup-map data-tile-url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" role="application" aria-label="集荷場所を地図上で選択する地図"></div>
+                  <p class="visit-pickup-map-status" data-pickup-map-status aria-live="polite">地図を読み込んでいます。</p>
+                  <input type="hidden" name="pickup_latitude" data-pickup-latitude>
+                  <input type="hidden" name="pickup_longitude" data-pickup-longitude>
+                </div>
+              </div>
+            </div>
+            <div class="visit-form-section"><h4>お申込み内容</h4>
+              <div class="visit-form-grid">
+                <label>おおよその箱数<input name="box_count" type="number" min="0" max="999" inputmode="numeric" placeholder="例：3" required><small>回収するお品物のおおよその箱数をご入力ください。</small></label>
+                <label>キャンペーンコード<input name="campaign_code" type="text" maxlength="40" autocomplete="off" placeholder="お持ちの場合に入力"><small>コードの適用はバックエンド接続時に確認します。</small></label>
+                <fieldset class="visit-form-choice visit-form-grid__wide"><legend>会員登録</legend><label><input type="radio" name="register_choice" value="yes" required><span>登録する</span></label><label><input type="radio" name="register_choice" value="no" required><span>登録しない</span></label></fieldset>
+                <fieldset class="visit-form-choice visit-form-grid__wide"><legend>お得なお知らせメール</legend><label><input type="radio" name="receive_choice" value="yes" required><span>受け取る</span></label><label><input type="radio" name="receive_choice" value="no" required><span>受け取らない</span></label></fieldset>
+              </div>
+            </div>
+            <div class="visit-pickup-code-panel" data-pickup-code-panel hidden>
+              <h4>荷物に記載する回収コード</h4>
+              <p>申込み時にシステムが発行した同じ回収コードを、回収するすべての荷物に記載してください。</p>
+              <output class="visit-pickup-code-value" data-pickup-code aria-live="polite">申込システム接続後に表示</output>
+              <input type="hidden" name="pickup_code" data-pickup-code-value>
+              <small>回収コードの発行・保存は申込システム接続後に有効になります。</small>
+            </div>
+            <div class="visit-form-section visit-form-consents">
+              <label><input type="checkbox" name="privacy_agreement" required><span>プライバシーポリシーを確認し、個人情報の取扱いに同意します。</span></label>
+              <label><input type="checkbox" name="terms_agreement" required><span>申込内容および出張買取の利用条件を確認しました。</span></label>
+              <p>送信後、確認メールをお送りします。メール内のリンクを開くまで申込は完了しません。</p>
+            </div>
+            <input type="text" name="website" class="visit-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <input type="hidden" name="visit_area" data-form-area>
+            <input type="hidden" name="handoff_method" data-form-handoff>
+            <input type="hidden" name="pickup_date" data-form-date>
+            <input type="hidden" name="pickup_times" data-form-times>
+            <input type="hidden" name="contactless_consent_version" value="contactless-v1-draft">
+            <input type="hidden" name="contactless_consented_at" data-form-consented-at>
+            <!-- WordPress組み込み時に申込用nonceを挿入する -->
+            <!-- VISIT_APPLICATION_NONCE -->
+            <div class="visit-booking-actions"><button class="visit-button visit-button--quiet" type="button" data-previous-step="5">口座情報に戻る</button><button class="visit-button visit-button--primary" type="submit" data-application-submit>仮申し込みを送信 <span aria-hidden="true">→</span></button></div>
+          </div>
+            <p class="visit-booking-submit-note" data-submit-note>現在はデザイン確認用です。送信・個人情報の保存・確認メールの送付は行われません。</p>
+            <div class="visit-application-result" data-application-result role="status" aria-live="polite" hidden></div>
+            <section class="visit-application-waiting" data-application-waiting aria-labelledby="application-waiting-title" hidden>
+              <p class="visit-application-waiting__eyebrow">EMAIL CONFIRMATION</p>
+              <h3 id="application-waiting-title">確認メールのリンクをお待ちください</h3>
+              <p>仮申し込みを受け付けました。入力したメールアドレスに届くメールを開き、確認リンクをクリックしてください。</p>
+              <strong>リンクをクリックするまでは、正式なお申し込みは完了していません。</strong>
+              <p data-application-waiting-status role="status" aria-live="polite">メール内のリンク確認後、この画面から申込内容確認ページへ移動します。</p>
+            </section>
+        </form>
+        <p class="visit-booking-live-message" data-booking-message aria-live="polite"></p>
+      </div>
+    </section>

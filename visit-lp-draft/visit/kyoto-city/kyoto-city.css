@@ -1,0 +1,18 @@
+/* 京都市地域ページ専用。既存テーマへの影響を避け .visit-kyoto-city に限定します。 */
+.visit-kyoto-breadcrumb { display: flex; align-items: center; gap: 10px; padding-block: 15px; color: #7a847d; font-size: 11px; }
+.visit-kyoto-breadcrumb a { color: #496b57; text-decoration: underline; text-underline-offset: 3px; }
+.visit-kyoto-hero { padding-top: 32px; }
+.visit-kyoto-hero .visit-hero__copy { padding-top: 0; }
+.visit-kyoto-hero .visit-hero__chips span:first-child { border-color: #d8a58e; background: #fff8f3; color: #9e6048; }
+.visit-kyoto-area-card { max-width: 760px; margin-inline: auto; }
+.visit-kyoto-area-intro { margin: 17px 0 12px; color: #68746d; font-size: 13px; }
+.visit-kyoto-ward-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; margin: 0; padding: 0; list-style: none; }
+.visit-kyoto-ward-list li { padding: 10px 12px; border: 1px solid #e1e7dd; border-radius: 7px; background: #fbfcf9; color: #47594d; font-size: 12px; font-weight: 650; text-align: center; }
+.visit-kyoto-final .visit-final-cta__text > p:last-child { max-width: 430px; }
+.visit-kyoto-city :focus-visible { outline: 3px solid #e6a17e; outline-offset: 3px; }
+@media (max-width: 640px) {
+  .visit-kyoto-breadcrumb { padding-block: 11px; font-size: 10px; }
+  .visit-kyoto-hero { padding-top: 23px; }
+  .visit-kyoto-ward-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .visit-kyoto-ward-list li { padding: 10px 7px; font-size: 11px; }
+}
