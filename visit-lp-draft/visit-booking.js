@@ -15,16 +15,22 @@
     multiSlotBonusPercent: 1,
     applicationSubmitEndpoint: '',
     applicationStatusEndpoint: '',
-    applicationConfirmationPageUrl: '/visit/kyoto-city/application-pending/'
+    applicationConfirmationPageUrl: '/visit/kyoto-city/application-pending/',
+    formPreviewMode: false,
+    applicationSubmissionEnabled: false
   };
-  const applicationFlowReady = Boolean(bookingConfig.applicationSubmitEndpoint && bookingConfig.applicationStatusEndpoint);
+  const isStagingFormPreview = bookingConfig.formPreviewMode === true;
+  const isInteractivePreview = isLocalPreview || isStagingFormPreview;
+  const applicationFlowReady = !isInteractivePreview
+    && bookingConfig.applicationSubmissionEnabled === true
+    && Boolean(bookingConfig.applicationSubmitEndpoint && bookingConfig.applicationStatusEndpoint);
   const bonusInfo = widget.querySelector('[data-bonus-info]');
   const bonusMessage = widget.querySelector('[data-bonus-message]');
   const bonusCalculation = widget.querySelector('[data-bonus-calculation]');
   const timeSelectionPrompt = widget.querySelector('[data-time-selection-prompt]');
   const timeWindowNote = widget.querySelector('[data-time-window-note]');
 
-  if (!isLocalPreview && !applicationFlowReady) {
+  if (!isInteractivePreview && !applicationFlowReady) {
     unavailable.hidden = false;
     unavailable.innerHTML = '<strong>お申し込み受付の準備中です</strong><span>仮申込の保存と確認メール送信は未接続のため、現在は受付できません。</span>';
     widget.querySelectorAll('input, select, button').forEach((control) => { control.disabled = true; });
@@ -33,6 +39,29 @@
   }
 
   demoNotice.hidden = false;
+  if (isStagingFormPreview) {
+    demoNotice.textContent = 'ステージングの画面確認モードです。予約枠は仮表示で、外部API呼び出し・申込保存・メール送信は行いません。操作できるのはお客様情報画面までです。';
+    widget.classList.add('is-form-preview');
+  }
+  if (isStagingFormPreview) {
+    widget.querySelectorAll('[data-progress]').forEach((item) => {
+      if (Number(item.dataset.progress) > 4) item.hidden = true;
+    });
+    widget.querySelectorAll('[data-next-step]').forEach((button) => {
+      if (Number(button.dataset.nextStep) > 4) button.disabled = true;
+    });
+    [5, 6].forEach((step) => {
+      widget.querySelectorAll(`[data-step="${step}"] input, [data-step="${step}"] select, [data-step="${step}"] textarea, [data-step="${step}"] button`).forEach((control) => {
+        control.disabled = true;
+      });
+    });
+  }
+  if (isInteractivePreview) {
+    widget.querySelectorAll('[data-application-submit]').forEach((button) => {
+      button.disabled = true;
+    });
+    widget.querySelector('[data-submit-note]').textContent = '画面確認専用です。申込受付・保存・予約確定・メール送信は行われません。';
+  }
   const state = { step: 1, area: '', handoff: '', consent: false, day: null, times: [] };
   const monthLabel = widget.querySelector('[data-calendar-month]');
   const calendarDays = widget.querySelector('[data-calendar-days]');
@@ -66,6 +95,10 @@
   const bonusEnabled = bookingConfig.multiSlotBonusEnabled !== false;
   const bonusPercent = Number(bookingConfig.multiSlotBonusPercent) > 0 ? Number(bookingConfig.multiSlotBonusPercent) : 1;
   function setStep(step) {
+    if (isStagingFormPreview && step > 4) {
+      liveMessage.textContent = '画面確認モードでは、お客様情報の画面まで操作できます。';
+      return;
+    }
     state.step = step;
     widget.querySelectorAll('[data-step]').forEach((panel) => {
       panel.hidden = Number(panel.dataset.step) !== step;
@@ -102,6 +135,10 @@
   let lastGeocodedAddress = '';
   let geocodeRequestId = 0;
   function initializePickupMap() {
+    if (isStagingFormPreview) {
+      pickupMapStatus.textContent = '地図はステージングの画面確認モードでは読み込みません。';
+      return;
+    }
     if (pickupMap || !pickupMapElement) return;
     if (!window.L) {
       pickupMapStatus.textContent = '地図を読み込めませんでした。通信を確認してページを再読み込みしてください。';
@@ -139,6 +176,7 @@
   }
 
   async function geocodePickupAddress() {
+    if (isStagingFormPreview) return;
     if (!pickupMap) return;
     const address = [form.elements.prefecture.value, form.elements.city.value, form.elements.street.value]
       .map((part) => part.trim())
@@ -270,6 +308,7 @@
       });
     };
     const loadBanks = async () => {
+      if (isStagingFormPreview) throw new Error('ステージングの画面確認モードでは銀行一覧を取得しません。');
       if (banks) return banks;
       if (!loadingBanks) loadingBanks = fetch(bankUrl, { cache: 'force-cache' }).then((response) => {
         if (!response.ok) throw new Error('銀行一覧を取得できませんでした。');
