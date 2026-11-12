@@ -5,7 +5,6 @@
   const widget = document.querySelector('[data-visit-booking-widget]');
   if (!widget) return;
 
-  const isLocalPreview = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
   const unavailable = widget.querySelector('[data-booking-unavailable]');
   const demoNotice = widget.querySelector('[data-booking-demo]');
   const liveMessage = widget.querySelector('[data-booking-message]');
@@ -19,8 +18,10 @@
     formPreviewMode: false,
     applicationSubmissionEnabled: false
   };
-  const isStagingFormPreview = bookingConfig.formPreviewMode === true;
-  const isInteractivePreview = isLocalPreview || isStagingFormPreview;
+  // wp_localize_script() serializes scalar values as strings, so PHP true arrives as "1".
+  const previewFlag = bookingConfig.formPreviewMode;
+  const isStagingFormPreview = previewFlag === true || previewFlag === 1 || previewFlag === '1';
+  const isInteractivePreview = isStagingFormPreview;
   const applicationFlowReady = !isInteractivePreview
     && bookingConfig.applicationSubmissionEnabled === true
     && Boolean(bookingConfig.applicationSubmitEndpoint && bookingConfig.applicationStatusEndpoint);

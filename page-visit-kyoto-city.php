@@ -29,7 +29,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 		wp_enqueue_script( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
 		$booking_script_dependencies = array( 'ouchi-visit-yubinbango', 'ouchi-visit-leaflet' );
 	}
-	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.6.0', true );
+	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.6.1', true );
 	$visit_booking_defaults = array(
 		'slots'                   => array( '10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00' ),
 		'multiSlotBonusEnabled'   => true,
