@@ -1,0 +1,8 @@
+.env
+.env.*
+*.log
+*.sql
+*.sql.gz
+*.bak
+*.zip
+.DS_Store
