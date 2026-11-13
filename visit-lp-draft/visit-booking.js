@@ -64,7 +64,6 @@
   const formResult = widget.querySelector('[data-application-result]');
   const applicationWaiting = widget.querySelector('[data-application-waiting]');
   const applicationWaitingStatus = widget.querySelector('[data-application-waiting-status]');
-  const applicationWaitingTitle = widget.querySelector('#application-waiting-title');
   const applicationWaitingLead = widget.querySelector('[data-application-waiting-lead]');
   const previewConfirmationButton = widget.querySelector('[data-preview-confirmation-link]');
   let stagingTestDefaultsApplied = false;
@@ -680,11 +679,11 @@
       if (isStagingFormPreview) {
         widget.querySelectorAll('[data-step]').forEach((stepPanel) => { stepPanel.hidden = true; });
         formResult.hidden = true;
-        applicationWaitingTitle.textContent = '確認リンクのクリック待ち画面';
-        applicationWaitingLead.textContent = '送信後に表示される確認待ち画面のプレビューです。';
-        applicationWaitingStatus.textContent = '実際のメール送信・仮申し込みの登録は行われていません。下のボタンから確認後の案内ページを表示できます。';
+        applicationWaitingLead.textContent = '実際の受付では、入力したメールアドレスに届く確認メールを開き、メール内のリンクをクリックしてください。';
+        applicationWaitingStatus.textContent = 'ステージングの画面確認用です。実際のメール送信・仮申し込み登録は行われません。確認後の案内ページは下のボタンでプレビューできます。';
         applicationWaiting.hidden = false;
         previewConfirmationButton.hidden = false;
+        widget.classList.add('is-awaiting-email');
         liveMessage.textContent = 'メール確認待ち画面を表示しました。これは画面プレビューです。';
         applicationWaiting.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;

@@ -158,11 +158,14 @@
           </div>
             <p class="visit-booking-submit-note" data-submit-note>現在はデザイン確認用です。送信・個人情報の保存・確認メールの送付は行われません。</p>
             <div class="visit-application-result" data-application-result role="status" aria-live="polite" hidden></div>
-            <section class="visit-application-waiting" data-application-waiting aria-labelledby="application-waiting-title" hidden>
-              <p class="visit-application-waiting__eyebrow">EMAIL CONFIRMATION</p>
-              <h3 id="application-waiting-title">確認メールのリンクをお待ちください</h3>
-              <p data-application-waiting-lead>仮申し込みを受け付けました。入力したメールアドレスに届くメールを開き、確認リンクをクリックしてください。</p>
-              <p data-application-waiting-status role="status" aria-live="polite">メール内のリンク確認後、この画面から申込内容確認ページへ移動します。</p>
+            <section class="visit-booking-step visit-application-waiting" data-application-waiting aria-labelledby="application-waiting-title" hidden>
+              <div class="visit-booking-step__heading">
+                <span>STEP 07 · EMAIL CONFIRMATION</span>
+                <h3 id="application-waiting-title">メールを開いて、確認リンクをクリックしてください</h3>
+                <p data-application-waiting-lead>入力したメールアドレスに届く確認メールを開き、メール内のリンクをクリックしてください。</p>
+              </div>
+              <p class="visit-application-waiting__instruction">メール内の確認リンクをクリックすると、申込内容確認ページへ進みます。</p>
+              <p data-application-waiting-status role="status" aria-live="polite">確認リンクをクリックすると、この画面から申込内容確認ページへ移動します。</p>
               <button class="visit-button visit-button--primary" type="button" data-preview-confirmation-link hidden>確認リンクをクリック（画面プレビュー） <span aria-hidden="true">→</span></button>
             </section>
         </form>

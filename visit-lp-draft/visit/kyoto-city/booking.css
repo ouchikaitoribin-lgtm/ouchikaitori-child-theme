@@ -140,12 +140,13 @@
 .visit-honeypot { position: absolute !important; left: -10000px !important; width: 1px !important; height: 1px !important; overflow: hidden !important; }
 .visit-application-result { margin-top: 16px; padding: 14px 16px; border: 1px solid #d4e1d4; border-radius: 9px; background: #f2f7f1; color: #34513e; font-size: 13px; line-height: 1.7; }
 .visit-application-result[hidden] { display: none !important; }
-.visit-application-waiting { margin-top: 20px; padding: clamp(20px, 4vw, 32px); border: 2px solid #d4a04a; border-radius: 14px; background: #fff9ec; color: #493b2a; }
-.visit-application-waiting__eyebrow { margin: 0 0 8px !important; color: #95631d !important; font-size: 10px !important; font-weight: 850; letter-spacing: .16em; }
-.visit-application-waiting h3 { margin: 0 0 12px; color: #6d4314; font-size: clamp(20px, 3vw, 27px); line-height: 1.4; }
-.visit-application-waiting p { margin: 8px 0; font-size: 13px; line-height: 1.8; }
-.visit-application-waiting > strong { display: block; margin: 14px 0; padding: 12px; border-radius: 8px; background: #fff; color: #8d3024; font-size: 14px; line-height: 1.7; }
-.visit-application-waiting [data-application-waiting-status] { color: #667067; font-size: 11px; }
+.visit-application-waiting { margin-top: 0; padding: clamp(20px, 4vw, 34px); border: 1px solid #e1e6dd; border-radius: 5px 24px 5px 24px; background: #fff; box-shadow: 0 10px 26px rgba(38,56,50,.045); color: #253d32; }
+.visit-application-waiting .visit-booking-step__heading { margin-bottom: 20px; }
+.visit-application-waiting .visit-booking-step__heading > span { color: #396b56; }
+.visit-application-waiting .visit-booking-step__heading h3 { margin: 4px 0 10px; color: #173d2c; font-size: clamp(22px, 4vw, 32px); line-height: 1.45; }
+.visit-application-waiting .visit-booking-step__heading p { max-width: 58em; color: #4b5f54; font-size: 15px; line-height: 1.85; }
+.visit-application-waiting__instruction { margin: 0 0 14px !important; padding: 16px 18px; border-left: 5px solid #e87820; border-radius: 5px 12px 12px 5px; background: #fff5e9; color: #713a11; font-size: clamp(17px, 2.8vw, 21px) !important; font-weight: 800; line-height: 1.7 !important; }
+.visit-application-waiting > p[data-application-waiting-status] { margin: 12px 0 0; color: #58695e; font-size: 13px; line-height: 1.8; }
 .visit-application-waiting[hidden] { display: none !important; }
 .visit-application-waiting [data-preview-confirmation-link] { margin-top: 12px; }
 .visit-booking.is-awaiting-email .visit-booking-progress { display: none; }
