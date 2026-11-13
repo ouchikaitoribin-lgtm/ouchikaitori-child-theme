@@ -41,7 +41,7 @@
 
   demoNotice.hidden = false;
   if (isStagingFormPreview) {
-    demoNotice.textContent = 'ステージングの画面確認モードです。住所検索時は入力住所を国土地理院の住所検索サービスへ送信し、OpenStreetMapの地図タイルを読み込みます。入力内容の保存・申込送信・メール送信・集荷API呼び出しは行いません。';
+    demoNotice.textContent = 'ステージングの画面確認モードです。入力欄には画面確認用のサンプル値が入っています。住所は国土地理院の住所検索サービスへ送信し、OpenStreetMapの地図タイルを読み込みます。入力内容の保存・申込送信・メール送信・集荷API呼び出しは行いません。';
     widget.classList.add('is-form-preview');
   }
   if (isInteractivePreview) {
@@ -62,6 +62,7 @@
   const formResult = widget.querySelector('[data-application-result]');
   const applicationWaiting = widget.querySelector('[data-application-waiting]');
   const applicationWaitingStatus = widget.querySelector('[data-application-waiting-status]');
+  let stagingTestDefaultsApplied = false;
   const terms = widget.querySelector('[data-contactless-terms]');
   const pickupPlaceDetails = widget.querySelector('[data-contactless-pickup-details]');
   const pickupPlaceDetailsInput = widget.querySelector('[data-pickup-place-details]');
@@ -103,6 +104,9 @@
     liveMessage.textContent = `ステップ${step}を表示しています。`;
     if (step === 6) {
       initializePickupMap();
+      if (isStagingFormPreview && stagingTestDefaultsApplied && pickupMap && !pickupMarker) {
+        placePickupMarker(pickupMap.getCenter());
+      }
       geocodePickupAddress();
       if (pickupMap) window.requestAnimationFrame(() => pickupMap.invalidateSize());
     }
@@ -124,6 +128,23 @@
   let pickupMarker = null;
   let lastGeocodedAddress = '';
   let geocodeRequestId = 0;
+  function updatePickupCoordinates(point) {
+    pickupLatitude.value = point.lat.toFixed(6);
+    pickupLongitude.value = point.lng.toFixed(6);
+    pickupMapStatus.textContent = stagingTestDefaultsApplied
+      ? `画面確認用の仮ピンを設定しました（緯度 ${pickupLatitude.value} / 経度 ${pickupLongitude.value}）。ドラッグして調整できます。`
+      : `集荷場所を指定しました（緯度 ${pickupLatitude.value} / 経度 ${pickupLongitude.value}）。ピンをドラッグして調整できます。`;
+    pickupMapStatus.classList.remove('is-error');
+  }
+  function placePickupMarker(point) {
+    if (!pickupMarker) {
+      pickupMarker = window.L.marker(point, { draggable: true, keyboard: true, title: stagingTestDefaultsApplied ? '画面確認用の仮ピン。ドラッグして位置を調整できます' : '集荷場所。ドラッグして位置を調整できます' }).addTo(pickupMap);
+      pickupMarker.on('dragend', () => updatePickupCoordinates(pickupMarker.getLatLng()));
+    } else {
+      pickupMarker.setLatLng(point);
+    }
+    updatePickupCoordinates(point);
+  }
   function initializePickupMap() {
     if (pickupMap || !pickupMapElement) return;
     if (!window.L) {
@@ -138,26 +159,13 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(pickupMap);
 
-    const updatePickupCoordinates = (point) => {
-      pickupLatitude.value = point.lat.toFixed(6);
-      pickupLongitude.value = point.lng.toFixed(6);
-      pickupMapStatus.textContent = `集荷場所を指定しました（緯度 ${pickupLatitude.value} / 経度 ${pickupLongitude.value}）。ピンをドラッグして調整できます。`;
-      pickupMapStatus.classList.remove('is-error');
-    };
-    const placePickupMarker = (point) => {
-      if (!pickupMarker) {
-        pickupMarker = window.L.marker(point, { draggable: true, keyboard: true, title: '集荷場所。ドラッグして位置を調整できます' }).addTo(pickupMap);
-        pickupMarker.on('dragend', () => updatePickupCoordinates(pickupMarker.getLatLng()));
-      } else {
-        pickupMarker.setLatLng(point);
-      }
-      updatePickupCoordinates(point);
-    };
     pickupMap.on('click', (event) => placePickupMarker(event.latlng));
     pickupAddressSearchButton.addEventListener('click', geocodePickupAddress);
     pickupMap.whenReady(() => {
       pickupMap.invalidateSize();
-      pickupMapStatus.textContent = '地図をクリックして集荷場所にピンを置いてください。';
+      pickupMapStatus.textContent = stagingTestDefaultsApplied && pickupMarker
+        ? '画面確認用の仮ピンを表示しています。ドラッグまたは地図をクリックして調整できます。'
+        : '地図をクリックして集荷場所にピンを置いてください。';
     });
   }
 
@@ -175,12 +183,15 @@
     if (address === lastGeocodedAddress) return;
     lastGeocodedAddress = address;
     const requestId = ++geocodeRequestId;
-    if (pickupMarker) {
+    const keepPreviewTestPin = isStagingFormPreview && stagingTestDefaultsApplied && Boolean(pickupMarker);
+    if (pickupMarker && !keepPreviewTestPin) {
       pickupMap.removeLayer(pickupMarker);
       pickupMarker = null;
     }
-    pickupLatitude.value = '';
-    pickupLongitude.value = '';
+    if (!keepPreviewTestPin) {
+      pickupLatitude.value = '';
+      pickupLongitude.value = '';
+    }
     pickupMapStatus.textContent = '入力住所付近を検索しています…';
     pickupMapStatus.classList.remove('is-error');
     try {
@@ -194,13 +205,16 @@
       const latitude = Number(coordinates?.[1]);
       if (requestId !== geocodeRequestId) return;
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) throw new Error('住所の位置が見つかりませんでした。');
-      if (pickupMarker) return;
+      if (pickupMarker && !keepPreviewTestPin) return;
       pickupMap.setView([latitude, longitude], 17);
       pickupMapStatus.textContent = '入力住所付近へ地図を移動しました。検索位置は目安です。地図をクリックして集荷場所にピンを置いてください。';
+      if (keepPreviewTestPin) placePickupMarker({ lat: latitude, lng: longitude });
     } catch (error) {
       if (requestId !== geocodeRequestId) return;
       lastGeocodedAddress = '';
-      pickupMapStatus.textContent = '住所を地図で検索できませんでした。地図を移動して集荷場所にピンを置いてください。';
+      pickupMapStatus.textContent = keepPreviewTestPin
+        ? '住所検索ができなかったため、画面確認用の仮ピンを表示しています。'
+        : '住所を地図で検索できませんでした。地図を移動して集荷場所にピンを置いてください。';
       pickupMapStatus.classList.add('is-error');
     }
   }
@@ -367,7 +381,7 @@
       branchName.value = branchSelect.selectedOptions[0]?.dataset.name || '';
     });
 
-    return { init: () => setStatus('五十音を選ぶと銀行一覧が表示されます。') };
+    return { init: () => setStatus(stagingTestDefaultsApplied ? 'テスト用の銀行・支店を選択済みです。' : '五十音を選ぶと銀行一覧が表示されます。') };
   })();
 
   function renderCalendar() {
@@ -687,6 +701,74 @@
     }
   });
 
+  function applyStagingTestDefaults() {
+    if (!isStagingFormPreview) return;
+    stagingTestDefaultsApplied = true;
+
+    const setRadio = (name, value) => {
+      const input = widget.querySelector(`[name="${name}"][value="${value}"]`);
+      if (!input) return;
+      input.checked = true;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    const setValue = (name, value) => {
+      const input = form.elements[name];
+      if (input) input.value = value;
+    };
+
+    setRadio('visit-area', '中京区');
+    setRadio('visit-handoff', 'contactless');
+    consentBox.checked = true;
+    consentBox.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const previewDay = new Date(earliest);
+    while (![1, 3, 5].includes(previewDay.getDay())) previewDay.setDate(previewDay.getDate() + 1);
+    state.day = previewDay;
+    displayedMonth = new Date(previewDay.getFullYear(), previewDay.getMonth(), 1);
+    state.times = [demoSlots[0]];
+    widget.querySelector('[data-next-step="4"]').disabled = false;
+
+    setValue('last_name', 'テスト');
+    setValue('first_name', 'ユーザー');
+    setValue('last_name_kana', 'テスト');
+    setValue('first_name_kana', 'ユーザー');
+    setValue('email', 'preview@example.invalid');
+    setValue('email_confirm', 'preview@example.invalid');
+    setValue('phone', '09000000000');
+    setValue('postal_code', '604-8571');
+    setValue('prefecture', '京都府');
+    setValue('city', '京都市中京区');
+    setValue('street', '寺町通御池上る上本能寺前町488');
+    setValue('building', 'テスト用');
+    setValue('birth_date', '1990-01-01');
+    setValue('occupation', '会社員');
+
+    const bankSelect = widget.querySelector('#visit-bank-select');
+    const branchSelect = widget.querySelector('#visit-branch-select');
+    bankSelect.replaceChildren(new Option('サンプル銀行（テスト用）', 'PREVIEW-BANK'));
+    branchSelect.replaceChildren(new Option('サンプル支店（テスト用）', 'PREVIEW-BRANCH'));
+    bankSelect.value = 'PREVIEW-BANK';
+    branchSelect.value = 'PREVIEW-BRANCH';
+    branchSelect.disabled = false;
+    widget.querySelector('[data-bank-name]').value = 'サンプル銀行（テスト用）';
+    widget.querySelector('[data-branch-name]').value = 'サンプル支店（テスト用）';
+    setValue('account_type', '普通');
+    setValue('account_number', '1234567');
+    setValue('account_holder_kana', 'テストユーザー');
+
+    setRadio('building_type', 'multi_unit');
+    setRadio('nameplate', 'no');
+    updateNameplateMismatchField();
+    setValue('pickup_place_details', '玄関ドア横のテスト用屋外スペース');
+    setValue('pickup_notes', '画面確認用のテスト入力です。');
+    setValue('box_count', '2');
+    setRadio('register_choice', 'no');
+    setRadio('receive_choice', 'no');
+    form.elements.privacy_agreement.checked = true;
+    form.elements.terms_agreement.checked = true;
+  }
+
+  applyStagingTestDefaults();
   renderCalendar();
   renderSlots();
   setStep(1);
