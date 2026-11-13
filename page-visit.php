@@ -10,22 +10,33 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-// 対応中の地域だけを掲載します。地域ページの公開後に url を設定してください。
-$visit_areas = array(
-    array(
-        'prefecture' => '京都府',
-        'municipalities' => array(
-            array(
-                'name' => '京都市',
-                'coverage' => '全11区',
-                'description' => '京都市内全域でお伺いします。',
-                'status' => '対応中',
-                'url' => home_url( '/visit/kyoto-city/' ),
-                'districts' => array( '北区', '上京区', '左京区', '中京区', '東山区', '下京区', '南区', '右京区', '伏見区', '山科区', '西京区' ),
-            ),
-        ),
-    ),
-);
+// 対応エリアは共通設定で管理し、地域ページ用テンプレートと同じデータを表示します。
+$visit_regions = require get_stylesheet_directory() . '/visit-lp-draft/visit/regions.php';
+$visit_areas = array();
+foreach ( $visit_regions as $visit_region_slug => $visit_region ) {
+    $visit_prefecture = (string) $visit_region['prefecture'];
+    if ( ! isset( $visit_areas[ $visit_prefecture ] ) ) {
+        $visit_areas[ $visit_prefecture ] = array(
+            'prefecture' => $visit_prefecture,
+            'municipalities' => array(),
+        );
+    }
+    $visit_areas[ $visit_prefecture ]['municipalities'][] = array(
+        'name' => (string) $visit_region['city'],
+        'coverage' => isset( $visit_region['coverage_label'] ) ? (string) $visit_region['coverage_label'] : '全' . count( $visit_region['areas'] ) . (string) $visit_region['area_unit'],
+        'description' => (string) $visit_region['city'] . 'の対応地域でお伺いします。',
+        'status' => '対応中',
+        'url' => home_url( '/visit/' . rawurlencode( (string) $visit_region_slug ) . '/' ),
+        'districts' => $visit_region['areas'],
+    );
+}
+$visit_areas = array_values( $visit_areas );
+$visit_area_summary_parts = array();
+foreach ( $visit_regions as $visit_region ) {
+    $visit_coverage = isset( $visit_region['coverage_label'] ) ? (string) $visit_region['coverage_label'] : '全' . count( $visit_region['areas'] ) . (string) $visit_region['area_unit'];
+    $visit_area_summary_parts[] = (string) $visit_region['city'] . '（' . $visit_coverage . '）';
+}
+$visit_area_summary = implode( '、', $visit_area_summary_parts );
 
 add_action( 'wp_enqueue_scripts', static function () {
     if ( ! is_page_template( 'page-visit.php' ) ) {
@@ -44,13 +55,13 @@ get_header();
     <section class="visit-hero" aria-labelledby="visit-hero-title">
       <div class="visit-container visit-hero__grid">
         <div class="visit-hero__copy">
-          <p class="visit-eyebrow"><span></span>京都市内で対応中</p>
+          <p class="visit-eyebrow"><span></span>現在対応中の地域をご案内</p>
           <h1 id="visit-hero-title">売りたいものは、<br><em>玄関前に置くだけ。</em></h1>
           <p class="visit-hero__lead">スタッフと会わずに、自宅にいなくても。<br>ご指定の場所から、まとめてお引き取りします。</p>
           <div class="visit-hero__chips" aria-label="出張買取の特徴">
             <span>非対面で受け渡し</span><span>ご不在でも回収</span><span>箱詰め不要</span>
           </div>
-          <p class="visit-hero__note">本・CD・DVD・ゲーム・カメラ・小型家電など<br><strong>現在の対応地域：京都市（全11区）</strong></p>
+          <p class="visit-hero__note">本・CD・DVD・ゲーム・カメラ・小型家電など<br><strong>現在の対応地域：<?php echo esc_html( $visit_area_summary ); ?></strong></p>
           <a class="visit-button visit-button--primary" href="#visit-area">対応エリアを確認する <span aria-hidden="true">↓</span></a>
           <p class="visit-hero__fineprint">非対面回収には事前の本人確認と回収場所の条件があります。<br>予約受付ページは準備中です。</p>
         </div>
@@ -149,7 +160,7 @@ get_header();
 
     <section class="visit-section visit-area" id="visit-area" aria-labelledby="visit-area-title">
       <div class="visit-container">
-        <div class="visit-area-heading"><div><p class="visit-eyebrow">SERVICE AREA</p><h2 id="visit-area-title">出張買取の対応エリア</h2></div><p>現在は京都市内で出張買取を承っています。<br>対応地域は順次拡大予定です。</p></div>
+        <div class="visit-area-heading"><div><p class="visit-eyebrow">SERVICE AREA</p><h2 id="visit-area-title">出張買取の対応エリア</h2></div><p>現在は<?php echo esc_html( $visit_area_summary ); ?>で出張買取を承っています。<br>対応地域は順次拡大予定です。</p></div>
         <div class="visit-prefecture-grid" data-visit-areas>
           <?php foreach ( $visit_areas as $visit_area ) : ?>
             <article class="visit-prefecture-card" data-prefecture="<?php echo esc_attr( $visit_area['prefecture'] ); ?>">
@@ -198,7 +209,7 @@ get_header();
       <div class="visit-container visit-faq__grid">
         <div class="visit-faq__intro"><p class="visit-eyebrow">FAQ</p><h2 id="visit-faq-title">よくある質問</h2><p>出張買取・非対面回収について、よくいただくご質問をまとめました。</p><span class="visit-faq__decor" aria-hidden="true">?</span></div>
         <div class="visit-faq-list">
-          <details class="visit-faq-item"><summary><span>Q</span>今はどの地域で利用できますか？<i aria-hidden="true"></i></summary><p>現在の対応地域は京都市内（全11区）です。京都府内でも京都市以外は現在対応しておりません。</p></details>
+          <details class="visit-faq-item"><summary><span>Q</span>今はどの地域で利用できますか？<i aria-hidden="true"></i></summary><p>現在の対応地域は<?php echo esc_html( $visit_area_summary ); ?>です。都道府県全域ではなく、カードに記載した市区町村が対象です。</p></details>
           <details class="visit-faq-item"><summary><span>Q</span>非対面での回収はできますか？<i aria-hidden="true"></i></summary><p>はい。事前にWEB上で所定の本人確認を行い、回収場所などの条件を確認したうえで、玄関前など指定場所から回収します。</p></details>
           <details class="visit-faq-item"><summary><span>Q</span>回収時に家にいる必要はありますか？<i aria-hidden="true"></i></summary><p>非対面回収では、事前に決めた場所へ商品を置いていただければ、ご不在中の回収も可能です。場所はスタッフが安全に確認できる範囲に限ります。</p></details>
           <details class="visit-faq-item"><summary><span>Q</span>スタッフに直接渡すこともできますか？<i aria-hidden="true"></i></summary><p>はい。ご希望に応じて、回収時にスタッフへ直接お渡しいただく方法もお選びいただけます。</p></details>
@@ -218,7 +229,7 @@ get_header();
     </section>
 
     <section class="visit-final-cta" aria-labelledby="visit-final-cta-title">
-      <div class="visit-container visit-final-cta__inner"><div class="visit-final-cta__text"><p class="visit-eyebrow">AVAILABLE IN KYOTO CITY</p><h2 id="visit-final-cta-title">まずは対応エリアを<br>ご確認ください。</h2><p>京都市内の対応地域をご案内しています。予約受付ページは準備中です。</p></div><a class="visit-button visit-button--light" href="#visit-area">京都市の対応エリアを見る <span aria-hidden="true">↑</span></a><span class="visit-final-cta__spark" aria-hidden="true">✳</span></div>
+      <div class="visit-container visit-final-cta__inner"><div class="visit-final-cta__text"><p class="visit-eyebrow">SERVICE AREAS</p><h2 id="visit-final-cta-title">まずは対応エリアを<br>ご確認ください。</h2><p>現在対応中の地域：<?php echo esc_html( $visit_area_summary ); ?>。予約受付ページは準備中です。</p></div><a class="visit-button visit-button--light" href="#visit-area">対応エリアを見る <span aria-hidden="true">↑</span></a><span class="visit-final-cta__spark" aria-hidden="true">✳</span></div>
     </section>
   </main></div>
 <?php get_footer(); ?>

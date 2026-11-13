@@ -1,7 +1,7 @@
 <section class="visit-section visit-booking" id="kyoto-booking" aria-labelledby="kyoto-booking-title" data-visit-booking-widget>
       <div class="visit-container">
         <div class="visit-section-heading visit-section-heading--center">
-          <p class="visit-eyebrow">KYOTO CITY BOOKING</p><h2 id="kyoto-booking-title">京都市の出張買取を申し込む</h2>
+          <p class="visit-eyebrow">VISIT BOOKING</p><h2 id="kyoto-booking-title">出張買取を申し込む</h2>
           <p>地域・受け渡し方法・日時を順に選択します。</p>
         </div>
         <div class="visit-booking-unavailable" data-booking-unavailable role="status" hidden>
@@ -13,9 +13,9 @@
         </ol>
 
         <div class="visit-booking-step" data-step="1">
-          <div class="visit-booking-step__heading"><span>STEP 01</span><h3>回収エリアを選択</h3><p>京都市内の11区からお選びください。</p></div>
-          <fieldset class="visit-ward-options"><legend class="visit-sr-only">京都市の回収エリア</legend>
-            <label><input type="radio" name="visit-area" value="北区"><span>北区</span></label><label><input type="radio" name="visit-area" value="上京区"><span>上京区</span></label><label><input type="radio" name="visit-area" value="左京区"><span>左京区</span></label><label><input type="radio" name="visit-area" value="中京区"><span>中京区</span></label><label><input type="radio" name="visit-area" value="東山区"><span>東山区</span></label><label><input type="radio" name="visit-area" value="下京区"><span>下京区</span></label><label><input type="radio" name="visit-area" value="南区"><span>南区</span></label><label><input type="radio" name="visit-area" value="右京区"><span>右京区</span></label><label><input type="radio" name="visit-area" value="伏見区"><span>伏見区</span></label><label><input type="radio" name="visit-area" value="山科区"><span>山科区</span></label><label><input type="radio" name="visit-area" value="西京区"><span>西京区</span></label>
+          <div class="visit-booking-step__heading"><span>STEP 01</span><h3>回収エリアを選択</h3><p data-area-selection-instruction>対応地域からお選びください。</p></div>
+          <fieldset class="visit-ward-options"><legend class="visit-sr-only">回収エリア</legend>
+            <!-- VISIT_AREA_OPTIONS -->
           </fieldset>
           <button class="visit-button visit-button--primary" type="button" data-next-step="2" disabled>受け渡し方法を選ぶ <span aria-hidden="true">→</span></button>
         </div>
@@ -161,9 +161,9 @@
             <section class="visit-application-waiting" data-application-waiting aria-labelledby="application-waiting-title" hidden>
               <p class="visit-application-waiting__eyebrow">EMAIL CONFIRMATION</p>
               <h3 id="application-waiting-title">確認メールのリンクをお待ちください</h3>
-              <p>仮申し込みを受け付けました。入力したメールアドレスに届くメールを開き、確認リンクをクリックしてください。</p>
-              <strong>リンクをクリックするまでは、正式なお申し込みは完了していません。</strong>
+              <p data-application-waiting-lead>仮申し込みを受け付けました。入力したメールアドレスに届くメールを開き、確認リンクをクリックしてください。</p>
               <p data-application-waiting-status role="status" aria-live="polite">メール内のリンク確認後、この画面から申込内容確認ページへ移動します。</p>
+              <button class="visit-button visit-button--primary" type="button" data-preview-confirmation-link hidden>確認リンクをクリック（画面プレビュー） <span aria-hidden="true">→</span></button>
             </section>
         </form>
         <p class="visit-booking-live-message" data-booking-message aria-live="polite"></p>

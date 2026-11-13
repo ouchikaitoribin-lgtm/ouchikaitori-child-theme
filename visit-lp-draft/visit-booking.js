@@ -1,4 +1,4 @@
-/* 京都市ページの申込UI。API設定がない環境ではプレビュー送信のみで、実際の受付は行いません。 */
+/* 地域共通ページの申込UI。API設定がない環境ではプレビューのみで、実際の受付は行いません。 */
 (function () {
   'use strict';
 
@@ -8,16 +8,18 @@
   const unavailable = widget.querySelector('[data-booking-unavailable]');
   const demoNotice = widget.querySelector('[data-booking-demo]');
   const liveMessage = widget.querySelector('[data-booking-message]');
+  const defaultConfirmationPageUrl = `${window.location.pathname.replace(/\/+$/, '')}/application-pending/`;
   const bookingConfig = window.VISIT_BOOKING_CONFIG || {
     slots: ['10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00'],
     multiSlotBonusEnabled: true,
     multiSlotBonusPercent: 1,
     applicationSubmitEndpoint: '',
     applicationStatusEndpoint: '',
-    applicationConfirmationPageUrl: '/visit/kyoto-city/application-pending/',
+    applicationConfirmationPageUrl: defaultConfirmationPageUrl,
     formPreviewMode: false,
     applicationSubmissionEnabled: false
   };
+  const regionName = String(bookingConfig.regionName || '');
   // wp_localize_script() serializes scalar values as strings, so PHP true arrives as "1".
   const previewFlag = bookingConfig.formPreviewMode;
   const isStagingFormPreview = previewFlag === true || previewFlag === 1 || previewFlag === '1';
@@ -62,6 +64,9 @@
   const formResult = widget.querySelector('[data-application-result]');
   const applicationWaiting = widget.querySelector('[data-application-waiting]');
   const applicationWaitingStatus = widget.querySelector('[data-application-waiting-status]');
+  const applicationWaitingTitle = widget.querySelector('#application-waiting-title');
+  const applicationWaitingLead = widget.querySelector('[data-application-waiting-lead]');
+  const previewConfirmationButton = widget.querySelector('[data-preview-confirmation-link]');
   let stagingTestDefaultsApplied = false;
   const terms = widget.querySelector('[data-contactless-terms]');
   const pickupPlaceDetails = widget.querySelector('[data-contactless-pickup-details]');
@@ -152,8 +157,11 @@
       pickupMapStatus.classList.add('is-error');
       return;
     }
+    const configuredMapCenter = Array.isArray(bookingConfig.mapCenter) && bookingConfig.mapCenter.length === 2
+      ? bookingConfig.mapCenter.map(Number)
+      : [35.0116, 135.7681];
     pickupMap = window.L.map(pickupMapElement, { scrollWheelZoom: false, tap: true })
-      .setView([35.0116, 135.7681], 13);
+      .setView(configuredMapCenter, 13);
     window.L.tileLayer(pickupMapElement.dataset.tileUrl, {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -503,7 +511,7 @@
       if (next === 6 && !validateAccountHolder()) return;
       if (next === 4) {
         if (!state.day || state.times.length === 0) return;
-        widget.querySelector('[data-summary-area]').textContent = `京都市${state.area}`;
+        widget.querySelector('[data-summary-area]').textContent = `${regionName}${state.area}`;
         widget.querySelector('[data-summary-handoff]').textContent = state.handoff === 'face' ? '対面' : '非対面';
         widget.querySelector('[data-summary-date]').textContent = `${state.day.getFullYear()}年${state.day.getMonth() + 1}月${state.day.getDate()}日`;
         widget.querySelector('[data-summary-time]').textContent = state.times.join('・');
@@ -511,13 +519,13 @@
         summaryBonus.textContent = !bonusEnabled
           ? '無効'
           : (state.times.length > 1 ? `+${Number((Math.max(0, state.times.length - 1) * bonusPercent).toFixed(2))}%（画面確認用）` : '対象外（1枠選択）');
-        widget.querySelector('[data-form-area]').value = `京都市${state.area}`;
+        widget.querySelector('[data-form-area]').value = `${regionName}${state.area}`;
         widget.querySelector('[data-form-handoff]').value = state.handoff;
         widget.querySelector('[data-form-date]').value = `${state.day.getFullYear()}-${String(state.day.getMonth() + 1).padStart(2, '0')}-${String(state.day.getDate()).padStart(2, '0')}`;
         widget.querySelector('[data-form-times]').value = state.times.join('|');
         widget.querySelector('[data-form-consented-at]').value = state.handoff === 'contactless' ? consentAt.value : '';
         const cityField = widget.querySelector('[data-city]');
-        cityField.value = `京都市${state.area}`;
+        cityField.value = `${regionName}${state.area}`;
       }
       setStep(next);
       scrollToStepTop(next);
@@ -604,6 +612,19 @@
     if (!response.ok) throw new Error(data.message || '送信を完了できませんでした。入力内容を確認して、もう一度お試しください。');
     return data;
   };
+  if (previewConfirmationButton) {
+    previewConfirmationButton.addEventListener('click', () => {
+      if (!isStagingFormPreview) return;
+      const destination = new URL(bookingConfig.applicationConfirmationPageUrl || defaultConfirmationPageUrl, window.location.origin);
+      if (destination.origin !== window.location.origin) {
+        applicationWaitingStatus.textContent = '案内ページの接続先を確認できません。';
+        return;
+      }
+      destination.searchParams.set('preview', '1');
+      liveMessage.textContent = '画面プレビューとして案内ページへ移動します。申込・メール送信は行われていません。';
+      window.location.assign(destination.toString());
+    });
+  }
   const waitForEmailConfirmation = async () => {
     while (applicationWaiting && !applicationWaiting.hidden) {
       try {
@@ -614,7 +635,7 @@
         });
         const status = await readJsonResponse(response);
         if (status.status === 'complete' && typeof status.public_token === 'string' && status.public_token) {
-          const destination = new URL(bookingConfig.applicationConfirmationPageUrl || '/visit/kyoto-city/application-pending/', window.location.origin);
+          const destination = new URL(bookingConfig.applicationConfirmationPageUrl || defaultConfirmationPageUrl, window.location.origin);
           if (destination.origin !== window.location.origin) throw new Error('確認ページの接続先を確認してください。');
           destination.searchParams.set('public_token', status.public_token);
           window.location.assign(destination.toString());
@@ -657,15 +678,15 @@
     if (!validateAccountHolder()) return;
     if (!applicationFlowReady) {
       if (isStagingFormPreview) {
-        const previewPage = new URL(bookingConfig.applicationConfirmationPageUrl || '/visit/kyoto-city/application-pending/', window.location.origin);
-        if (previewPage.origin !== window.location.origin) {
-          formResult.textContent = 'プレビュー案内ページの接続先を確認できません。';
-          formResult.hidden = false;
-          return;
-        }
-        previewPage.searchParams.set('preview', '1');
-        liveMessage.textContent = '画面確認用の案内ページを表示します。申込は送信されていません。';
-        window.location.assign(previewPage.toString());
+        widget.querySelectorAll('[data-step]').forEach((stepPanel) => { stepPanel.hidden = true; });
+        formResult.hidden = true;
+        applicationWaitingTitle.textContent = '確認リンクのクリック待ち画面';
+        applicationWaitingLead.textContent = '送信後に表示される確認待ち画面のプレビューです。';
+        applicationWaitingStatus.textContent = '実際のメール送信・仮申し込みの登録は行われていません。下のボタンから確認後の案内ページを表示できます。';
+        applicationWaiting.hidden = false;
+        previewConfirmationButton.hidden = false;
+        liveMessage.textContent = 'メール確認待ち画面を表示しました。これは画面プレビューです。';
+        applicationWaiting.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
       formResult.textContent = 'プレビュー上で入力内容を確認しました。実際の仮申込保存・確認メール送信は未接続です。';
@@ -715,8 +736,10 @@
       const input = form.elements[name];
       if (input) input.value = value;
     };
+    const previewAddress = bookingConfig.previewAddress || {};
 
-    setRadio('visit-area', '中京区');
+    const firstAreaOption = widget.querySelector('[name="visit-area"]');
+    if (firstAreaOption) setRadio('visit-area', firstAreaOption.value);
     setRadio('visit-handoff', 'contactless');
     consentBox.checked = true;
     consentBox.dispatchEvent(new Event('change', { bubbles: true }));
@@ -735,11 +758,11 @@
     setValue('email', 'preview@example.invalid');
     setValue('email_confirm', 'preview@example.invalid');
     setValue('phone', '09000000000');
-    setValue('postal_code', '604-8571');
-    setValue('prefecture', '京都府');
-    setValue('city', '京都市中京区');
-    setValue('street', '寺町通御池上る上本能寺前町488');
-    setValue('building', 'テスト用');
+    setValue('postal_code', String(previewAddress.postal_code || '604-8571'));
+    setValue('prefecture', String(bookingConfig.prefectureName || ''));
+    setValue('city', `${regionName}${firstAreaOption ? firstAreaOption.value : ''}`);
+    setValue('street', String(previewAddress.street || '寺町通御池上る上本能寺前町488'));
+    setValue('building', String(previewAddress.building || 'テスト用'));
     setValue('birth_date', '1990-01-01');
     setValue('occupation', '会社員');
 

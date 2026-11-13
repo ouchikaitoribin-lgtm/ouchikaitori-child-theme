@@ -147,6 +147,7 @@
 .visit-application-waiting > strong { display: block; margin: 14px 0; padding: 12px; border-radius: 8px; background: #fff; color: #8d3024; font-size: 14px; line-height: 1.7; }
 .visit-application-waiting [data-application-waiting-status] { color: #667067; font-size: 11px; }
 .visit-application-waiting[hidden] { display: none !important; }
+.visit-application-waiting [data-preview-confirmation-link] { margin-top: 12px; }
 .visit-booking.is-awaiting-email .visit-booking-progress { display: none; }
 @media (max-width: 640px) {
   .visit-booking .visit-section-heading { margin-bottom: 21px; }

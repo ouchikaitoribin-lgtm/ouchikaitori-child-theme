@@ -1,6 +1,6 @@
 <?php
 /**
- * Template Name: 京都市出張買取 仮申し込み後のご案内
+ * Template Name: 出張買取 仮申し込み後のご案内（地域共通）
  * Template Post Type: page
  *
  * 仮申し込み後の案内ページ案。申込内容と回収コードは、今後の仮申込処理から
@@ -21,6 +21,9 @@ $visit_pending_preview_mode = function_exists( 'wp_get_environment_type' )
 	&& isset( $_GET['preview'] )
 	&& is_string( $_GET['preview'] )
 	&& '1' === sanitize_text_field( wp_unslash( $_GET['preview'] ) );
+$visit_parent_page_id = wp_get_post_parent_id( get_queried_object_id() );
+$visit_region_page_url = $visit_parent_page_id ? get_permalink( $visit_parent_page_id ) : home_url( '/visit/' );
+$visit_booking_page_url = trailingslashit( $visit_region_page_url ) . '#kyoto-booking';
 $visit_pending_application = null;
 if ( '' !== $visit_public_token && strlen( $visit_public_token ) <= 512 ) {
 	$visit_pending_application = apply_filters( 'visit_pending_application_for_public_token', null, $visit_public_token );
@@ -91,11 +94,11 @@ get_header();
   <a class="visit-skip-link" href="#pending-main">本文へ移動</a>
   <header class="visit-header">
     <div class="visit-container visit-header__inner">
-      <a class="visit-brand" href="<?php echo esc_url( home_url( '/visit/kyoto-city/' ) ); ?>" aria-label="京都市の出張買取ページへ戻る">
+      <a class="visit-brand" href="<?php echo esc_url( $visit_region_page_url ); ?>" aria-label="出張買取ページへ戻る">
         <span class="visit-brand__mark" aria-hidden="true">家</span>
         <span class="visit-brand__name">おうち買取便<small>出張買取</small></span>
       </a>
-      <a class="visit-header__cta" href="<?php echo esc_url( home_url( '/visit/kyoto-city/#kyoto-booking' ) ); ?>">申込ページへ <span aria-hidden="true">→</span></a>
+      <a class="visit-header__cta" href="<?php echo esc_url( $visit_booking_page_url ); ?>">申込ページへ <span aria-hidden="true">→</span></a>
     </div>
   </header>
 
@@ -189,7 +192,7 @@ get_header();
     </section>
 
     <section class="visit-pending-final">
-      <div class="visit-container"><p class="visit-pending-eyebrow">PLEASE CONFIRM</p><div data-application-state="preview" hidden><h2>画面確認用のプレビューです。</h2><p>申込内容と回収コードは、実際の受付システム接続後に表示されます。</p></div><div data-application-state="pending"><h2>メールの確認リンクを押すまでは、<br>正式なお申し込みは完了していません。</h2><p>仮申し込み内容と回収コードを確認し、メールに記載されたリンクをクリックしてください。</p></div><div data-application-state="complete" hidden><h2>申込内容と回収コードをご確認ください。</h2><p>専用URLを保存しておくと、あとからこのページを確認できます。</p></div><a class="visit-pending-back-link" href="<?php echo esc_url( home_url( '/visit/kyoto-city/#kyoto-booking' ) ); ?>">京都市ページへ戻る <span aria-hidden="true">→</span></a></div>
+      <div class="visit-container"><p class="visit-pending-eyebrow">PLEASE CONFIRM</p><div data-application-state="preview" hidden><h2>画面確認用のプレビューです。</h2><p>申込内容と回収コードは、実際の受付システム接続後に表示されます。</p></div><div data-application-state="pending"><h2>メールの確認リンクを押すまでは、<br>正式なお申し込みは完了していません。</h2><p>仮申し込み内容と回収コードを確認し、メールに記載されたリンクをクリックしてください。</p></div><div data-application-state="complete" hidden><h2>申込内容と回収コードをご確認ください。</h2><p>専用URLを保存しておくと、あとからこのページを確認できます。</p></div><a class="visit-pending-back-link" href="<?php echo esc_url( $visit_booking_page_url ); ?>">申込ページへ戻る <span aria-hidden="true">→</span></a></div>
     </section>
   </main>
   <footer class="visit-footer"><div class="visit-container"><p>© おうち買取便</p></div></footer>
