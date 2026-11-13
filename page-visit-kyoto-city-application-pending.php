@@ -55,7 +55,7 @@ add_action( 'wp_enqueue_scripts', static function () {
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
 	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.0.0' );
 	wp_enqueue_style( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.css', array( 'ouchi-visit-lp' ), '1.1.0' );
-	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.1', true );
+	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.2', true );
 	wp_script_add_data( 'ouchi-visit-pending', 'strategy', 'defer' );
 } );
 
@@ -108,31 +108,31 @@ get_header();
         <div data-application-state="preview" hidden>
           <p class="visit-pending-eyebrow">STAGING PREVIEW</p>
           <p class="visit-pending-state">画面確認用</p>
-          <h1 id="pending-preview-title">仮申し込み後の案内ページをプレビューしています。</h1>
-          <p class="visit-pending-hero__lead">このページは表示確認用です。申込情報の送信・保存や確認メールの送信は行われておらず、実際の申込・回収コードは発行されていません。</p>
+          <h1 id="pending-preview-title">申込内容確認ページのプレビューです。</h1>
+          <p class="visit-pending-hero__lead">この画面は表示確認用です。実際の申込情報は保存されておらず、回収コードも発行されていません。</p>
           <div class="visit-pending-warning" role="status">
             <span class="visit-pending-warning__icon" aria-hidden="true">i</span>
-            <div><strong>実際の申込は完了していません</strong><p>本番システム接続後に、メール確認や申込内容・回収コードの表示が有効になります。</p></div>
+            <div><strong>画面確認用のプレビューです</strong><p>受付システム接続後に、申込内容と回収コードが表示されます。</p></div>
           </div>
         </div>
         <div data-application-state="pending">
-        <p class="visit-pending-eyebrow">PROVISIONAL APPLICATION</p>
-        <p class="visit-pending-state">仮申し込み後のご案内</p>
-        <h1 id="pending-title">メール内の確認リンクをクリックするまで、<br class="visit-pending-desktop-break">正式なお申し込みは完了していません。</h1>
-        <p class="visit-pending-hero__lead">仮申し込み内容をご確認のうえ、入力したメールアドレスに届く確認メールを開き、本文のリンクをクリックしてください。</p>
+        <p class="visit-pending-eyebrow">APPLICATION LOOKUP</p>
+        <p class="visit-pending-state">申込内容の確認</p>
+        <h1 id="pending-title">申込内容を表示できません。</h1>
+        <p class="visit-pending-hero__lead">有効な申込情報を確認できません。申込完了後に発行された専用URLをご確認ください。</p>
         <div class="visit-pending-warning" role="alert">
           <span class="visit-pending-warning__icon" aria-hidden="true">!</span>
-          <div><strong>確認リンクのクリックが必要です</strong><p>リンクをクリックするまでは、出張買取のお申し込みは正式に完了していません。</p></div>
+          <div><strong>申込情報を読み込めません</strong><p>URLをご確認いただくか、お問い合わせください。</p></div>
         </div>
         </div>
         <div data-application-state="complete" hidden>
           <p class="visit-pending-eyebrow">APPLICATION COMPLETE</p>
           <p class="visit-pending-state visit-pending-state--complete">正式申込完了</p>
           <h1>正式なお申し込みが完了しました。</h1>
-          <p class="visit-pending-hero__lead">このページは、メールでお知らせした専用URLからいつでも確認できます。申込内容と回収コード、荷物の準備方法をご確認ください。</p>
+          <p class="visit-pending-hero__lead">申込完了時に案内された専用URLからいつでも確認できます。申込内容と回収コード、荷物の準備方法をご確認ください。</p>
         </div>
         <p class="visit-pending-token-status" data-public-token-status role="status" hidden></p>
-        <div class="visit-pending-token-invalid" data-public-token-invalid role="alert" hidden>この確認ページを表示できません。メールに記載されたURLを確認するか、お問い合わせください。</div>
+        <div class="visit-pending-token-invalid" data-public-token-invalid role="alert" hidden>この確認ページを表示できません。申込完了時に発行されたURLをご確認いただくか、お問い合わせください。</div>
       </div>
     </section>
 
@@ -192,7 +192,7 @@ get_header();
     </section>
 
     <section class="visit-pending-final">
-      <div class="visit-container"><p class="visit-pending-eyebrow">PLEASE CONFIRM</p><div data-application-state="preview" hidden><h2>画面確認用のプレビューです。</h2><p>申込内容と回収コードは、実際の受付システム接続後に表示されます。</p></div><div data-application-state="pending"><h2>メールの確認リンクを押すまでは、<br>正式なお申し込みは完了していません。</h2><p>仮申し込み内容と回収コードを確認し、メールに記載されたリンクをクリックしてください。</p></div><div data-application-state="complete" hidden><h2>申込内容と回収コードをご確認ください。</h2><p>専用URLを保存しておくと、あとからこのページを確認できます。</p></div><a class="visit-pending-back-link" href="<?php echo esc_url( $visit_booking_page_url ); ?>">申込ページへ戻る <span aria-hidden="true">→</span></a></div>
+      <div class="visit-container"><p class="visit-pending-eyebrow">APPLICATION DETAILS</p><div data-application-state="preview" hidden><h2>申込内容確認画面のプレビューです。</h2><p>実際の申込情報と回収コードは、受付システム接続後に表示されます。</p></div><div data-application-state="pending"><h2>申込情報を表示できません。</h2><p>申込完了後に発行された専用URLをご確認ください。</p></div><div data-application-state="complete" hidden><h2>申込内容と回収コードをご確認ください。</h2><p>専用URLを保存しておくと、あとからこのページを確認できます。</p></div><a class="visit-pending-back-link" href="<?php echo esc_url( $visit_booking_page_url ); ?>">申込ページへ戻る <span aria-hidden="true">→</span></a></div>
     </section>
   </main>
   <footer class="visit-footer"><div class="visit-container"><p>© おうち買取便</p></div></footer>

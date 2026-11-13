@@ -36,7 +36,7 @@
   }
 
   if (isValidCompletedToken && tokenStatus) {
-    tokenStatus.textContent = 'メール確認済みの正式なお申し込み内容です。';
+    tokenStatus.textContent = '正式なお申し込み内容を表示しています。';
     tokenStatus.hidden = false;
   }
 
