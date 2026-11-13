@@ -10,9 +10,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// ステージング環境だけでフォーム画面を操作できるプレビューとして動かします。
+// ステージングでは、バックエンド設定が整った場合だけ送信を有効にします。
+$visit_application_backend_enabled = class_exists( 'Ouchi_Visit_Application_Backend' )
+	&& Ouchi_Visit_Application_Backend::is_enabled();
 $visit_form_preview_mode = function_exists( 'wp_get_environment_type' )
-	&& 'staging' === wp_get_environment_type();
+	&& 'staging' === wp_get_environment_type()
+	&& ! $visit_application_backend_enabled;
 $visit_regions = require get_stylesheet_directory() . '/visit-lp-draft/visit/regions.php';
 $visit_region_slug = (string) get_post_field( 'post_name', get_queried_object_id() );
 $visit_region = isset( $visit_regions[ $visit_region_slug ] ) ? $visit_regions[ $visit_region_slug ] : null;
@@ -44,7 +47,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 	wp_enqueue_script( 'ouchi-visit-yubinbango', 'https://yubinbango.github.io/yubinbango/yubinbango.js', array(), null, true );
 	wp_enqueue_script( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
 	$booking_script_dependencies = array( 'ouchi-visit-yubinbango', 'ouchi-visit-leaflet' );
-	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.6.7', true );
+	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.7.0', true );
 	$visit_booking_defaults = array(
 		'slots'                   => array( '10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00' ),
 		'multiSlotBonusEnabled'   => true,
@@ -62,7 +65,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 			'applicationStatusEndpoint' => apply_filters( 'visit_application_status_endpoint', '' ),
 			'applicationConfirmationPageUrl' => home_url( $visit_confirmation_path ),
 			'formPreviewMode' => $visit_form_preview_mode,
-			'applicationSubmissionEnabled' => false,
+			'applicationSubmissionEnabled' => $visit_application_backend_enabled,
 			'regionName' => $visit_address_prefix,
 			'prefectureName' => $visit_prefecture_name,
 			'mapCenter' => $visit_map_center,
@@ -127,6 +130,7 @@ get_header();
         $booking_widget_html = str_replace( '<!-- VISIT_AREA_OPTIONS -->', $area_options_markup, $booking_widget_html );
         $booking_widget_html = str_replace( 'value="contactless-v1-draft"', 'value="' . esc_attr( $terms_version ) . '"', $booking_widget_html );
         $booking_widget_html = str_replace( 'value="京都府"', 'value="' . esc_attr( $visit_prefecture_name ) . '"', $booking_widget_html );
+        $booking_widget_html = str_replace( 'name="visit_region_slug" value="kyoto-city"', 'name="visit_region_slug" value="' . esc_attr( $visit_region_slug ) . '"', $booking_widget_html );
         $application_nonce = wp_nonce_field( 'visit_application_submit', 'visit_application_nonce', false, false );
         $booking_widget_html = str_replace( '<!-- VISIT_APPLICATION_NONCE -->', $application_nonce, $booking_widget_html );
         echo $booking_widget_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- 固定HTML断片を使用し、差し込み値は個別にエスケープ済み

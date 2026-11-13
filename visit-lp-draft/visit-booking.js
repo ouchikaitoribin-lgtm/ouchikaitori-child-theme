@@ -54,6 +54,10 @@
     }
     widget.querySelector('[data-submit-note]').textContent = 'ステージングの画面確認専用です。ボタンを押すと案内ページを表示しますが、申込送信・保存・予約確定・メール送信は行いません。';
   }
+  if (applicationFlowReady) {
+    demoNotice.textContent = 'ステージングの申込テストです。確認メールは固定テスト宛先だけに送信します。入力されたメールアドレスには送信しません。メール内のリンクをクリックすると、確認後の申込情報がステージングDBへ保存されます。';
+    widget.querySelector('[data-submit-note]').textContent = 'ステージング専用テストです。実際の利用者への受付・メール送信は行いません。';
+  }
   const state = { step: 1, area: '', handoff: '', consent: false, day: null, times: [] };
   const monthLabel = widget.querySelector('[data-calendar-month]');
   const calendarDays = widget.querySelector('[data-calendar-days]');
@@ -64,14 +68,15 @@
   const formResult = widget.querySelector('[data-application-result]');
   const applicationWaiting = widget.querySelector('[data-application-waiting]');
   const emailSentMessage = widget.querySelector('[data-email-sent-message]');
-  const emailRecipient = widget.querySelector('[data-email-recipient]');
   const applicationWaitingStatus = widget.querySelector('[data-application-waiting-status]');
   const applicationWaitingLead = widget.querySelector('[data-application-waiting-lead]');
   const previewConfirmationButton = widget.querySelector('[data-preview-confirmation-link]');
-  const showEmailSentMessage = (address) => {
-    if (!emailSentMessage || !emailRecipient) return;
-    emailRecipient.textContent = String(address || '').trim();
-    emailSentMessage.hidden = !emailRecipient.textContent;
+  let applicationPollToken = '';
+  let applicationSubmissionKey = '';
+  const showEmailSentMessage = (message) => {
+    if (!emailSentMessage) return;
+    emailSentMessage.textContent = String(message || '');
+    emailSentMessage.hidden = !emailSentMessage.textContent;
   };
   let stagingTestDefaultsApplied = false;
   const terms = widget.querySelector('[data-contactless-terms]');
@@ -637,7 +642,8 @@
         const response = await fetch(getSameOriginEndpoint(bookingConfig.applicationStatusEndpoint), {
           method: 'POST',
           credentials: 'same-origin',
-          headers: { 'Accept': 'application/json' }
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ poll_token: applicationPollToken })
         });
         const status = await readJsonResponse(response);
         if (status.status === 'complete' && typeof status.public_token === 'string' && status.public_token) {
@@ -686,7 +692,7 @@
       if (isStagingFormPreview) {
         widget.querySelectorAll('[data-step]').forEach((stepPanel) => { stepPanel.hidden = true; });
         formResult.hidden = true;
-        showEmailSentMessage(form.elements.email.value);
+        showEmailSentMessage('画面プレビューです。メール送信や申込登録は行われていません。');
         applicationWaitingLead.textContent = '実際の受付では、入力したメールアドレスに届く確認メールを開き、メール内のリンクをクリックしてください。';
         applicationWaitingStatus.textContent = 'ステージングの画面確認用です。実際のメール送信・仮申し込み登録は行われません。確認後の案内ページは下のボタンでプレビューできます。';
         applicationWaiting.hidden = false;
@@ -708,12 +714,29 @@
       const response = await fetch(getSameOriginEndpoint(bookingConfig.applicationSubmitEndpoint), {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Accept': 'application/json' },
+        headers: {
+          'Accept': 'application/json',
+          'X-Visit-Submission-Key': applicationSubmissionKey || (applicationSubmissionKey = createSubmissionKey())
+        },
         body: new FormData(form)
       });
       const result = await readJsonResponse(response);
+      if (result.status === 'complete' && typeof result.public_token === 'string' && result.public_token) {
+        const destination = new URL(bookingConfig.applicationConfirmationPageUrl || defaultConfirmationPageUrl, window.location.origin);
+        if (destination.origin !== window.location.origin) throw new Error('確認ページの接続先を確認してください。');
+        destination.searchParams.set('public_token', result.public_token);
+        window.location.assign(destination.toString());
+        return;
+      }
       if (result.status !== 'pending') throw new Error('仮申し込みの受付状態を確認できませんでした。');
-      showEmailSentMessage(form.elements.email.value);
+      applicationPollToken = String(result.poll_token || '');
+      if (!applicationPollToken) throw new Error('申込状態を確認する情報がありません。');
+      showEmailSentMessage(result.test_mail_only
+        ? 'ステージングの固定テスト宛先へ確認メールを送信しました。入力されたメールアドレスには送信していません。'
+        : `${form.elements.email.value.trim()} に確認メールを送信しました。`);
+      if (result.test_mail_only) {
+        applicationWaitingLead.textContent = 'ステージングの固定テスト宛先で確認メールを開き、メール内のリンクをクリックしてください。入力されたメールアドレスにはメールを送信していません。';
+      }
       widget.querySelectorAll('[data-step]').forEach((stepPanel) => { stepPanel.hidden = true; });
       formResult.hidden = true;
       applicationWaiting.hidden = false;
@@ -729,6 +752,15 @@
       if (submitButton) submitButton.disabled = false;
     }
   });
+
+  function createSubmissionKey() {
+    if (!window.crypto || typeof window.crypto.getRandomValues !== 'function') {
+      throw new Error('安全な送信状態を作成できません。HTTPSでページを開いてください。');
+    }
+    const bytes = new Uint8Array(32);
+    window.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  }
 
   function applyStagingTestDefaults() {
     if (!isStagingFormPreview) return;

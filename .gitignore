@@ -2,6 +2,7 @@
 .env.*
 *.log
 *.sql
+!visit-lp-draft/migrations/*.sql
 *.sql.gz
 *.bak
 *.zip

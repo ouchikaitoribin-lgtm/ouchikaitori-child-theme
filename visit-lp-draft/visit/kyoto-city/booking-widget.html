@@ -127,8 +127,8 @@
             </div>
             <div class="visit-form-section"><h4>お申込み内容</h4>
               <div class="visit-form-grid">
-                <label>おおよその箱数<input name="box_count" type="number" min="0" max="999" inputmode="numeric" placeholder="例：3" required><small>回収するお品物のおおよその箱数をご入力ください。</small></label>
-                <label>キャンペーンコード<input name="campaign_code" type="text" maxlength="40" autocomplete="off" placeholder="お持ちの場合に入力"><small>コードの適用はバックエンド接続時に確認します。</small></label>
+                <label>おおよその箱数<input name="box_count" type="number" min="0" max="255" inputmode="numeric" placeholder="例：3" required><small>回収するお品物のおおよその箱数をご入力ください。</small></label>
+                <label>キャンペーンコード<input name="campaign_code" type="text" maxlength="10" autocomplete="off" placeholder="お持ちの場合に入力"><small>コードの適用はバックエンド接続時に確認します。</small></label>
                 <fieldset class="visit-form-choice visit-form-grid__wide"><legend>会員登録</legend><label><input type="radio" name="register_choice" value="yes" required><span>登録する</span></label><label><input type="radio" name="register_choice" value="no" required><span>登録しない</span></label></fieldset>
                 <fieldset class="visit-form-choice visit-form-grid__wide"><legend>お得なお知らせメール</legend><label><input type="radio" name="receive_choice" value="yes" required><span>受け取る</span></label><label><input type="radio" name="receive_choice" value="no" required><span>受け取らない</span></label></fieldset>
               </div>
@@ -147,6 +147,7 @@
             </div>
             <input type="text" name="website" class="visit-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
             <input type="hidden" name="visit_area" data-form-area>
+            <input type="hidden" name="visit_region_slug" value="kyoto-city">
             <input type="hidden" name="handoff_method" data-form-handoff>
             <input type="hidden" name="pickup_date" data-form-date>
             <input type="hidden" name="pickup_times" data-form-times>
@@ -159,7 +160,7 @@
             <p class="visit-booking-submit-note" data-submit-note>現在はデザイン確認用です。送信・個人情報の保存・確認メールの送付は行われません。</p>
             <div class="visit-application-result" data-application-result role="status" aria-live="polite" hidden></div>
             <section class="visit-booking-step visit-application-waiting" data-application-waiting aria-labelledby="application-waiting-title" hidden>
-              <p class="visit-application-waiting__sent" data-email-sent-message role="status" aria-live="polite" hidden><span data-email-recipient></span>に確認メールを送信しました。</p>
+              <p class="visit-application-waiting__sent" data-email-sent-message role="status" aria-live="polite" hidden></p>
               <div class="visit-booking-step__heading">
                 <span>STEP 07 · EMAIL CONFIRMATION</span>
                 <h3 id="application-waiting-title">メールを開いて、確認リンクをクリックしてください</h3>

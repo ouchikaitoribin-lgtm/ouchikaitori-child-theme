@@ -78,3 +78,12 @@ add_action('init', function () {
         return ob_get_clean();
     });
 }, 20);
+
+// 出張買取の申込APIはステージング環境だけで読み込みます。
+// 既存の宅配買取処理には接続しません。
+if (function_exists('wp_get_environment_type') && 'staging' === wp_get_environment_type()) {
+    $visit_application_backend = get_stylesheet_directory() . '/visit-lp-draft/plugin/visit-application-backend.php';
+    if (is_readable($visit_application_backend)) {
+        require_once $visit_application_backend;
+    }
+}
