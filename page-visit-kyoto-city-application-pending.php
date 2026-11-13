@@ -15,6 +15,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 $visit_public_token = isset( $_GET['public_token'] ) && is_string( $_GET['public_token'] )
 	? sanitize_text_field( wp_unslash( $_GET['public_token'] ) )
 	: '';
+$visit_pending_preview_mode = function_exists( 'wp_get_environment_type' )
+	&& 'staging' === wp_get_environment_type()
+	&& '' === $visit_public_token
+	&& isset( $_GET['preview'] )
+	&& is_string( $_GET['preview'] )
+	&& '1' === sanitize_text_field( wp_unslash( $_GET['preview'] ) );
 $visit_pending_application = null;
 if ( '' !== $visit_public_token && strlen( $visit_public_token ) <= 512 ) {
 	$visit_pending_application = apply_filters( 'visit_pending_application_for_public_token', null, $visit_public_token );
@@ -46,7 +52,7 @@ add_action( 'wp_enqueue_scripts', static function () {
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
 	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.0.0' );
 	wp_enqueue_style( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.css', array( 'ouchi-visit-lp' ), '1.1.0' );
-	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.0', true );
+	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.1', true );
 	wp_script_add_data( 'ouchi-visit-pending', 'strategy', 'defer' );
 } );
 
@@ -78,6 +84,9 @@ get_header();
 <?php if ( is_array( $visit_pending_application ) ) : ?>
 <script>window.VISIT_PENDING_APPLICATION = <?php echo wp_json_encode( $visit_pending_application, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ); ?>;</script>
 <?php endif; ?>
+<?php if ( $visit_pending_preview_mode ) : ?>
+<script>window.VISIT_PENDING_PREVIEW = true;</script>
+<?php endif; ?>
 <div class="visit-page">
   <a class="visit-skip-link" href="#pending-main">本文へ移動</a>
   <header class="visit-header">
@@ -91,8 +100,18 @@ get_header();
   </header>
 
   <main id="pending-main" class="visit-pending-main">
-    <section class="visit-pending-hero" aria-labelledby="pending-title">
+    <section class="visit-pending-hero">
       <div class="visit-container">
+        <div data-application-state="preview" hidden>
+          <p class="visit-pending-eyebrow">STAGING PREVIEW</p>
+          <p class="visit-pending-state">画面確認用</p>
+          <h1 id="pending-preview-title">仮申し込み後の案内ページをプレビューしています。</h1>
+          <p class="visit-pending-hero__lead">このページは表示確認用です。申込情報の送信・保存や確認メールの送信は行われておらず、実際の申込・回収コードは発行されていません。</p>
+          <div class="visit-pending-warning" role="status">
+            <span class="visit-pending-warning__icon" aria-hidden="true">i</span>
+            <div><strong>実際の申込は完了していません</strong><p>本番システム接続後に、メール確認や申込内容・回収コードの表示が有効になります。</p></div>
+          </div>
+        </div>
         <div data-application-state="pending">
         <p class="visit-pending-eyebrow">PROVISIONAL APPLICATION</p>
         <p class="visit-pending-state">仮申し込み後のご案内</p>
@@ -169,8 +188,8 @@ get_header();
       </div>
     </section>
 
-    <section class="visit-pending-final" aria-labelledby="pending-final-title">
-      <div class="visit-container"><p class="visit-pending-eyebrow">PLEASE CONFIRM</p><div data-application-state="pending"><h2 id="pending-final-title">メールの確認リンクを押すまでは、<br>正式なお申し込みは完了していません。</h2><p>仮申し込み内容と回収コードを確認し、メールに記載されたリンクをクリックしてください。</p></div><div data-application-state="complete" hidden><h2>申込内容と回収コードをご確認ください。</h2><p>専用URLを保存しておくと、あとからこのページを確認できます。</p></div><a class="visit-pending-back-link" href="<?php echo esc_url( home_url( '/visit/kyoto-city/#kyoto-booking' ) ); ?>">京都市ページへ戻る <span aria-hidden="true">→</span></a></div>
+    <section class="visit-pending-final">
+      <div class="visit-container"><p class="visit-pending-eyebrow">PLEASE CONFIRM</p><div data-application-state="preview" hidden><h2>画面確認用のプレビューです。</h2><p>申込内容と回収コードは、実際の受付システム接続後に表示されます。</p></div><div data-application-state="pending"><h2>メールの確認リンクを押すまでは、<br>正式なお申し込みは完了していません。</h2><p>仮申し込み内容と回収コードを確認し、メールに記載されたリンクをクリックしてください。</p></div><div data-application-state="complete" hidden><h2>申込内容と回収コードをご確認ください。</h2><p>専用URLを保存しておくと、あとからこのページを確認できます。</p></div><a class="visit-pending-back-link" href="<?php echo esc_url( home_url( '/visit/kyoto-city/#kyoto-booking' ) ); ?>">京都市ページへ戻る <span aria-hidden="true">→</span></a></div>
     </section>
   </main>
   <footer class="visit-footer"><div class="visit-container"><p>© おうち買取便</p></div></footer>

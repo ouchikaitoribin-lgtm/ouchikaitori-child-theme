@@ -21,15 +21,12 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
 	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.3.2' );
 	wp_enqueue_style( 'ouchi-visit-kyoto-city', $asset_uri . 'visit/kyoto-city/kyoto-city.css', array( 'ouchi-visit-lp' ), '1.3.2' );
-	wp_enqueue_style( 'ouchi-visit-booking-ui', $asset_uri . 'visit/kyoto-city/booking.css', array( 'ouchi-visit-kyoto-city' ), '1.6.1' );
+	wp_enqueue_style( 'ouchi-visit-booking-ui', $asset_uri . 'visit/kyoto-city/booking.css', array( 'ouchi-visit-kyoto-city' ), '1.6.2' );
+	wp_enqueue_style( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
 	wp_enqueue_script( 'ouchi-visit-yubinbango', 'https://yubinbango.github.io/yubinbango/yubinbango.js', array(), null, true );
-	$booking_script_dependencies = array( 'ouchi-visit-yubinbango' );
-	if ( ! $visit_form_preview_mode ) {
-		wp_enqueue_style( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
-		wp_enqueue_script( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
-		$booking_script_dependencies[] = 'ouchi-visit-leaflet';
-	}
-	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.6.2', true );
+	wp_enqueue_script( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
+	$booking_script_dependencies = array( 'ouchi-visit-yubinbango', 'ouchi-visit-leaflet' );
+	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.6.3', true );
 	$visit_booking_defaults = array(
 		'slots'                   => array( '10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00' ),
 		'multiSlotBonusEnabled'   => true,

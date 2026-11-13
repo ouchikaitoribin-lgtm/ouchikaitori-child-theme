@@ -4,6 +4,7 @@
   const url = new URL(window.location.href);
   const publicToken = url.searchParams.get('public_token');
   const application = window.VISIT_PENDING_APPLICATION;
+  const isPreview = window.VISIT_PENDING_PREVIEW === true && !publicToken;
   const pendingNote = document.querySelector('[data-pending-data-note]');
   const contactlessDetails = document.querySelector('[data-pending-contactless]');
   const tokenStatus = document.querySelector('[data-public-token-status]');
@@ -22,7 +23,8 @@
     });
   };
 
-  showState('pending', !hasToken);
+  showState('preview', isPreview);
+  showState('pending', !hasToken && !isPreview);
   showState('complete', isValidCompletedToken);
 
   if (hasToken && !isValidCompletedToken) {

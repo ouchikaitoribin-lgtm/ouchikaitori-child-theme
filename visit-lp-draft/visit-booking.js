@@ -41,14 +41,16 @@
 
   demoNotice.hidden = false;
   if (isStagingFormPreview) {
-    demoNotice.textContent = 'ステージングの画面確認モードです。銀行・郵便番号の参照情報を取得します。予約枠は仮表示で、入力内容の保存・申込送信・メール送信・集荷API呼び出しは行いません。';
+    demoNotice.textContent = 'ステージングの画面確認モードです。住所検索時は入力住所を国土地理院の住所検索サービスへ送信し、OpenStreetMapの地図タイルを読み込みます。入力内容の保存・申込送信・メール送信・集荷API呼び出しは行いません。';
     widget.classList.add('is-form-preview');
   }
   if (isInteractivePreview) {
-    widget.querySelectorAll('[data-application-submit]').forEach((button) => {
-      button.disabled = true;
-    });
-    widget.querySelector('[data-submit-note]').textContent = '画面確認専用です。申込受付・保存・予約確定・メール送信は行われません。';
+    const previewButton = widget.querySelector('[data-application-submit]');
+    if (isStagingFormPreview && previewButton) {
+      previewButton.disabled = false;
+      previewButton.textContent = '送信後の案内をプレビュー';
+    }
+    widget.querySelector('[data-submit-note]').textContent = 'ステージングの画面確認専用です。ボタンを押すと案内ページを表示しますが、申込送信・保存・予約確定・メール送信は行いません。';
   }
   const state = { step: 1, area: '', handoff: '', consent: false, day: null, times: [] };
   const monthLabel = widget.querySelector('[data-calendar-month]');
@@ -123,10 +125,6 @@
   let lastGeocodedAddress = '';
   let geocodeRequestId = 0;
   function initializePickupMap() {
-    if (isStagingFormPreview) {
-      pickupMapStatus.textContent = '地図はステージングの画面確認モードでは読み込みません。';
-      return;
-    }
     if (pickupMap || !pickupMapElement) return;
     if (!window.L) {
       pickupMapStatus.textContent = '地図を読み込めませんでした。通信を確認してページを再読み込みしてください。';
@@ -164,7 +162,6 @@
   }
 
   async function geocodePickupAddress() {
-    if (isStagingFormPreview) return;
     if (!pickupMap) return;
     const address = [form.elements.prefecture.value, form.elements.city.value, form.elements.street.value]
       .map((part) => part.trim())
@@ -645,6 +642,18 @@
     }
     if (!validateAccountHolder()) return;
     if (!applicationFlowReady) {
+      if (isStagingFormPreview) {
+        const previewPage = new URL(bookingConfig.applicationConfirmationPageUrl || '/visit/kyoto-city/application-pending/', window.location.origin);
+        if (previewPage.origin !== window.location.origin) {
+          formResult.textContent = 'プレビュー案内ページの接続先を確認できません。';
+          formResult.hidden = false;
+          return;
+        }
+        previewPage.searchParams.set('preview', '1');
+        liveMessage.textContent = '画面確認用の案内ページを表示します。申込は送信されていません。';
+        window.location.assign(previewPage.toString());
+        return;
+      }
       formResult.textContent = 'プレビュー上で入力内容を確認しました。実際の仮申込保存・確認メール送信は未接続です。';
       formResult.hidden = false;
       liveMessage.textContent = 'プレビュー確認のみです。申込は保存されていません。';
