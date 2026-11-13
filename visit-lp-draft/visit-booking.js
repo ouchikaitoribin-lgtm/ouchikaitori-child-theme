@@ -63,9 +63,16 @@
   const form = widget.querySelector('[data-application-form]');
   const formResult = widget.querySelector('[data-application-result]');
   const applicationWaiting = widget.querySelector('[data-application-waiting]');
+  const emailSentMessage = widget.querySelector('[data-email-sent-message]');
+  const emailRecipient = widget.querySelector('[data-email-recipient]');
   const applicationWaitingStatus = widget.querySelector('[data-application-waiting-status]');
   const applicationWaitingLead = widget.querySelector('[data-application-waiting-lead]');
   const previewConfirmationButton = widget.querySelector('[data-preview-confirmation-link]');
+  const showEmailSentMessage = (address) => {
+    if (!emailSentMessage || !emailRecipient) return;
+    emailRecipient.textContent = String(address || '').trim();
+    emailSentMessage.hidden = !emailRecipient.textContent;
+  };
   let stagingTestDefaultsApplied = false;
   const terms = widget.querySelector('[data-contactless-terms]');
   const pickupPlaceDetails = widget.querySelector('[data-contactless-pickup-details]');
@@ -679,6 +686,7 @@
       if (isStagingFormPreview) {
         widget.querySelectorAll('[data-step]').forEach((stepPanel) => { stepPanel.hidden = true; });
         formResult.hidden = true;
+        showEmailSentMessage(form.elements.email.value);
         applicationWaitingLead.textContent = '実際の受付では、入力したメールアドレスに届く確認メールを開き、メール内のリンクをクリックしてください。';
         applicationWaitingStatus.textContent = 'ステージングの画面確認用です。実際のメール送信・仮申し込み登録は行われません。確認後の案内ページは下のボタンでプレビューできます。';
         applicationWaiting.hidden = false;
@@ -705,6 +713,7 @@
       });
       const result = await readJsonResponse(response);
       if (result.status !== 'pending') throw new Error('仮申し込みの受付状態を確認できませんでした。');
+      showEmailSentMessage(form.elements.email.value);
       widget.querySelectorAll('[data-step]').forEach((stepPanel) => { stepPanel.hidden = true; });
       formResult.hidden = true;
       applicationWaiting.hidden = false;
