@@ -12,16 +12,16 @@
 2. `public_token` が `CHAR(64)` のUNIQUE KEYであり、テーブルがInnoDBであることを確認します。
 3. `shipping_choice` に `visit` が含まれることを確認します。添付されたDDLは `pickup/self` のみです。`visit` がなければ、このプラグインは登録を拒否します。既存テーブルの変更SQLは含めていません。
 4. 親表と同じ文字コード・照合順序であることを確認した後、マイグレーションSQLをステージングDBへ適用します。
-5. 環境変数をWordPress/PHPプロセスへ設定します。子テーマのローダーはDBスキーマ確認に成功した場合だけ送信画面を有効化します。WordPress管理画面から別途プラグインを有効化する必要はありません。
+5. `pdo_connect_app_db()` の定義元を確認します。このリポジトリには定義が含まれていません。WordPressでは有効プラグインの後にテーマが読み込まれ、子テーマ `functions.php` は親テーマ `functions.php` より先に読み込まれます。出張買取側は `init` 以降に関数の有無を確認するため、有効プラグイン・MUプラグイン・親テーマのいずれで定義されても利用できます。関数が未定義の場合はバックエンドを停止します。接続先は既存関数の設定（`OTP_DB_*`）に従います。
+6. 固定テスト宛先と暗号化キーをWordPress/PHPプロセスに設定します。子テーマのローダーは既存関数によるDB接続と必要なテーブルの確認に成功した場合だけ送信画面を有効化します。WordPress管理画面から別途プラグインを有効化する必要はありません。
 
 必要な環境変数（値はGitやチャットへ登録しないでください）：
 
 - `WP_ENVIRONMENT_TYPE=staging`
-- `VISIT_DB_DSN=mysql:host=...;dbname=...;charset=utf8mb4`
-- `VISIT_DB_USER`
-- `VISIT_DB_PASSWORD`
 - `VISIT_CONFIRMATION_TEST_RECIPIENT`（固定のテスト受信先。環境変数、またはステージングの `wp-config.php` に定数として設定）
 - `PAYOUT_ENC_KEY_B64`（既存の32バイトAES鍵をBase64化した値。PHP環境変数または `wp-config.php` の定数）
+
+DB接続専用の設定は追加せず、既存の `pdo_connect_app_db()` を使用します。関数が未定義の場合は接続処理を行いません。
 
 `VISIT_CONFIRMATION_TEST_RECIPIENT` が申込フォームに入力されたメールアドレスと同じ場合は、メール送信を拒否します。申込者へメールは送信しません。
 送信先のメールアドレスはリポジトリへ書かず、Lightsail側のPHP環境変数またはステージング用 `wp-config.php` に設定してください。

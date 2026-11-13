@@ -40,14 +40,18 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function __construct() {
-		if ( $this->enabled() && ! wp_next_scheduled( 'ouchi_visit_cleanup_expired_drafts' ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'ouchi_visit_cleanup_expired_drafts' );
-		}
+		add_action( 'init', array( $this, 'ensure_cleanup_schedule' ), 20 );
 		add_action( 'ouchi_visit_cleanup_expired_drafts', array( $this, 'cleanup_expired_drafts' ) );
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_filter( 'visit_application_submit_endpoint', array( $this, 'submit_endpoint' ) );
 		add_filter( 'visit_application_status_endpoint', array( $this, 'status_endpoint' ) );
 		add_filter( 'visit_pending_application_for_public_token', array( $this, 'pending_application' ), 10, 2 );
+	}
+
+	public function ensure_cleanup_schedule() {
+		if ( $this->enabled() && ! wp_next_scheduled( 'ouchi_visit_cleanup_expired_drafts' ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'ouchi_visit_cleanup_expired_drafts' );
+		}
 	}
 
 	public function cleanup_expired_drafts() {
@@ -77,9 +81,7 @@ final class Ouchi_Visit_Application_Backend {
 			&& extension_loaded( 'pdo_mysql' )
 			&& function_exists( 'openssl_encrypt' )
 			&& function_exists( 'mb_convert_kana' )
-			&& '' !== (string) getenv( 'VISIT_DB_DSN' )
-			&& '' !== (string) getenv( 'VISIT_DB_USER' )
-			&& '' !== (string) getenv( 'VISIT_DB_PASSWORD' )
+			&& function_exists( 'pdo_connect_app_db' )
 			&& '' !== (string) $test_recipient
 			&& false !== $key && 32 === strlen( $key );
 	}
@@ -131,15 +133,14 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function db() {
-		if ( ! $this->enabled() ) {
-			throw new RuntimeException( '受付設定が有効ではありません。' );
+		if ( ! $this->enabled() || ! function_exists( 'pdo_connect_app_db' ) ) {
+			throw new RuntimeException( '既存のDB接続関数を利用できません。' );
 		}
-		$options = array(
-			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-			PDO::ATTR_EMULATE_PREPARES   => false,
-			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-		);
-		return new PDO( (string) getenv( 'VISIT_DB_DSN' ), (string) getenv( 'VISIT_DB_USER' ), (string) getenv( 'VISIT_DB_PASSWORD' ), $options );
+		$pdo = pdo_connect_app_db();
+		if ( ! $pdo instanceof PDO ) {
+			throw new RuntimeException( '既存のDB接続関数がPDO接続を返しませんでした。' );
+		}
+		return $pdo;
 	}
 
 	private function assert_same_origin() {
