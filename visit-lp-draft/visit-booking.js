@@ -15,6 +15,8 @@
     multiSlotBonusPercent: 1,
     applicationSubmitEndpoint: '',
     applicationStatusEndpoint: '',
+    availabilityEndpoint: '',
+    regionSlug: '',
     applicationConfirmationPageUrl: defaultConfirmationPageUrl,
     formPreviewMode: false,
     applicationSubmissionEnabled: false
@@ -94,6 +96,7 @@
   const earliest = new Date(today);
   earliest.setDate(earliest.getDate() + 1);
   let displayedMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const availabilityCache = Object.create(null);
 
   // 以下の空き枠は操作イメージ確認用の仮データで、予約には使われません。
   const demoSlots = Array.isArray(bookingConfig.slots) && bookingConfig.slots.length
@@ -403,9 +406,39 @@
     return { init: () => setStatus(stagingTestDefaultsApplied ? 'テスト用の銀行・支店を選択済みです。' : '五十音を選ぶと銀行一覧が表示されます。') };
   })();
 
+  function monthKey(year, month) {
+    return `${year}-${String(month + 1).padStart(2, '0')}|${state.area}`;
+  }
+
+  function loadMonthAvailability(year, month) {
+    if (!applicationFlowReady || !bookingConfig.availabilityEndpoint) return;
+    const key = monthKey(year, month);
+    if (Object.prototype.hasOwnProperty.call(availabilityCache, key)) return;
+    availabilityCache[key] = null;
+    const endpoint = new URL(getSameOriginEndpoint(bookingConfig.availabilityEndpoint), window.location.origin);
+    endpoint.searchParams.set('month', key.slice(0, 7));
+    endpoint.searchParams.set('region_slug', String(bookingConfig.regionSlug || ''));
+    endpoint.searchParams.set('visit_area', state.area);
+    fetch(endpoint, { headers: { Accept: 'application/json' }, cache: 'no-store' })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || '空き枠を確認できません。');
+        availabilityCache[key] = result.days || {};
+        renderCalendar();
+        renderSlots();
+      })
+      .catch(() => {
+        delete availabilityCache[key];
+        liveMessage.textContent = '予約枠を確認できません。時間をおいて再度お試しください。';
+      });
+  }
+
   function renderCalendar() {
     const year = displayedMonth.getFullYear();
     const month = displayedMonth.getMonth();
+    loadMonthAvailability(year, month);
+    const isLiveAvailability = applicationFlowReady && Boolean(bookingConfig.availabilityEndpoint);
+    const monthAvailability = availabilityCache[monthKey(year, month)];
     monthLabel.textContent = `${year}年${month + 1}月`;
     calendarDays.replaceChildren();
 
@@ -419,18 +452,22 @@
 
     for (let dayNumber = 1; dayNumber <= daysInMonth; dayNumber += 1) {
       const date = new Date(year, month, dayNumber);
+      const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+      const liveDate = monthAvailability && monthAvailability[dateKey];
       const button = document.createElement('button');
-      const isAvailable = date >= earliest && [1, 3, 5].includes(date.getDay());
+      const isAvailable = isLiveAvailability
+        ? Boolean(liveDate && liveDate.available)
+        : date >= earliest && [1, 3, 5].includes(date.getDay());
       button.type = 'button';
       const dayLabel = document.createElement('span');
       dayLabel.textContent = String(dayNumber);
       const statusLabel = document.createElement('small');
-      statusLabel.textContent = date < earliest ? '－' : (isAvailable ? '○' : '×');
+      statusLabel.textContent = isLiveAvailability && !monthAvailability ? '…' : (date < earliest ? '－' : (isAvailable ? '○' : '×'));
       button.append(dayLabel, statusLabel);
-      button.disabled = !isAvailable;
+      button.disabled = !isAvailable || (isLiveAvailability && !monthAvailability);
       button.classList.toggle('is-available', isAvailable);
       button.classList.toggle('is-selected', Boolean(state.day && date.toDateString() === state.day.toDateString()));
-      button.setAttribute('aria-label', `${year}年${month + 1}月${dayNumber}日${isAvailable ? ' 画面確認用の仮枠あり' : (date < earliest ? ' 受付対象外' : ' 予約不可')}`);
+      button.setAttribute('aria-label', `${year}年${month + 1}月${dayNumber}日${isAvailable ? (isLiveAvailability ? ' 空き枠あり' : ' 画面確認用の仮枠あり') : (date < earliest ? ' 受付対象外' : ' 予約不可')}`);
       if (isAvailable) {
         button.addEventListener('click', () => {
           state.day = date;
@@ -458,16 +495,26 @@
       timeSlots.append(message);
       return;
     }
-    demoSlots.forEach((slot, index) => {
+    const dateKey = `${state.day.getFullYear()}-${String(state.day.getMonth() + 1).padStart(2, '0')}-${String(state.day.getDate()).padStart(2, '0')}`;
+    const isLiveAvailability = applicationFlowReady && Boolean(bookingConfig.availabilityEndpoint);
+    const dayAvailability = isLiveAvailability ? availabilityCache[monthKey(state.day.getFullYear(), state.day.getMonth())]?.[dateKey] : null;
+    if (isLiveAvailability && !dayAvailability) {
+      const message = document.createElement('p');
+      message.textContent = '空き枠を確認しています。';
+      timeSlots.append(message);
+      return;
+    }
+    const slotEntries = isLiveAvailability ? dayAvailability.slots : demoSlots.map((time, index) => ({ time, available: !(index === 1 && state.day.getDate() % 2 === 0) }));
+    slotEntries.forEach((entry) => {
+      const slot = entry.time;
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = `${slot} · 仮枠`;
+      button.textContent = `${slot} · ${isLiveAvailability ? (entry.available ? '空きあり' : '満枠') : '仮枠'}`;
       const isSelected = state.times.includes(slot);
       button.classList.toggle('is-selected', isSelected);
       button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-      if (index === 1 && state.day.getDate() % 2 === 0) {
+      if (!entry.available) {
         button.disabled = true;
-        button.textContent = `${slot} · 受付対象外`;
       } else {
         button.addEventListener('click', () => {
           state.times = isSelected
@@ -484,6 +531,11 @@
   widget.querySelectorAll('[name="visit-area"]').forEach((input) => {
     input.addEventListener('change', () => {
       state.area = input.value;
+      state.day = null;
+      state.times = [];
+      renderCalendar();
+      renderSlots();
+      widget.querySelector('[data-next-step="4"]').disabled = true;
       widget.querySelector('[data-next-step="2"]').disabled = false;
     });
   });

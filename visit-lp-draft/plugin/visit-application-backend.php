@@ -2,7 +2,7 @@
 /**
  * Plugin Name: おうち買取便 出張買取申込バックエンド（ステージング専用）
  * Description: 出張買取の仮申込、確認リンク、確認後のDB登録を行います。ステージング環境以外では受付を停止します。
- * Version: 0.1.0
+ * Version: 0.2.0
  * Requires at least: 5.6
  * Requires PHP: 7.4
  */
@@ -21,6 +21,8 @@ final class Ouchi_Visit_Application_Backend {
 
 	/** @var self|null */
 	private static $instance = null;
+	private $readiness_checked = false;
+	private $readiness_result = false;
 
 	public static function boot() {
 		if ( null === self::$instance ) {
@@ -45,7 +47,10 @@ final class Ouchi_Visit_Application_Backend {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_filter( 'visit_application_submit_endpoint', array( $this, 'submit_endpoint' ) );
 		add_filter( 'visit_application_status_endpoint', array( $this, 'status_endpoint' ) );
+		add_filter( 'visit_application_availability_endpoint', array( $this, 'availability_endpoint' ) );
 		add_filter( 'visit_pending_application_for_public_token', array( $this, 'pending_application' ), 10, 2 );
+		add_action( 'admin_init', array( $this, 'register_capacity_setting' ) );
+		add_action( 'admin_menu', array( $this, 'register_capacity_page' ) );
 	}
 
 	public function ensure_cleanup_schedule() {
@@ -65,23 +70,30 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	public function submit_endpoint( $endpoint ) {
-		return $this->enabled() ? rest_url( self::API_NAMESPACE . '/application' ) : '';
+		return $this->database_ready() ? rest_url( self::API_NAMESPACE . '/application' ) : '';
 	}
 
 	public function status_endpoint( $endpoint ) {
-		return $this->enabled() ? rest_url( self::API_NAMESPACE . '/status' ) : '';
+		return $this->database_ready() ? rest_url( self::API_NAMESPACE . '/status' ) : '';
+	}
+
+	public function availability_endpoint( $endpoint ) {
+		return $this->database_ready() ? rest_url( self::API_NAMESPACE . '/availability' ) : '';
 	}
 
 	private function enabled() {
+		$api_enabled = defined( 'VISIT_APPLICATION_API_ENABLED' ) ? VISIT_APPLICATION_API_ENABLED : getenv( 'VISIT_APPLICATION_API_ENABLED' );
+		$mail_enabled = defined( 'VISIT_APPLICATION_EMAIL_ENABLED' ) ? VISIT_APPLICATION_EMAIL_ENABLED : getenv( 'VISIT_APPLICATION_EMAIL_ENABLED' );
 		$key_b64 = defined( 'PAYOUT_ENC_KEY_B64' ) ? PAYOUT_ENC_KEY_B64 : getenv( 'PAYOUT_ENC_KEY_B64' );
 		$key = base64_decode( (string) $key_b64, true );
 		$test_recipient = defined( 'VISIT_CONFIRMATION_TEST_RECIPIENT' ) ? VISIT_CONFIRMATION_TEST_RECIPIENT : getenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
-		return function_exists( 'wp_get_environment_type' )
+		return '1' === (string) $api_enabled
+			&& '1' === (string) $mail_enabled
+			&& function_exists( 'wp_get_environment_type' )
 			&& 'staging' === wp_get_environment_type()
 			&& extension_loaded( 'pdo_mysql' )
 			&& function_exists( 'openssl_encrypt' )
 			&& function_exists( 'mb_convert_kana' )
-			&& function_exists( 'pdo_connect_app_db' )
 			&& '' !== (string) $test_recipient
 			&& false !== $key && 32 === strlen( $key );
 	}
@@ -92,18 +104,111 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function database_ready() {
-		if ( ! $this->enabled() ) {
+		if ( $this->readiness_checked ) {
+			return $this->readiness_result;
+		}
+		$this->readiness_checked = true;
+		if ( ! $this->enabled() || $this->slot_capacity() < 1 || empty( $this->service_weekdays() ) ) {
 			return false;
 		}
 		try {
 			$this->check_schema( $this->db() );
-			return true;
+			$this->readiness_result = true;
+			return $this->readiness_result;
 		} catch ( Throwable $e ) {
 			return false;
 		}
 	}
 
+	public function register_capacity_setting() {
+		register_setting( 'visit_slot_capacity_settings', 'visit_booking_slot_capacity', array(
+			'type'              => 'integer',
+			'sanitize_callback' => array( $this, 'sanitize_slot_capacity' ),
+			'default'           => 0,
+		) );
+		register_setting( 'visit_slot_capacity_settings', 'visit_booking_service_weekdays', array(
+			'type'              => 'array',
+			'sanitize_callback' => array( $this, 'sanitize_service_weekdays' ),
+			'default'           => array(),
+		) );
+	}
+
+	public function sanitize_slot_capacity( $value ) {
+		if ( ! is_scalar( $value ) ) {
+			return 0;
+		}
+		$capacity = filter_var( $value, FILTER_VALIDATE_INT );
+		return false === $capacity || $capacity < 1 ? 0 : (int) $capacity;
+	}
+
+	private function slot_capacity() {
+		return max( 0, (int) get_option( 'visit_booking_slot_capacity', 0 ) );
+	}
+
+	public function sanitize_service_weekdays( $value ) {
+		$value = is_array( $value ) ? $value : array();
+		$days = array();
+		foreach ( $value as $day ) {
+			if ( ! is_scalar( $day ) || ! preg_match( '/^[0-6]$/', (string) $day ) ) {
+				continue;
+			}
+			$days[] = (int) $day;
+		}
+		$days = array_values( array_unique( $days ) );
+		sort( $days );
+		return $days;
+	}
+
+	private function service_weekdays() {
+		$value = get_option( 'visit_booking_service_weekdays', array() );
+		return $this->sanitize_service_weekdays( $value );
+	}
+
+	private function is_service_date( $date ) {
+		$earliest = function_exists( 'visit_booking_get_earliest_date' ) ? visit_booking_get_earliest_date() : ( new DateTimeImmutable( 'tomorrow', wp_timezone() ) )->format( 'Y-m-d' );
+		$parsed = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $date, wp_timezone() );
+		return $parsed && $parsed->format( 'Y-m-d' ) === $date && $date >= $earliest && in_array( (int) $parsed->format( 'w' ), $this->service_weekdays(), true );
+	}
+
+	public function register_capacity_page() {
+		add_options_page( '出張買取の予約枠上限', '出張買取の予約枠上限', 'manage_options', 'visit-slot-capacity', array( $this, 'render_capacity_page' ) );
+	}
+
+	public function render_capacity_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		?>
+		<div class="wrap">
+			<h1>出張買取の予約枠上限</h1>
+			<p>全対応エリア共通で、各時間帯に受け付ける申込数と受付曜日を設定します。上限未設定または受付曜日が未選択の場合、出張買取APIと空き枠表示は無効です。</p>
+			<form action="options.php" method="post">
+				<?php settings_fields( 'visit_slot_capacity_settings' ); ?>
+				<label for="visit-booking-slot-capacity">各時間帯の受付上限</label>
+				<input id="visit-booking-slot-capacity" name="visit_booking_slot_capacity" type="number" min="1" step="1" value="<?php echo esc_attr( (string) $this->slot_capacity() ); ?>">
+				<fieldset>
+					<legend>受付曜日</legend>
+					<input type="hidden" name="visit_booking_service_weekdays[]" value="">
+					<?php foreach ( array( 0 => '日', 1 => '月', 2 => '火', 3 => '水', 4 => '木', 5 => '金', 6 => '土' ) as $day_number => $day_label ) : ?>
+						<label><input type="checkbox" name="visit_booking_service_weekdays[]" value="<?php echo esc_attr( (string) $day_number ); ?>" <?php checked( in_array( $day_number, $this->service_weekdays(), true ) ); ?>><?php echo esc_html( $day_label ); ?></label>
+					<?php endforeach; ?>
+				</fieldset>
+				<p class="description">単一時間帯を選択した申込は、メール確認後に空きがあれば1枠を確保します。複数時間帯を選択した申込は希望として記録し、枠は確保しません。</p>
+				<?php submit_button( '設定を保存' ); ?>
+			</form>
+		</div>
+		<?php
+	}
+
 	public function register_routes() {
+		if ( ! $this->database_ready() ) {
+			return;
+		}
+		register_rest_route( self::API_NAMESPACE, '/availability', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'availability' ),
+			'permission_callback' => '__return_true',
+		) );
 		register_rest_route( self::API_NAMESPACE, '/application', array(
 			'methods'             => 'POST',
 			'callback'            => array( $this, 'submit' ),
@@ -128,19 +233,123 @@ final class Ouchi_Visit_Application_Backend {
 		) );
 	}
 
+	private function slot_range_utc( $date, $slot ) {
+		if ( ! preg_match( '/^(\d{2}:\d{2})〜(\d{2}:\d{2})$/u', (string) $slot, $match ) ) {
+			throw new DomainException( '回収希望時間帯を選び直してください。' );
+		}
+		$start = DateTimeImmutable::createFromFormat( '!Y-m-d H:i', $date . ' ' . $match[1], wp_timezone() );
+		$end = DateTimeImmutable::createFromFormat( '!Y-m-d H:i', $date . ' ' . $match[2], wp_timezone() );
+		if ( ! $start || ! $end || $start >= $end ) {
+			throw new DomainException( '回収希望時間帯を選び直してください。' );
+		}
+		$utc = new DateTimeZone( 'UTC' );
+		return array( $start->setTimezone( $utc )->format( 'Y-m-d H:i:s' ), $end->setTimezone( $utc )->format( 'Y-m-d H:i:s' ) );
+	}
+
+	private function lock_service_date( PDO $pdo, $date ) {
+		$insert = $pdo->prepare( 'INSERT IGNORE INTO visit_slot_reservation_day_locks (service_date) VALUES (?)' );
+		$insert->execute( array( $date ) );
+		$lock = $pdo->prepare( 'SELECT service_date FROM visit_slot_reservation_day_locks WHERE service_date = ? FOR UPDATE' );
+		$lock->execute( array( $date ) );
+		if ( ! $lock->fetchColumn() ) {
+			throw new RuntimeException( '予約枠をロックできません。' );
+		}
+	}
+
+	private function reserved_count( PDO $pdo, $start_at, $end_at ) {
+		$stmt = $pdo->prepare( 'SELECT COUNT(*) FROM visit_purchase_details WHERE confirmed_start_at < ? AND confirmed_end_at > ?' );
+		$stmt->execute( array( $end_at, $start_at ) );
+		return (int) $stmt->fetchColumn();
+	}
+
+	private function assert_selected_slots_available( PDO $pdo, $data, $lock_date ) {
+		if ( $lock_date ) {
+			$this->lock_service_date( $pdo, $data['pickup_date'] );
+		}
+		$capacity = $this->slot_capacity();
+		foreach ( $data['pickup_times'] as $slot ) {
+			list( $start_at, $end_at ) = $this->slot_range_utc( $data['pickup_date'], $slot );
+			if ( $this->reserved_count( $pdo, $start_at, $end_at ) >= $capacity ) {
+				throw new DomainException( '選択した時間帯は満枠になりました。空きのある時間帯を選び直してください。' );
+			}
+		}
+	}
+
+	public function availability( WP_REST_Request $request ) {
+		try {
+			if ( ! $this->database_ready() ) {
+				return $this->response_error( '空き枠を確認できません。', 503 );
+			}
+			$month = sanitize_text_field( (string) $request->get_param( 'month' ) );
+			$region_slug = sanitize_key( (string) $request->get_param( 'region_slug' ) );
+			$area = sanitize_text_field( (string) $request->get_param( 'visit_area' ) );
+			$regions_file = get_stylesheet_directory() . '/visit-lp-draft/visit/regions.php';
+			$regions = is_readable( $regions_file ) ? require $regions_file : array();
+			if ( ! preg_match( '/^\d{4}-\d{2}$/', $month ) || ! isset( $regions[ $region_slug ] ) || ! in_array( $area, $regions[ $region_slug ]['areas'], true ) ) {
+				return $this->response_error( '対応地域または対象月を確認してください。', 400 );
+			}
+			$month_start = DateTimeImmutable::createFromFormat( '!Y-m-d', $month . '-01', wp_timezone() );
+			if ( ! $month_start || $month_start->format( 'Y-m' ) !== $month ) {
+				return $this->response_error( '対象月を確認してください。', 400 );
+			}
+			$slots = function_exists( 'visit_booking_get_shared_slots' ) ? visit_booking_get_shared_slots() : array( '10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00' );
+			$pdo = $this->db();
+			$this->check_schema( $pdo );
+			$utc = new DateTimeZone( 'UTC' );
+			$month_start_utc = $month_start->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+			$month_end_utc = $month_start->modify( 'first day of next month' )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+			$reservations_query = $pdo->prepare( 'SELECT confirmed_start_at, confirmed_end_at FROM visit_purchase_details WHERE confirmed_start_at < ? AND confirmed_end_at > ?' );
+			$reservations_query->execute( array( $month_end_utc, $month_start_utc ) );
+			$reservations = $reservations_query->fetchAll();
+			$last_day = (int) $month_start->modify( 'last day of this month' )->format( 'j' );
+			$days = array();
+			for ( $day = 1; $day <= $last_day; $day++ ) {
+				$date = $month_start->setDate( (int) $month_start->format( 'Y' ), (int) $month_start->format( 'n' ), $day )->format( 'Y-m-d' );
+				$day_slots = array();
+				foreach ( $slots as $slot ) {
+					list( $start_at, $end_at ) = $this->slot_range_utc( $date, $slot );
+					$reserved = 0;
+					foreach ( $reservations as $reservation ) {
+						if ( $reservation['confirmed_start_at'] < $end_at && $reservation['confirmed_end_at'] > $start_at ) {
+							$reserved++;
+						}
+					}
+					$day_slots[] = array( 'time' => $slot, 'available' => $this->is_service_date( $date ) && $reserved < $this->slot_capacity() );
+				}
+				$days[ $date ] = array( 'available' => $this->is_service_date( $date ) && count( array_filter( $day_slots, static function ( $entry ) { return $entry['available']; } ) ) > 0, 'slots' => $day_slots );
+			}
+			return rest_ensure_response( array( 'month' => $month, 'days' => $days ) );
+		} catch ( Throwable $e ) {
+			error_log( '[visit-application] availability lookup failed' );
+			return $this->response_error( '空き枠を確認できません。時間をおいて再度お試しください。', 503 );
+		}
+	}
+
 	private function response_error( $message, $status ) {
 		return new WP_Error( 'visit_application_error', $message, array( 'status' => $status ) );
 	}
 
 	private function db() {
-		if ( ! $this->enabled() || ! function_exists( 'pdo_connect_app_db' ) ) {
-			throw new RuntimeException( '既存のDB接続関数を利用できません。' );
+		if ( ! $this->enabled() ) {
+			throw new RuntimeException( '出張買取APIは無効です。' );
 		}
-		$pdo = pdo_connect_app_db();
-		if ( ! $pdo instanceof PDO ) {
-			throw new RuntimeException( '既存のDB接続関数がPDO接続を返しませんでした。' );
+		if ( ! defined( 'OTP_DB_HOST' ) || ! defined( 'OTP_DB_NAME' ) || ! defined( 'OTP_DB_USER' ) || ! defined( 'OTP_DB_PASS' ) || ! defined( 'OTP_DB_CHARSET' ) ) {
+			throw new RuntimeException( '既存のアプリケーションDB設定がありません。' );
 		}
-		return $pdo;
+		if ( 'contact_db' !== (string) OTP_DB_NAME ) {
+			throw new RuntimeException( '出張買取APIの接続先DBを確認できません。' );
+		}
+		$host = (string) OTP_DB_HOST;
+		$charset = (string) OTP_DB_CHARSET;
+		if ( '' === $host || ! preg_match( '/^[A-Za-z0-9._:\-]+$/', $host ) || ! preg_match( '/^[A-Za-z0-9_]+$/', $charset ) ) {
+			throw new RuntimeException( '既存のアプリケーションDB設定が不正です。' );
+		}
+		$dsn = sprintf( 'mysql:host=%s;dbname=contact_db;charset=%s', $host, $charset );
+		return new PDO( $dsn, (string) OTP_DB_USER, (string) OTP_DB_PASS, array(
+			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+			PDO::ATTR_EMULATE_PREPARES   => false,
+		) );
 	}
 
 	private function assert_same_origin() {
@@ -292,8 +501,7 @@ final class Ouchi_Visit_Application_Backend {
 		$data['branch_name'] = sanitize_text_field( $data['branch_name'] );
 		$data['pickup_date'] = sanitize_text_field( $data['pickup_date'] );
 		$date = DateTimeImmutable::createFromFormat( '!Y-m-d', $data['pickup_date'], wp_timezone() );
-		$earliest = function_exists( 'visit_booking_get_earliest_date' ) ? visit_booking_get_earliest_date() : ( new DateTimeImmutable( 'tomorrow', wp_timezone() ) )->format( 'Y-m-d' );
-		if ( ! $date || $date->format( 'Y-m-d' ) !== $data['pickup_date'] || $data['pickup_date'] < $earliest ) {
+		if ( ! $date || $date->format( 'Y-m-d' ) !== $data['pickup_date'] || ! $this->is_service_date( $data['pickup_date'] ) ) {
 			throw new DomainException( '回収希望日を選び直してください。' );
 		}
 		$available_slots = function_exists( 'visit_booking_get_shared_slots' ) ? visit_booking_get_shared_slots() : array( '10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00' );
@@ -380,7 +588,7 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function check_schema( PDO $pdo ) {
-		$required = array( 'visit_application_drafts', 'visit_purchase_details', 'visit_pickup_time_slots', 'visit_consent_records', 'purchase_requests' );
+		$required = array( 'visit_application_drafts', 'visit_purchase_details', 'visit_pickup_time_slots', 'visit_consent_records', 'visit_slot_reservation_day_locks', 'purchase_requests' );
 		foreach ( $required as $table ) {
 			$stmt = $pdo->prepare( 'SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1' );
 			$stmt->execute( array( $table ) );
@@ -393,6 +601,7 @@ final class Ouchi_Visit_Application_Backend {
 			'visit_purchase_details' => array( 'public_token', 'collection_code', 'visit_type', 'latitude', 'longitude', 'placement_location', 'placement_note', 'nameplate_status', 'nameplate_name', 'building_type', 'access_note', 'confirmed_start_at', 'confirmed_end_at', 'collection_status', 'collected_at' ),
 			'visit_pickup_time_slots' => array( 'public_token', 'preference_order', 'start_at', 'end_at' ),
 			'visit_consent_records' => array( 'public_token', 'consent_type', 'consent_version', 'consent_text', 'consented_at' ),
+			'visit_slot_reservation_day_locks' => array( 'service_date' ),
 		);
 		$columns_query = $pdo->prepare( 'SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ?' );
 		foreach ( $table_columns as $table => $expected_columns ) {
@@ -450,6 +659,7 @@ final class Ouchi_Visit_Application_Backend {
 			list( $ciphertext, $iv, $tag ) = $this->encrypt_draft( $data );
 			$pdo = $this->db();
 			$this->check_schema( $pdo );
+			$this->assert_selected_slots_available( $pdo, $data, false );
 			$pdo->exec( "DELETE FROM visit_application_drafts WHERE draft_status = 'expired' OR (draft_status = 'pending' AND expires_at <= UTC_TIMESTAMP())" );
 			$existing = $pdo->prepare( 'SELECT poll_token_ciphertext, poll_token_iv, poll_token_tag, draft_status, public_token, expires_at FROM visit_application_drafts WHERE submission_key_hash = ? LIMIT 1' );
 			$existing->execute( array( hash( 'sha256', $submission_key, true ) ) );
@@ -553,6 +763,7 @@ final class Ouchi_Visit_Application_Backend {
 
 	private function insert_confirmed_application( PDO $pdo, $draft ) {
 		$data = $this->decrypt_draft( $draft['payload_ciphertext'], $draft['payload_iv'], $draft['payload_tag'] );
+		$this->assert_selected_slots_available( $pdo, $data, true );
 		$public_token = bin2hex( random_bytes( 32 ) );
 		$code = $this->collection_code();
 		$account_enc = $this->encrypt( $data['account_number'] );
@@ -575,9 +786,13 @@ final class Ouchi_Visit_Application_Backend {
 		$request_code = 'VIS-' . wp_date( 'Ymd' ) . '-' . str_pad( (string) $request_id, 6, '0', STR_PAD_LEFT );
 		$update = $pdo->prepare( 'UPDATE purchase_requests SET request_code = :request_code WHERE request_id = :request_id' );
 		$update->execute( array( ':request_code' => $request_code, ':request_id' => $request_id ) );
-
-		$detail = $pdo->prepare( 'INSERT INTO visit_purchase_details (public_token, collection_code, visit_type, latitude, longitude, placement_location, placement_note, nameplate_status, nameplate_name, building_type, access_note, confirmed_start_at, confirmed_end_at, collection_status) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, NULL, NULL, ?)' );
-		$detail->execute( array( $public_token, $code, $data['handoff_method'], $data['pickup_latitude'], $data['pickup_longitude'], 'contactless' === $data['handoff_method'] ? $data['pickup_place_details'] : null, $data['nameplate'], 'no' === $data['nameplate'] ? $data['nameplate_name'] : null, $data['building_type'], $data['pickup_notes'], '回収待ち' ) );
+		$confirmed_start = null;
+		$confirmed_end = null;
+		if ( 1 === count( $data['pickup_times'] ) ) {
+			list( $confirmed_start, $confirmed_end ) = $this->slot_range_utc( $data['pickup_date'], $data['pickup_times'][0] );
+		}
+		$detail = $pdo->prepare( 'INSERT INTO visit_purchase_details (public_token, collection_code, visit_type, latitude, longitude, placement_location, placement_note, nameplate_status, nameplate_name, building_type, access_note, confirmed_start_at, confirmed_end_at, collection_status) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)' );
+		$detail->execute( array( $public_token, $code, $data['handoff_method'], $data['pickup_latitude'], $data['pickup_longitude'], 'contactless' === $data['handoff_method'] ? $data['pickup_place_details'] : null, $data['nameplate'], 'no' === $data['nameplate'] ? $data['nameplate_name'] : null, $data['building_type'], $data['pickup_notes'], $confirmed_start, $confirmed_end, '回収待ち' ) );
 
 		$slot_insert = $pdo->prepare( 'INSERT INTO visit_pickup_time_slots (public_token, preference_order, start_at, end_at) VALUES (?, ?, ?, ?)' );
 		foreach ( $data['pickup_times'] as $index => $slot ) {
@@ -607,6 +822,7 @@ final class Ouchi_Visit_Application_Backend {
 		}
 		$pdo = null;
 		try {
+			$this->assert_same_origin();
 			$pdo = $this->db();
 			$this->check_schema( $pdo );
 			$pdo->beginTransaction();
