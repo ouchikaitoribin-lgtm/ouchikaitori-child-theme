@@ -41,21 +41,8 @@
 
   demoNotice.hidden = false;
   if (isStagingFormPreview) {
-    demoNotice.textContent = 'ステージングの画面確認モードです。予約枠は仮表示で、外部API呼び出し・申込保存・メール送信は行いません。操作できるのはお客様情報画面までです。';
+    demoNotice.textContent = 'ステージングの画面確認モードです。銀行・郵便番号の参照情報を取得します。予約枠は仮表示で、入力内容の保存・申込送信・メール送信・集荷API呼び出しは行いません。';
     widget.classList.add('is-form-preview');
-  }
-  if (isStagingFormPreview) {
-    widget.querySelectorAll('[data-progress]').forEach((item) => {
-      if (Number(item.dataset.progress) > 4) item.hidden = true;
-    });
-    widget.querySelectorAll('[data-next-step]').forEach((button) => {
-      if (Number(button.dataset.nextStep) > 4) button.disabled = true;
-    });
-    [5, 6].forEach((step) => {
-      widget.querySelectorAll(`[data-step="${step}"] input, [data-step="${step}"] select, [data-step="${step}"] textarea, [data-step="${step}"] button`).forEach((control) => {
-        control.disabled = true;
-      });
-    });
   }
   if (isInteractivePreview) {
     widget.querySelectorAll('[data-application-submit]').forEach((button) => {
@@ -96,8 +83,8 @@
   const bonusEnabled = bookingConfig.multiSlotBonusEnabled !== false;
   const bonusPercent = Number(bookingConfig.multiSlotBonusPercent) > 0 ? Number(bookingConfig.multiSlotBonusPercent) : 1;
   function setStep(step) {
-    if (isStagingFormPreview && step > 4) {
-      liveMessage.textContent = '画面確認モードでは、お客様情報の画面まで操作できます。';
+    if (!Number.isInteger(step) || step < 1 || step > 6) {
+      liveMessage.textContent = '指定された入力画面を表示できません。';
       return;
     }
     state.step = step;
@@ -309,7 +296,6 @@
       });
     };
     const loadBanks = async () => {
-      if (isStagingFormPreview) throw new Error('ステージングの画面確認モードでは銀行一覧を取得しません。');
       if (banks) return banks;
       if (!loadingBanks) loadingBanks = fetch(bankUrl, { cache: 'force-cache' }).then((response) => {
         if (!response.ok) throw new Error('銀行一覧を取得できませんでした。');
