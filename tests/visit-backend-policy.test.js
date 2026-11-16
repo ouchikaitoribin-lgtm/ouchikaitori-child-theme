@@ -6,6 +6,8 @@ const assert = require('node:assert/strict');
 const root = join(__dirname, '..');
 const backend = readFileSync(join(root, 'visit-lp-draft/plugin/visit-application-backend.php'), 'utf8');
 const migration = readFileSync(join(root, 'visit-lp-draft/migrations/003-visit-application-email-outbox.sql'), 'utf8');
+const mailpitTransport = readFileSync(join(root, 'visit-lp-draft/plugin/visit-staging-mailpit-transport.php'), 'utf8');
+const functions = readFileSync(join(root, 'functions.php'), 'utf8');
 const page = readFileSync(join(root, 'page-visit-kyoto-city.php'), 'utf8');
 
 test('expired drafts are not automatically deleted', () => {
@@ -71,6 +73,15 @@ test('API registration is staging-gated and does not call collection services', 
   assert.match(backend, /'staging' === wp_get_environment_type\(\)/);
   assert.match(backend, /if \( ! \$this->database_ready\(\) \)\s*\{\s*return;\s*\}/);
   assert.doesNotMatch(backend, /wp_remote_(?:get|post|request)\s*\(|curl_(?:init|exec)\s*\(/);
+});
+
+test('staging WordPress mail is pinned to loopback Mailpit with no mail() fallback', () => {
+  assert.match(functions, /'staging' === wp_get_environment_type\(\)[\s\S]*?visit-staging-mailpit-transport\.php/);
+  assert.match(mailpitTransport, /'127\.0\.0\.1'/);
+  assert.match(mailpitTransport, /\$mailer->Port\s*=\s*1025/);
+  assert.match(mailpitTransport, /\$mailer->isSMTP\(\)/);
+  assert.match(mailpitTransport, /\$mailer->SMTPAutoTLS\s*=\s*false/);
+  assert.doesNotMatch(mailpitTransport, /isMail\s*\(|smtp-relay|wp_mail_from/);
 });
 
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {

@@ -7,6 +7,7 @@ on:
       - 'page-visit-kyoto-city.php'
       - 'tests/visit-backend-policy.test.js'
       - 'tests/visit-backend-runtime.test.php'
+      - 'tests/visit-mailpit-transport.test.php'
       - '.github/workflows/visit-backend-validation.yml'
   push:
     branches:
@@ -16,6 +17,7 @@ on:
       - 'page-visit-kyoto-city.php'
       - 'tests/visit-backend-policy.test.js'
       - 'tests/visit-backend-runtime.test.php'
+      - 'tests/visit-mailpit-transport.test.php'
       - '.github/workflows/visit-backend-validation.yml'
 
 permissions:
@@ -38,10 +40,15 @@ jobs:
       - name: PHP syntax checks
         run: |
           php -l visit-lp-draft/plugin/visit-application-backend.php
+          php -l visit-lp-draft/plugin/visit-staging-mailpit-transport.php
           php -l page-visit-kyoto-city.php
+          php -l functions.php
           php -l tests/visit-backend-runtime.test.php
+          php -l tests/visit-mailpit-transport.test.php
       - name: PHP runtime mocks (no database or email)
-        run: php tests/visit-backend-runtime.test.php
+        run: |
+          php tests/visit-backend-runtime.test.php
+          php tests/visit-mailpit-transport.test.php
       - name: JavaScript syntax and policy checks
         run: |
           node --check visit-lp-draft/visit-booking.js
