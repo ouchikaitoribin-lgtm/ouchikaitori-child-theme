@@ -77,6 +77,16 @@ $assert( 16 === strlen( $decoded_tag ), 'AES-GCM tag should be 16 bytes' );
 $plaintext = openssl_decrypt( base64_decode( $ciphertext, true ), 'aes-256-gcm', base64_decode( getenv( 'PAYOUT_ENC_KEY_B64' ), true ), OPENSSL_RAW_DATA, $decoded_iv, $decoded_tag );
 $assert( 'SYNTHETIC-ACCOUNT-1234567' === $plaintext, 'AES-GCM ciphertext should round-trip with the test key' );
 
+$encrypt_private_token = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'encrypt_private_token' );
+$encrypt_private_token->setAccessible( true );
+$decrypt_private_token = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'decrypt_private_token' );
+$decrypt_private_token->setAccessible( true );
+$synthetic_token = bin2hex( random_bytes( 32 ) );
+list( $private_ciphertext, $private_iv, $private_tag ) = $encrypt_private_token->invoke( $instance, $synthetic_token );
+$assert( 32 === strlen( $private_ciphertext ), 'private token ciphertext should fit the BINARY(32) poll-token column' );
+$assert( 12 === strlen( $private_iv ) && 16 === strlen( $private_tag ), 'private token AES-GCM IV and tag lengths should match the schema' );
+$assert( $synthetic_token === $decrypt_private_token->invoke( $instance, $private_ciphertext, $private_iv, $private_tag ), 'private token should round-trip to its 64-character hex representation' );
+
 putenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
 putenv( 'PAYOUT_ENC_KEY_B64' );
 echo "Visit backend runtime mock checks passed.\n";

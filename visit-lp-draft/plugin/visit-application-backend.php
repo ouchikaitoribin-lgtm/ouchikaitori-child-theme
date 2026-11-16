@@ -579,9 +579,13 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function encrypt_private_token( $token ) {
+		if ( ! is_string( $token ) || ! preg_match( '/^[a-f0-9]{64}$/i', $token ) ) {
+			throw new RuntimeException( '一時トークンの形式が正しくありません。' );
+		}
+		$token_bytes = hex2bin( $token );
 		$iv = random_bytes( 12 );
 		$tag = '';
-		$cipher = openssl_encrypt( $token, 'aes-256-gcm', $this->encryption_key(), OPENSSL_RAW_DATA, $iv, $tag );
+		$cipher = openssl_encrypt( $token_bytes, 'aes-256-gcm', $this->encryption_key(), OPENSSL_RAW_DATA, $iv, $tag );
 		if ( false === $cipher || 32 !== strlen( $cipher ) || 16 !== strlen( $tag ) ) {
 			throw new RuntimeException( '一時トークンを暗号化できません。' );
 		}
@@ -589,11 +593,11 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function decrypt_private_token( $ciphertext, $iv, $tag ) {
-		$token = openssl_decrypt( $ciphertext, 'aes-256-gcm', $this->encryption_key(), OPENSSL_RAW_DATA, $iv, $tag );
-		if ( ! is_string( $token ) || ! preg_match( '/^[a-f0-9]{64}$/i', $token ) ) {
+		$token_bytes = openssl_decrypt( $ciphertext, 'aes-256-gcm', $this->encryption_key(), OPENSSL_RAW_DATA, $iv, $tag );
+		if ( ! is_string( $token_bytes ) || 32 !== strlen( $token_bytes ) ) {
 			throw new RuntimeException( '状態確認トークンを復号できません。' );
 		}
-		return $token;
+		return bin2hex( $token_bytes );
 	}
 
 	private function decrypt_draft( $ciphertext, $iv, $tag ) {
