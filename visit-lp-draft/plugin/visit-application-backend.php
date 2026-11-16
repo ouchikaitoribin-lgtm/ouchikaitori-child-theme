@@ -494,6 +494,9 @@ final class Ouchi_Visit_Application_Backend {
 		$data['campaign_code'] = sanitize_text_field( $data['campaign_code'] );
 		$data['pickup_notes'] = sanitize_textarea_field( $data['pickup_notes'] );
 		$data['pickup_place_details'] = sanitize_text_field( $data['pickup_place_details'] );
+		if ( 'contactless' === $data['handoff_method'] && mb_strlen( $data['pickup_place_details'], 'UTF-8' ) > 240 ) {
+			throw new DomainException( '非対面の場合の荷物の置き場所は240文字以内で入力してください。' );
+		}
 		$data['nameplate_name'] = sanitize_text_field( $data['nameplate_name'] );
 		$data['prefecture'] = (string) $region['prefecture'];
 		$data['city'] = sanitize_text_field( $data['city'] );

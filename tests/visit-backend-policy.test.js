@@ -70,6 +70,13 @@ test('the page and API share the same contactless terms helpers', () => {
   assert.match(backend, /return 'contactless-v1-draft'/);
 });
 
+test('contactless placement text is bounded before database insertion', () => {
+  const validation = backend.slice(backend.indexOf("$data['pickup_place_details'] = sanitize_text_field"), backend.indexOf("$data['nameplate_name'] = sanitize_text_field"));
+  assert.match(validation, /'contactless' === \$data\['handoff_method'\]/);
+  assert.match(validation, /mb_strlen\( \$data\['pickup_place_details'\], 'UTF-8' \) > 240/);
+  assert.match(validation, /throw new DomainException/);
+});
+
 test('API registration is staging-gated and does not call collection services', () => {
   assert.match(backend, /'staging' === wp_get_environment_type\(\)/);
   assert.match(backend, /if \( ! \$this->database_ready\(\) \)\s*\{\s*return;\s*\}/);
