@@ -1,0 +1,48 @@
+name: Visit backend validation
+
+on:
+  pull_request:
+    paths:
+      - 'visit-lp-draft/**'
+      - 'page-visit-kyoto-city.php'
+      - 'tests/visit-backend-policy.test.js'
+      - 'tests/visit-backend-runtime.test.php'
+      - '.github/workflows/visit-backend-validation.yml'
+  push:
+    branches:
+      - '**'
+    paths:
+      - 'visit-lp-draft/**'
+      - 'page-visit-kyoto-city.php'
+      - 'tests/visit-backend-policy.test.js'
+      - 'tests/visit-backend-runtime.test.php'
+      - '.github/workflows/visit-backend-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: PHP syntax checks
+        run: |
+          php -l visit-lp-draft/plugin/visit-application-backend.php
+          php -l page-visit-kyoto-city.php
+          php -l tests/visit-backend-runtime.test.php
+      - name: PHP runtime mocks (no database or email)
+        run: php tests/visit-backend-runtime.test.php
+      - name: JavaScript syntax and policy checks
+        run: |
+          node --check visit-lp-draft/visit-booking.js
+          node --test tests/visit-backend-policy.test.js
+      - name: Diff whitespace check
+        run: git diff --check HEAD^ HEAD

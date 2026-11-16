@@ -1,0 +1,82 @@
+<?php
+define( 'ABSPATH', __DIR__ . '/' );
+
+$GLOBALS['visit_test_environment'] = 'staging';
+$GLOBALS['visit_test_mail_filters'] = array();
+$GLOBALS['visit_test_mail_calls'] = array();
+$GLOBALS['visit_test_mail_result'] = true;
+
+function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) {}
+function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
+	if ( 'wp_mail' === $hook ) {
+		$GLOBALS['visit_test_mail_filters'][ $priority ][] = $callback;
+	}
+}
+function remove_filter( $hook, $callback, $priority = 10 ) {
+	if ( 'wp_mail' !== $hook || empty( $GLOBALS['visit_test_mail_filters'][ $priority ] ) ) {
+		return;
+	}
+	$GLOBALS['visit_test_mail_filters'][ $priority ] = array_values( array_filter(
+		$GLOBALS['visit_test_mail_filters'][ $priority ],
+		static function ( $registered ) use ( $callback ) { return $registered !== $callback; }
+	) );
+}
+function register_deactivation_hook( $file, $callback ) {}
+function wp_get_environment_type() { return $GLOBALS['visit_test_environment']; }
+function sanitize_email( $email ) { return filter_var( (string) $email, FILTER_SANITIZE_EMAIL ); }
+function is_email( $email ) { return false !== filter_var( (string) $email, FILTER_VALIDATE_EMAIL ); }
+function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
+	$args = compact( 'to', 'subject', 'message', 'headers', 'attachments' );
+	ksort( $GLOBALS['visit_test_mail_filters'] );
+	foreach ( $GLOBALS['visit_test_mail_filters'] as $callbacks ) {
+		foreach ( $callbacks as $callback ) {
+			$args = call_user_func( $callback, $args );
+		}
+	}
+	$GLOBALS['visit_test_mail_calls'][] = $args;
+	return $GLOBALS['visit_test_mail_result'];
+}
+
+require dirname( __DIR__ ) . '/visit-lp-draft/plugin/visit-application-backend.php';
+
+$assert = static function ( $condition, $message ) {
+	if ( ! $condition ) {
+		throw new RuntimeException( $message );
+	}
+};
+$instance = ( new ReflectionClass( 'Ouchi_Visit_Application_Backend' ) )->newInstanceWithoutConstructor();
+$send = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'send_staging_test_mail' );
+$send->setAccessible( true );
+$test_recipient = 'visit-qa' . '@' . 'example.invalid';
+putenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT=' . $test_recipient );
+
+$GLOBALS['visit_test_environment'] = 'staging';
+$GLOBALS['visit_test_mail_result'] = true;
+$assert( true === $send->invoke( $instance, 'mock success', 'synthetic test message' ), 'mocked mail success should be returned' );
+$sent_args = end( $GLOBALS['visit_test_mail_calls'] );
+$assert( array( $test_recipient ) === $sent_args['to'], 'recipient must be forced to the staging test address' );
+$assert( array( 'Content-Type: text/plain; charset=UTF-8' ) === $sent_args['headers'], 'headers must not carry CC or BCC recipients' );
+$assert( array() === $sent_args['attachments'], 'test mail must not carry attachments' );
+
+$GLOBALS['visit_test_mail_result'] = false;
+$assert( false === $send->invoke( $instance, 'mock failure', 'synthetic test message' ), 'mocked mail failure should be returned' );
+$calls_before_non_staging = count( $GLOBALS['visit_test_mail_calls'] );
+$GLOBALS['visit_test_environment'] = 'production';
+$assert( false === $send->invoke( $instance, 'must not send', 'synthetic test message' ), 'mail must be disabled outside staging' );
+$assert( $calls_before_non_staging === count( $GLOBALS['visit_test_mail_calls'] ), 'non-staging call must not invoke wp_mail' );
+
+$GLOBALS['visit_test_environment'] = 'staging';
+putenv( 'PAYOUT_ENC_KEY_B64=' . base64_encode( random_bytes( 32 ) ) );
+$encrypt = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'encrypt' );
+$encrypt->setAccessible( true );
+list( $ciphertext, $iv, $tag ) = $encrypt->invoke( $instance, 'SYNTHETIC-ACCOUNT-1234567' );
+$decoded_iv = base64_decode( $iv, true );
+$decoded_tag = base64_decode( $tag, true );
+$assert( 12 === strlen( $decoded_iv ), 'AES-GCM IV should be 12 bytes' );
+$assert( 16 === strlen( $decoded_tag ), 'AES-GCM tag should be 16 bytes' );
+$plaintext = openssl_decrypt( base64_decode( $ciphertext, true ), 'aes-256-gcm', base64_decode( getenv( 'PAYOUT_ENC_KEY_B64' ), true ), OPENSSL_RAW_DATA, $decoded_iv, $decoded_tag );
+$assert( 'SYNTHETIC-ACCOUNT-1234567' === $plaintext, 'AES-GCM ciphertext should round-trip with the test key' );
+
+putenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
+putenv( 'PAYOUT_ENC_KEY_B64' );
+echo "Visit backend runtime mock checks passed.\n";

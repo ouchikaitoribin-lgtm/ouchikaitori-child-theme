@@ -3,7 +3,7 @@
 ## 構成
 
 - `visit-application-backend.php` は仮申込、確認リンク、確認後登録の処理です。子テーマの `functions.php` から `WP_ENVIRONMENT_TYPE=staging` の場合だけ読み込まれます。
-- `../migrations/001-visit-application.sql` は新規4テーブル、`../migrations/002-visit-slot-locks.sql` は日単位の同時申込ロックテーブルを作る手動マイグレーションです。プラグインからDDLを実行しません。
+- `../migrations/001-visit-application.sql` は新規4テーブル、`../migrations/002-visit-slot-locks.sql` は日単位の同時申込ロックテーブル、`../migrations/003-visit-application-email-outbox.sql` は確認メールと申込完了メールの送信状態を保存する2テーブルを作る手動マイグレーションです。プラグインからDDLを実行しません。
 - 本番環境では `WP_ENVIRONMENT_TYPE=staging` でない限り、受付API・メール確認APIを有効にしません。
 
 ## 有効化前の確認
@@ -11,11 +11,11 @@
 1. ステージングDBへ接続し、`SHOW CREATE TABLE purchase_requests` を実行して現状を確認します。
 2. `public_token` が `CHAR(64)` のUNIQUE KEYであり、テーブルがInnoDBであることを確認します。
 3. `shipping_choice` に `visit` が含まれることを確認します。添付されたDDLは `pickup/self` のみです。`visit` がなければ、このプラグインは登録を拒否します。既存テーブルの変更SQLは含めていません。
-4. 親表と同じ文字コード・照合順序であることを確認した後、未適用のマイグレーションだけをステージングDBへ適用します。4テーブルがすでにある場合は `001` を再実行せず、`002` のロックテーブルだけを適用してください。
+4. 親表と同じ文字コード・照合順序であることを確認した後、未適用のマイグレーションだけをステージングDBへ適用します。既存4テーブルとロックテーブルが作成済みの場合でも、確認メール・完了メールの送信状態テーブルがなければ `003` は別途バックアップ後に適用が必要です。
 5. `OTP_DB_HOST`、`OTP_DB_NAME`、`OTP_DB_USER`、`OTP_DB_PASS`、`OTP_DB_CHARSET` が定義され、`OTP_DB_NAME` が `contact_db` であることを確認します。出張買取は専用の `visit_connect_app_db()` を使って既存定数から接続し、`pdo_connect_app_db()` や親テーマのPHPを読み込みません。
 6. WordPress管理画面の「設定 > 出張買取の予約枠上限」で、全エリア共通の各時間帯の受付上限と受付曜日を設定します。どちらかが未設定の場合は空き枠とAPIを無効にします。
 7. APIは `WP_ENVIRONMENT_TYPE=staging` に加え、`VISIT_APPLICATION_API_ENABLED=1` と `VISIT_APPLICATION_EMAIL_ENABLED=1` が明示された場合だけ有効です。いずれも未設定時は無効です。固定テスト宛先と暗号化キーをWordPress/PHPプロセスに設定し、必要なテーブルの確認が通った後に限り受付画面が接続されます。これらの有効化設定は、明示的な承認なしに追加しないでください。WordPress管理画面から別途プラグインを有効化する必要はありません。
-8. 非対面回収では、画面に表示した内容と同じ同意文・バージョンを返す `visit_booking_get_contactless_terms_text()` と `visit_booking_get_contactless_terms_version()` が必要です。どちらかが未定義または空の場合、同意内容を記録できないため非対面申込を受け付けません。
+8. 非対面回収では、画面表示とAPIが共有する `visit_booking_get_contactless_terms_text()` と `visit_booking_get_contactless_terms_version()` の戻り値が必須です。どちらかが空の場合、同意内容を記録できないため非対面申込を受け付けません。既存サイト側で正式な共通実装が定義されている場合は、その値を優先します。
 
 必要な環境変数（値はGitやチャットへ登録しないでください）：
 
@@ -39,11 +39,12 @@ DB接続専用の設定は追加せず、既存の `OTP_DB_*` 定数を使用し
 3. メールリンクをGETしただけでは登録しません。表示された確認ボタンのPOSTで、確認トークンを行ロックし、`purchase_requests`、出張詳細、希望時間帯、非対面同意を1トランザクションで登録します。
 4. 受付番号は `VIS-YYYYMMDD-連番`、`shipping_choice` と `shipping_method` は `visit`、支払方法は既存値の `銀行振込` です。銀行情報は既存形式のAES-256-GCMで暗号化します。
 5. 希望時間帯は `visit_pickup_time_slots` へ個別行で保存します。`pickup_time` には保存しません。1枠選択時はメール確認後にその日時を `visit_purchase_details.confirmed_start_at` / `confirmed_end_at` に保存して確保し、複数枠は希望時間帯だけを保存します。
-6. 確認後、状態確認用の一時トークンを含む暗号化ペイロードはランダム値で上書きします。期限切れドラフトは定期処理で削除します。
+6. 確認後、状態確認用の一時トークンを含む暗号化ペイロードはランダム値で上書きします。期限切れドラフトは自動削除しません。
 
 ## 制限
 
 - 空き枠APIは、設定済み時間帯と `visit_purchase_details.confirmed_start_at` / `confirmed_end_at` の確保済み件数から空きを返します。単一枠の申込は、メール確認時に日付単位のInnoDBロックを取得して上限を再確認し、同じトランザクション内で1枠を確保します。複数枠は空き照会と希望記録のみで、予約枠を確保しません。
+- 確認メールは宛先を再送できるよう、リンクトークンをAES-256-GCMで暗号化して `visit_application_confirmation_outbox` に保存します。確認完了・期限切れ時は暗号文をランダム値で上書きします。完了メールはDBトランザクションのコミット後に送信し、状態を `visit_application_email_outbox` に保存します。既知の送信失敗は5分以上の間隔を空けて再試行できます。送信中にプロセスが停止した行は重複送信を防ぐため自動再送せず、状態確認が必要です。
 - 会員登録要求は `register_flg` に保存しますが、WordPressユーザーや `customers` テーブルの作成・更新はしません。
 - キャンペーンコードは保存しますが、既存のクーポン判定・割引処理は実行しません。
 - 本人確認、査定、振込、回収スタッフ管理、回収記録・写真保存は実行しません。

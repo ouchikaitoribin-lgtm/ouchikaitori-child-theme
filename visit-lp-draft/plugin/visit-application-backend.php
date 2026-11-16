@@ -33,6 +33,20 @@ if ( ! function_exists( 'visit_connect_app_db' ) ) {
         return new PDO( $dsn, (string) OTP_DB_USER, (string) OTP_DB_PASS, $options );
     }
 }
+
+// The page and API use the same fallback text/version unless the site supplies
+// an authoritative shared implementation before this file is loaded.
+if ( ! function_exists( 'visit_booking_get_contactless_terms_text' ) ) {
+	function visit_booking_get_contactless_terms_text() {
+		return "盗難・紛失について | 商品を玄関前などに設置してから、当社スタッフが回収するまでの間に発生した盗難・紛失等については、当社に責任が認められる場合を除き、補償いたしかねます。\n雨・風などによる汚損について | 回収前に雨・風などによって商品が濡れたり、汚れたり、破損した場合については、当社に責任が認められる場合を除き、補償いたしかねます。雨風の影響を受けにくい場所に設置してください。\n回収住所について | 非対面回収は、原則としてお申し込み住所と本人確認書類に記載された住所が一致する場合にご利用いただけます。住所が異なる場合は、別途確認が必要です。\n表札などによる住所確認 | スタッフが回収先を間違えないよう、表札などで回収先を確認できる状態にしてください。表札を設置できない場合の対応方法は、受付開始時にご案内します。\nスタッフが立ち入れる場所 | オートロックのマンション内や施錠された門の内側など、スタッフが立ち入れない場所では回収できません。\nペットなどへの配慮 | スタッフが安全に回収できるよう、ペットなどが回収作業を妨げない状態にしてください。\n回収時の写真撮影 | 回収間違いやトラブル防止のため、スタッフが商品の設置状況や回収時の状態を写真撮影します。個人情報や住宅内部など、回収確認に不要なものは極力撮影しません。\n本人確認について | 非対面回収では、回収前にWEB上で所定の本人確認手続を完了していただく必要があります。";
+	}
+}
+if ( ! function_exists( 'visit_booking_get_contactless_terms_version' ) ) {
+	function visit_booking_get_contactless_terms_version() {
+		return 'contactless-v1-draft';
+	}
+}
+
 final class Ouchi_Visit_Application_Backend {
 	const API_NAMESPACE = 'visit/v1';
 	const DRAFT_TTL = 18000; // 添付された宅配申込ソースのフロー期限（5時間）に合わせる。
@@ -53,19 +67,11 @@ final class Ouchi_Visit_Application_Backend {
 		return self::$instance;
 	}
 
-	public static function activate() {
-		if ( ! wp_next_scheduled( 'ouchi_visit_cleanup_expired_drafts' ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'ouchi_visit_cleanup_expired_drafts' );
-		}
-	}
-
 	public static function deactivate() {
 		wp_clear_scheduled_hook( 'ouchi_visit_cleanup_expired_drafts' );
 	}
 
 	private function __construct() {
-		add_action( 'init', array( $this, 'ensure_cleanup_schedule' ), 20 );
-		add_action( 'ouchi_visit_cleanup_expired_drafts', array( $this, 'cleanup_expired_drafts' ) );
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_filter( 'visit_application_submit_endpoint', array( $this, 'submit_endpoint' ) );
 		add_filter( 'visit_application_status_endpoint', array( $this, 'status_endpoint' ) );
@@ -73,22 +79,6 @@ final class Ouchi_Visit_Application_Backend {
 		add_filter( 'visit_pending_application_for_public_token', array( $this, 'pending_application' ), 10, 2 );
 		add_action( 'admin_init', array( $this, 'register_capacity_setting' ) );
 		add_action( 'admin_menu', array( $this, 'register_capacity_page' ) );
-	}
-
-	public function ensure_cleanup_schedule() {
-		if ( $this->enabled() && ! wp_next_scheduled( 'ouchi_visit_cleanup_expired_drafts' ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'ouchi_visit_cleanup_expired_drafts' );
-		}
-	}
-
-	public function cleanup_expired_drafts() {
-		if ( ! $this->enabled() ) { return; }
-		try {
-			$pdo = $this->db();
-			$pdo->exec( "DELETE FROM visit_application_drafts WHERE draft_status <> 'confirmed' AND expires_at <= UTC_TIMESTAMP()" );
-		} catch ( Throwable $e ) {
-			error_log( '[visit-application] expired draft cleanup failed' );
-		}
 	}
 
 	public function submit_endpoint( $endpoint ) {
@@ -616,7 +606,7 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function check_schema( PDO $pdo ) {
-		$required = array( 'visit_application_drafts', 'visit_purchase_details', 'visit_pickup_time_slots', 'visit_consent_records', 'visit_slot_reservation_day_locks', 'purchase_requests' );
+		$required = array( 'visit_application_drafts', 'visit_application_confirmation_outbox', 'visit_purchase_details', 'visit_pickup_time_slots', 'visit_consent_records', 'visit_slot_reservation_day_locks', 'visit_application_email_outbox', 'purchase_requests' );
 		$engine_query = $pdo->prepare( 'SELECT engine FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1' );
 		foreach ( $required as $table ) {
 			$engine_query->execute( array( $table ) );
@@ -630,6 +620,8 @@ final class Ouchi_Visit_Application_Backend {
 			'visit_purchase_details' => array( 'public_token', 'collection_code', 'visit_type', 'latitude', 'longitude', 'placement_location', 'placement_note', 'nameplate_status', 'nameplate_name', 'building_type', 'access_note', 'confirmed_start_at', 'confirmed_end_at', 'collection_status', 'collected_at' ),
 			'visit_pickup_time_slots' => array( 'public_token', 'preference_order', 'start_at', 'end_at' ),
 			'visit_consent_records' => array( 'public_token', 'consent_type', 'consent_version', 'consent_text', 'consented_at' ),
+			'visit_application_email_outbox' => array( 'public_token', 'region_slug', 'delivery_status', 'attempt_count', 'last_attempt_at', 'sent_at', 'created_at' ),
+			'visit_application_confirmation_outbox' => array( 'draft_id', 'region_slug', 'confirmation_token_ciphertext', 'confirmation_token_iv', 'confirmation_token_tag', 'delivery_status', 'attempt_count', 'last_attempt_at', 'sent_at' ),
 			'visit_slot_reservation_day_locks' => array( 'service_date' ),
 		);
 		$columns_query = $pdo->prepare( 'SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ?' );
@@ -677,6 +669,229 @@ final class Ouchi_Visit_Application_Backend {
 		return add_query_arg( array( 'token' => rawurlencode( $token ), 'region' => sanitize_key( $region_slug ) ), rest_url( self::API_NAMESPACE . '/confirm' ) );
 	}
 
+	private function send_staging_test_mail( $subject, $body ) {
+		if ( ! function_exists( 'wp_get_environment_type' ) || 'staging' !== wp_get_environment_type() || ! function_exists( 'wp_mail' ) ) {
+			return false;
+		}
+		$setting = defined( 'VISIT_CONFIRMATION_TEST_RECIPIENT' ) ? VISIT_CONFIRMATION_TEST_RECIPIENT : getenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
+		$recipient = sanitize_email( (string) $setting );
+		if ( ! is_email( $recipient ) ) {
+			return false;
+		}
+		$marker = '[OUCHI-VISIT-STAGING] ';
+		$guard = static function ( $args ) use ( $recipient, $marker ) {
+			if ( ! is_array( $args ) || empty( $args['subject'] ) || 0 !== strpos( (string) $args['subject'], $marker ) ) {
+				return $args;
+			}
+			$args['to'] = array( $recipient );
+			$args['headers'] = array( 'Content-Type: text/plain; charset=UTF-8' );
+			$args['attachments'] = array();
+			return $args;
+		};
+		add_filter( 'wp_mail', $guard, PHP_INT_MAX );
+		try {
+			return (bool) wp_mail( $recipient, $marker . $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
+		} catch ( Throwable $e ) {
+			return false;
+		} finally {
+			remove_filter( 'wp_mail', $guard, PHP_INT_MAX );
+		}
+	}
+
+	private function dispatch_confirmation_email( $draft_id ) {
+		if ( ! $this->enabled() || ! function_exists( 'wp_get_environment_type' ) || 'staging' !== wp_get_environment_type() ) {
+			return 'disabled';
+		}
+		$pdo = $this->db();
+		$mail_was_accepted = false;
+		try {
+			$pdo->beginTransaction();
+			$select = $pdo->prepare( 'SELECT o.region_slug, o.confirmation_token_ciphertext, o.confirmation_token_iv, o.confirmation_token_tag, o.delivery_status, o.attempt_count, o.last_attempt_at, d.draft_status, d.expires_at FROM visit_application_confirmation_outbox o INNER JOIN visit_application_drafts d ON d.draft_id = o.draft_id WHERE o.draft_id = ? FOR UPDATE' );
+			$select->execute( array( $draft_id ) );
+			$outbox = $select->fetch();
+			if ( ! $outbox ) {
+				$pdo->commit();
+				return 'missing';
+			}
+			if ( 'consumed' === $outbox['delivery_status'] ) {
+				$pdo->commit();
+				return 'consumed';
+			}
+			if ( 'sending' === $outbox['delivery_status'] ) {
+				$pdo->commit();
+				return 'sending';
+			}
+			if ( 'pending' !== $outbox['draft_status'] || strtotime( $outbox['expires_at'] . ' UTC' ) <= time() ) {
+				$expire = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'expired', confirmation_token_ciphertext = ?, confirmation_token_iv = ?, confirmation_token_tag = ? WHERE draft_id = ? AND delivery_status NOT IN ('consumed', 'sending')" );
+				$expire->execute( array( random_bytes( 64 ), random_bytes( 12 ), random_bytes( 16 ), $draft_id ) );
+				$pdo->commit();
+				return 'expired';
+			}
+			if ( in_array( $outbox['delivery_status'], array( 'sent', 'expired' ), true ) ) {
+				$pdo->commit();
+				return $outbox['delivery_status'];
+			}
+			if ( (int) $outbox['attempt_count'] >= 5 ) {
+				$pdo->commit();
+				return 'attempt_limit';
+			}
+			if ( ! empty( $outbox['last_attempt_at'] ) && strtotime( $outbox['last_attempt_at'] . ' UTC' ) > time() - 300 ) {
+				$pdo->commit();
+				return 'pending';
+			}
+			$claim = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'sending', attempt_count = attempt_count + 1, last_attempt_at = UTC_TIMESTAMP() WHERE draft_id = ? AND delivery_status = 'pending'" );
+			$claim->execute( array( $draft_id ) );
+			if ( 1 !== $claim->rowCount() ) {
+				$pdo->commit();
+				return 'sending';
+			}
+			$pdo->commit();
+			$token = $this->decrypt_private_token( $outbox['confirmation_token_ciphertext'], $outbox['confirmation_token_iv'], $outbox['confirmation_token_tag'] );
+			$body = "ステージング環境の出張買取メール確認テストです。\n\n" . $this->mail_link( $token, $outbox['region_slug'] ) . "\n\nこのメールは固定テスト宛先にのみ送信されています。申込者の入力メールアドレスには送信していません。\nリンクの有効期限は5時間です。";
+			$sent = $this->send_staging_test_mail( 'おうち買取便 出張買取：確認リンク（ステージングテスト）', $body );
+			if ( $sent ) {
+				$mail_was_accepted = true;
+				$finish = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'sent', sent_at = UTC_TIMESTAMP() WHERE draft_id = ? AND delivery_status = 'sending'" );
+				$finish->execute( array( $draft_id ) );
+				return 'sent';
+			}
+			$retry = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'pending' WHERE draft_id = ? AND delivery_status = 'sending'" );
+			$retry->execute( array( $draft_id ) );
+			return 'pending';
+		} catch ( Throwable $e ) {
+			if ( $pdo->inTransaction() ) { $pdo->rollBack(); }
+			if ( ! $mail_was_accepted ) {
+				try {
+					$retry = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'pending' WHERE draft_id = ? AND delivery_status = 'sending'" );
+					$retry->execute( array( $draft_id ) );
+				} catch ( Throwable $retry_error ) {
+					// Never log confirmation tokens, payloads or connection details.
+				}
+			}
+			error_log( '[visit-application] confirmation email failed' );
+			return 'pending';
+		}
+	}
+
+	private function completion_email_body( PDO $pdo, $public_token, $outbox ) {
+		$request = $pdo->prepare( "SELECT request_code, last_name, first_name, email, phone_number, application_zip, application_prefecture, application_city, application_address1, pickup_date FROM purchase_requests WHERE public_token = ? AND shipping_choice = 'visit' LIMIT 1" );
+		$request->execute( array( $public_token ) );
+		$row = $request->fetch();
+		$detail_query = $pdo->prepare( 'SELECT collection_code, visit_type, placement_location, confirmed_start_at, confirmed_end_at FROM visit_purchase_details WHERE public_token = ? LIMIT 1' );
+		$detail_query->execute( array( $public_token ) );
+		$detail = $detail_query->fetch();
+		$slot_query = $pdo->prepare( 'SELECT start_at, end_at FROM visit_pickup_time_slots WHERE public_token = ? ORDER BY preference_order ASC' );
+		$slot_query->execute( array( $public_token ) );
+		$slots = $slot_query->fetchAll();
+		if ( ! $row || ! $detail ) {
+			throw new RuntimeException( '出張買取の申込情報を確認できません。' );
+		}
+		$address = trim( $row['application_zip'] . ' ' . $row['application_prefecture'] . $row['application_city'] . ' ' . $row['application_address1'] );
+		$slot_lines = array();
+		foreach ( $slots as $slot ) {
+			$slot_lines[] = wp_date( 'Y年n月j日 H:i', strtotime( $slot['start_at'] . ' UTC' ) ) . '〜' . wp_date( 'H:i', strtotime( $slot['end_at'] . ' UTC' ) );
+		}
+		$confirmed = '';
+		if ( ! empty( $detail['confirmed_start_at'] ) && ! empty( $detail['confirmed_end_at'] ) ) {
+			$confirmed = wp_date( 'Y年n月j日 H:i', strtotime( $detail['confirmed_start_at'] . ' UTC' ) ) . '〜' . wp_date( 'H:i', strtotime( $detail['confirmed_end_at'] . ' UTC' ) );
+		}
+		$region_slug = sanitize_key( (string) $outbox['region_slug'] );
+		$application_url = home_url( '/visit/' . rawurlencode( $region_slug ) . '/application-pending/?public_token=' . rawurlencode( $public_token ) );
+		$handoff = 'contactless' === $detail['visit_type'] ? '非対面' : '対面';
+		$lines = array(
+			"{$row['last_name']} {$row['first_name']} 様",
+			'',
+			'おうち買取便の出張買取にお申し込みいただき、ありがとうございます。メールアドレスの確認が完了し、お申し込みを受け付けました。',
+			'',
+			'受付番号：' . $row['request_code'],
+			'申込日時：' . wp_date( 'Y年n月j日 H:i', strtotime( $outbox['created_at'] . ' UTC' ) ),
+			'メールアドレス：' . $row['email'],
+			'電話番号：' . $row['phone_number'],
+			'回収先住所：' . $address,
+			'受け渡し方法：' . $handoff,
+			'回収希望日時：' . ( $slot_lines ? implode( '／', $slot_lines ) : '記録なし' ),
+			'確定した回収日時：' . ( '' !== $confirmed ? $confirmed : '現在、確定日時はありません。' ),
+			'申込内容確認ページ：' . $application_url,
+			'',
+			'本人確認について：対面の場合は回収時に本人確認書類の原本をご提示ください。非対面の場合はWEB上で所定の本人確認手続きを行ってください。',
+		);
+		if ( 'contactless' === $detail['visit_type'] ) {
+			$lines[] = '';
+			$lines[] = '非対面回収について';
+			$lines[] = '荷物は段ボール箱・紙袋・ビニール袋のいずれかに入れ、箱のふたまたは袋の口を閉じてください。回収するすべての荷物に、同じ回収コードを外から見えるように記載してください。';
+			$lines[] = '回収コード：' . $detail['collection_code'];
+			$lines[] = '荷物の設置場所：' . (string) $detail['placement_location'];
+			$consent_query = $pdo->prepare( "SELECT consent_text FROM visit_consent_records WHERE public_token = ? AND consent_type = 'contactless_pickup' ORDER BY consented_at DESC LIMIT 1" );
+			$consent_query->execute( array( $public_token ) );
+			$consent_text = (string) $consent_query->fetchColumn();
+			if ( '' !== $consent_text ) {
+				$lines[] = '';
+				$lines[] = 'お申し込み時に確認・同意いただいた注意事項：';
+				$lines[] = $consent_text;
+			}
+		}
+		$lines[] = '';
+		$lines[] = 'ご不明な点は、おうち買取便公式サイトのお問い合わせ案内をご確認ください。';
+		$lines[] = home_url( '/' );
+		$lines[] = '';
+		$lines[] = 'このメールには銀行口座情報や本人確認画像を含めていません。';
+		return implode( "\n", $lines );
+	}
+
+	private function dispatch_completion_email( $public_token ) {
+		if ( ! $this->enabled() || ! function_exists( 'wp_get_environment_type' ) || 'staging' !== wp_get_environment_type() ) {
+			return 'disabled';
+		}
+		$pdo = $this->db();
+		$mail_was_accepted = false;
+		try {
+			$pdo->beginTransaction();
+			$select = $pdo->prepare( 'SELECT region_slug, delivery_status, attempt_count, last_attempt_at, created_at FROM visit_application_email_outbox WHERE public_token = ? FOR UPDATE' );
+			$select->execute( array( $public_token ) );
+			$outbox = $select->fetch();
+			if ( ! $outbox || 'sent' === $outbox['delivery_status'] || 'sending' === $outbox['delivery_status'] || (int) $outbox['attempt_count'] >= 5 ) {
+				$pdo->commit();
+				if ( ! $outbox ) { return 'missing'; }
+				if ( (int) $outbox['attempt_count'] >= 5 && 'sent' !== $outbox['delivery_status'] ) { return 'attempt_limit'; }
+				return $outbox['delivery_status'];
+			}
+			if ( ! empty( $outbox['last_attempt_at'] ) && strtotime( $outbox['last_attempt_at'] . ' UTC' ) > time() - 300 ) {
+				$pdo->commit();
+				return 'pending';
+			}
+			$claim = $pdo->prepare( "UPDATE visit_application_email_outbox SET delivery_status = 'sending', attempt_count = attempt_count + 1, last_attempt_at = UTC_TIMESTAMP() WHERE public_token = ? AND delivery_status = 'pending'" );
+			$claim->execute( array( $public_token ) );
+			if ( 1 !== $claim->rowCount() ) {
+				$pdo->commit();
+				return 'sending';
+			}
+			$pdo->commit();
+			$body = $this->completion_email_body( $pdo, $public_token, $outbox );
+			$sent = $this->send_staging_test_mail( '出張買取のお申し込みを受け付けました', $body );
+			if ( $sent ) {
+				$mail_was_accepted = true;
+				$finish = $pdo->prepare( "UPDATE visit_application_email_outbox SET delivery_status = 'sent', sent_at = UTC_TIMESTAMP() WHERE public_token = ? AND delivery_status = 'sending'" );
+				$finish->execute( array( $public_token ) );
+				return 'sent';
+			}
+			$retry = $pdo->prepare( "UPDATE visit_application_email_outbox SET delivery_status = 'pending' WHERE public_token = ? AND delivery_status = 'sending'" );
+			$retry->execute( array( $public_token ) );
+			return 'pending';
+		} catch ( Throwable $e ) {
+			if ( $pdo->inTransaction() ) { $pdo->rollBack(); }
+			if ( ! $mail_was_accepted ) {
+				try {
+					$retry = $pdo->prepare( "UPDATE visit_application_email_outbox SET delivery_status = 'pending' WHERE public_token = ? AND delivery_status = 'sending'" );
+					$retry->execute( array( $public_token ) );
+				} catch ( Throwable $retry_error ) {
+					// Keep diagnostics free of application data and credentials.
+				}
+			}
+			error_log( '[visit-application] completion email failed' );
+			return 'pending';
+		}
+	}
+
 	public function submit( WP_REST_Request $request ) {
 		try {
 			if ( ! $this->enabled() ) {
@@ -704,39 +919,41 @@ final class Ouchi_Visit_Application_Backend {
 			$pdo = $this->db();
 			$this->check_schema( $pdo );
 			$this->assert_selected_slots_available( $pdo, $data, false );
-			$pdo->exec( "DELETE FROM visit_application_drafts WHERE draft_status = 'expired' OR (draft_status = 'pending' AND expires_at <= UTC_TIMESTAMP())" );
-			$existing = $pdo->prepare( 'SELECT poll_token_ciphertext, poll_token_iv, poll_token_tag, draft_status, public_token, expires_at FROM visit_application_drafts WHERE submission_key_hash = ? LIMIT 1' );
+			$existing = $pdo->prepare( 'SELECT draft_id, poll_token_ciphertext, poll_token_iv, poll_token_tag, draft_status, public_token, expires_at FROM visit_application_drafts WHERE submission_key_hash = ? LIMIT 1' );
 			$existing->execute( array( hash( 'sha256', $submission_key, true ) ) );
 			$row = $existing->fetch();
 			if ( $row && 'pending' === $row['draft_status'] && strtotime( $row['expires_at'] . ' UTC' ) > time() ) {
 				$poll_token = $this->decrypt_private_token( $row['poll_token_ciphertext'], $row['poll_token_iv'], $row['poll_token_tag'] );
+				$mail_status = $this->dispatch_confirmation_email( $row['draft_id'] );
+				if ( ! in_array( $mail_status, array( 'sent', 'sending' ), true ) ) {
+					return $this->response_error( '確認メールを送信できませんでした。入力内容は保持されています。時間をおいて同じ画面から再度お試しください。', 502 );
+				}
 				return rest_ensure_response( array( 'status' => 'pending', 'poll_token' => $poll_token, 'test_mail_only' => true ) );
 			}
 			if ( $row && 'confirmed' === $row['draft_status'] && ! empty( $row['public_token'] ) ) {
 				return rest_ensure_response( array( 'status' => 'complete', 'public_token' => $row['public_token'] ) );
 			}
 			if ( $row ) {
-				$delete = $pdo->prepare( 'DELETE FROM visit_application_drafts WHERE submission_key_hash = ? AND draft_status = \'expired\'' );
-				$delete->execute( array( hash( 'sha256', $submission_key, true ) ) );
-				if ( 1 !== $delete->rowCount() ) {
-					return $this->response_error( 'この申込は期限切れです。ページを再読み込みして入力し直してください。', 410 );
-				}
+				$this->dispatch_confirmation_email( $row['draft_id'] );
+				return $this->response_error( 'この申込は期限切れです。ページを再読み込みして入力し直してください。', 410 );
 			}
 			list( $poll_cipher, $poll_iv, $poll_tag ) = $this->encrypt_private_token( $poll_token );
-			$insert = $pdo->prepare( 'INSERT INTO visit_application_drafts (submission_key_hash, confirmation_token_hash, poll_token_hash, payload_ciphertext, payload_iv, payload_tag, poll_token_ciphertext, poll_token_iv, poll_token_tag, expires_at, draft_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL ' . self::DRAFT_TTL . ' SECOND), \'pending\')' );
-			$insert->execute( array( hash( 'sha256', $submission_key, true ), hash( 'sha256', $confirmation_token, true ), hash( 'sha256', $poll_token, true ), $ciphertext, $iv, $tag, $poll_cipher, $poll_iv, $poll_tag ) );
-			$subject = 'おうち買取便 出張買取：確認リンク（ステージングテスト）';
-			$body = "ステージング環境の出張買取メール確認テストです。\n\n" . $this->mail_link( $confirmation_token, $data['visit_region_slug'] ) . "\n\nこのメールは固定テスト宛先にのみ送信されています。申込者の入力メールアドレスには送信していません。\nリンクの有効期限は5時間です。";
-			$mail_sent = false;
+			list( $confirmation_cipher, $confirmation_iv, $confirmation_tag ) = $this->encrypt_private_token( $confirmation_token );
+			$pdo->beginTransaction();
 			try {
-				$mail_sent = wp_mail( $test_recipient, $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
-			} catch ( Throwable $mail_error ) {
-				$mail_sent = false;
+				$insert = $pdo->prepare( 'INSERT INTO visit_application_drafts (submission_key_hash, confirmation_token_hash, poll_token_hash, payload_ciphertext, payload_iv, payload_tag, poll_token_ciphertext, poll_token_iv, poll_token_tag, expires_at, draft_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, DATE_ADD(UTC_TIMESTAMP(), INTERVAL ' . self::DRAFT_TTL . ' SECOND), \'pending\')' );
+				$insert->execute( array( hash( 'sha256', $submission_key, true ), hash( 'sha256', $confirmation_token, true ), hash( 'sha256', $poll_token, true ), $ciphertext, $iv, $tag, $poll_cipher, $poll_iv, $poll_tag ) );
+				$draft_id = (int) $pdo->lastInsertId();
+				$outbox = $pdo->prepare( 'INSERT INTO visit_application_confirmation_outbox (draft_id, region_slug, confirmation_token_ciphertext, confirmation_token_iv, confirmation_token_tag, delivery_status) VALUES (?, ?, ?, ?, ?, \'pending\')' );
+				$outbox->execute( array( $draft_id, sanitize_key( $data['visit_region_slug'] ), $confirmation_cipher, $confirmation_iv, $confirmation_tag ) );
+				$pdo->commit();
+			} catch ( Throwable $insert_error ) {
+				if ( $pdo->inTransaction() ) { $pdo->rollBack(); }
+				throw $insert_error;
 			}
-			if ( ! $mail_sent ) {
-				$expired = $pdo->prepare( "DELETE FROM visit_application_drafts WHERE confirmation_token_hash = ? AND draft_status = 'pending'" );
-				$expired->execute( array( hash( 'sha256', $confirmation_token, true ) ) );
-				return $this->response_error( 'テスト用確認メールを送信できませんでした。申込は確定していません。', 502 );
+			$mail_status = $this->dispatch_confirmation_email( $draft_id );
+			if ( ! in_array( $mail_status, array( 'sent', 'sending' ), true ) ) {
+				return $this->response_error( '確認メールを送信できませんでした。入力内容は保持されています。時間をおいて同じ画面から再度お試しください。', 502 );
 			}
 			return rest_ensure_response( array( 'status' => 'pending', 'poll_token' => $poll_token, 'test_mail_only' => true ) );
 		} catch ( DomainException $e ) {
@@ -768,10 +985,6 @@ final class Ouchi_Visit_Application_Backend {
 				return rest_ensure_response( array( 'status' => 'complete', 'public_token' => $row['public_token'] ) );
 			}
 			if ( strtotime( $row['expires_at'] . ' UTC' ) < time() || 'expired' === $row['draft_status'] ) {
-				if ( $row ) {
-					$delete = $pdo->prepare( "DELETE FROM visit_application_drafts WHERE draft_id = ? AND draft_status <> 'confirmed'" );
-					$delete->execute( array( $row['draft_id'] ) );
-				}
 				return rest_ensure_response( array( 'status' => 'expired' ) );
 			}
 			return rest_ensure_response( array( 'status' => 'pending' ) );
@@ -853,6 +1066,8 @@ final class Ouchi_Visit_Application_Backend {
 			$consent = $pdo->prepare( 'INSERT INTO visit_consent_records (public_token, consent_type, consent_version, consent_text, consented_at) VALUES (?, ?, ?, ?, ?)' );
 			$consent->execute( array( $public_token, 'contactless_pickup', $data['contactless_consent_version'], $data['contactless_consent_text'], $data['contactless_consented_at_utc'] ) );
 		}
+		$outbox = $pdo->prepare( 'INSERT INTO visit_application_email_outbox (public_token, region_slug, delivery_status) VALUES (?, ?, \'pending\')' );
+		$outbox->execute( array( $public_token, sanitize_key( $data['visit_region_slug'] ) ) );
 		return $public_token;
 	}
 
@@ -879,19 +1094,23 @@ final class Ouchi_Visit_Application_Backend {
 			}
 			if ( 'confirmed' === $draft['draft_status'] && ! empty( $draft['public_token'] ) ) {
 				$pdo->commit();
-				return rest_ensure_response( array( 'status' => 'complete', 'public_token' => $draft['public_token'] ) );
+				$email_status = $this->dispatch_completion_email( $draft['public_token'] );
+				return rest_ensure_response( array( 'status' => 'complete', 'public_token' => $draft['public_token'], 'completion_email_status' => $email_status ) );
 			}
 			if ( 'pending' !== $draft['draft_status'] || strtotime( $draft['expires_at'] . ' UTC' ) < time() ) {
-				$expired = $pdo->prepare( "DELETE FROM visit_application_drafts WHERE draft_id = ?" );
-				$expired->execute( array( $draft['draft_id'] ) );
+				$expire = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'expired', confirmation_token_ciphertext = ?, confirmation_token_iv = ?, confirmation_token_tag = ? WHERE draft_id = ? AND delivery_status NOT IN ('consumed', 'sending')" );
+				$expire->execute( array( random_bytes( 64 ), random_bytes( 12 ), random_bytes( 16 ), $draft['draft_id'] ) );
 				$pdo->commit();
 				return $this->response_error( '確認リンクが無効または期限切れです。', 410 );
 			}
 			$public_token = $this->insert_confirmed_application( $pdo, $draft );
 			$update = $pdo->prepare( "UPDATE visit_application_drafts SET draft_status = 'confirmed', public_token = ?, confirmation_token_hash = ?, payload_ciphertext = ?, payload_iv = ?, payload_tag = ?, poll_token_ciphertext = ?, poll_token_iv = ?, poll_token_tag = ? WHERE draft_id = ?" );
 			$update->execute( array( $public_token, random_bytes( 32 ), random_bytes( 32 ), random_bytes( 12 ), random_bytes( 16 ), random_bytes( 32 ), random_bytes( 12 ), random_bytes( 16 ), $draft['draft_id'] ) );
+			$consume = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'consumed', confirmation_token_ciphertext = ?, confirmation_token_iv = ?, confirmation_token_tag = ? WHERE draft_id = ? AND delivery_status <> 'consumed'" );
+			$consume->execute( array( random_bytes( 64 ), random_bytes( 12 ), random_bytes( 16 ), $draft['draft_id'] ) );
 			$pdo->commit();
-			return rest_ensure_response( array( 'status' => 'complete', 'public_token' => $public_token ) );
+			$email_status = $this->dispatch_completion_email( $public_token );
+			return rest_ensure_response( array( 'status' => 'complete', 'public_token' => $public_token, 'completion_email_status' => $email_status ) );
 		} catch ( DomainException $e ) {
 			if ( $pdo && $pdo->inTransaction() ) { $pdo->rollBack(); }
 			return $this->response_error( $e->getMessage(), 400 );
@@ -917,6 +1136,7 @@ final class Ouchi_Visit_Application_Backend {
 			$detail_stmt->execute( array( $public_token ) );
 			$detail = $detail_stmt->fetch();
 			if ( ! $detail ) { return null; }
+			$this->dispatch_completion_email( $public_token );
 			$slots_stmt = $pdo->prepare( 'SELECT start_at, end_at FROM visit_pickup_time_slots WHERE public_token = ? ORDER BY preference_order ASC' );
 			$slots_stmt->execute( array( $public_token ) );
 			$slots = array();
@@ -942,6 +1162,5 @@ final class Ouchi_Visit_Application_Backend {
 	}
 }
 
-register_activation_hook( __FILE__, array( 'Ouchi_Visit_Application_Backend', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'Ouchi_Visit_Application_Backend', 'deactivate' ) );
 Ouchi_Visit_Application_Backend::boot();
