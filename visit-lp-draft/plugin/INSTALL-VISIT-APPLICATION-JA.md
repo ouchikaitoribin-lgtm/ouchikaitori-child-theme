@@ -12,9 +12,10 @@
 2. `public_token` が `CHAR(64)` のUNIQUE KEYであり、テーブルがInnoDBであることを確認します。
 3. `shipping_choice` に `visit` が含まれることを確認します。添付されたDDLは `pickup/self` のみです。`visit` がなければ、このプラグインは登録を拒否します。既存テーブルの変更SQLは含めていません。
 4. 親表と同じ文字コード・照合順序であることを確認した後、未適用のマイグレーションだけをステージングDBへ適用します。4テーブルがすでにある場合は `001` を再実行せず、`002` のロックテーブルだけを適用してください。
-5. `OTP_DB_HOST`、`OTP_DB_NAME`、`OTP_DB_USER`、`OTP_DB_PASS`、`OTP_DB_CHARSET` がWordPressの設定で定義されていることを確認します。出張買取は専用PDO接続を作り、`OTP_DB_NAME` が `contact_db` と完全一致する場合だけ接続します。既存の宅配買取接続関数やその処理は変更しません。
+5. `OTP_DB_HOST`、`OTP_DB_NAME`、`OTP_DB_USER`、`OTP_DB_PASS`、`OTP_DB_CHARSET` が定義され、`OTP_DB_NAME` が `contact_db` であることを確認します。出張買取は専用の `visit_connect_app_db()` を使って既存定数から接続し、`pdo_connect_app_db()` や親テーマのPHPを読み込みません。
 6. WordPress管理画面の「設定 > 出張買取の予約枠上限」で、全エリア共通の各時間帯の受付上限と受付曜日を設定します。どちらかが未設定の場合は空き枠とAPIを無効にします。
 7. APIは `WP_ENVIRONMENT_TYPE=staging` に加え、`VISIT_APPLICATION_API_ENABLED=1` と `VISIT_APPLICATION_EMAIL_ENABLED=1` が明示された場合だけ有効です。いずれも未設定時は無効です。固定テスト宛先と暗号化キーをWordPress/PHPプロセスに設定し、必要なテーブルの確認が通った後に限り受付画面が接続されます。これらの有効化設定は、明示的な承認なしに追加しないでください。WordPress管理画面から別途プラグインを有効化する必要はありません。
+8. 非対面回収では、画面に表示した内容と同じ同意文・バージョンを返す `visit_booking_get_contactless_terms_text()` と `visit_booking_get_contactless_terms_version()` が必要です。どちらかが未定義または空の場合、同意内容を記録できないため非対面申込を受け付けません。
 
 必要な環境変数（値はGitやチャットへ登録しないでください）：
 

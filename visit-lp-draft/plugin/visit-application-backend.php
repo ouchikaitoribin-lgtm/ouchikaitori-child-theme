@@ -11,6 +11,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! function_exists( 'visit_connect_app_db' ) ) {
+    function visit_connect_app_db(): PDO {
+        if ( ! defined( 'OTP_DB_HOST' ) || ! defined( 'OTP_DB_NAME' ) || ! defined( 'OTP_DB_USER' ) || ! defined( 'OTP_DB_PASS' ) || ! defined( 'OTP_DB_CHARSET' ) ) {
+            throw new RuntimeException( '既存のアプリケーションDB設定がありません。' );
+        }
+        if ( 'contact_db' !== (string) OTP_DB_NAME ) {
+            throw new RuntimeException( '出張買取APIの接続先DBを確認できません。' );
+        }
+        $host = (string) OTP_DB_HOST;
+        $charset = (string) OTP_DB_CHARSET;
+        if ( '' === $host || ! preg_match( '/^[A-Za-z0-9._:\\-]+$/', $host ) || ! preg_match( '/^[A-Za-z0-9_]+$/', $charset ) ) {
+            throw new RuntimeException( '既存のアプリケーションDB設定が不正です。' );
+        }
+        $dsn = sprintf( 'mysql:host=%s;dbname=%s;charset=%s', $host, OTP_DB_NAME, $charset );
+        $options = array(
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+        );
+        return new PDO( $dsn, (string) OTP_DB_USER, (string) OTP_DB_PASS, $options );
+    }
+}
 final class Ouchi_Visit_Application_Backend {
 	const API_NAMESPACE = 'visit/v1';
 	const DRAFT_TTL = 18000; // 添付された宅配申込ソースのフロー期限（5時間）に合わせる。
@@ -339,17 +361,7 @@ final class Ouchi_Visit_Application_Backend {
 		if ( 'contact_db' !== (string) OTP_DB_NAME ) {
 			throw new RuntimeException( '出張買取APIの接続先DBを確認できません。' );
 		}
-		$host = (string) OTP_DB_HOST;
-		$charset = (string) OTP_DB_CHARSET;
-		if ( '' === $host || ! preg_match( '/^[A-Za-z0-9._:\-]+$/', $host ) || ! preg_match( '/^[A-Za-z0-9_]+$/', $charset ) ) {
-			throw new RuntimeException( '既存のアプリケーションDB設定が不正です。' );
-		}
-		$dsn = sprintf( 'mysql:host=%s;dbname=contact_db;charset=%s', $host, $charset );
-		return new PDO( $dsn, (string) OTP_DB_USER, (string) OTP_DB_PASS, array(
-			PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-			PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-			PDO::ATTR_EMULATE_PREPARES   => false,
-		) );
+		return visit_connect_app_db();
 	}
 
 	private function assert_same_origin() {
@@ -433,12 +445,16 @@ final class Ouchi_Visit_Application_Backend {
 			throw new DomainException( '非対面回収の注意事項への同意と置き場所の入力が必要です。' );
 		}
 		if ( 'contactless' === $data['handoff_method'] ) {
-			$current_version = function_exists( 'visit_booking_get_contactless_terms_version' ) ? visit_booking_get_contactless_terms_version() : 'contactless-v1-draft';
+			$contactless_terms = $this->contactless_terms();
+			if ( false === $contactless_terms ) {
+				throw new DomainException( '非対面回収の注意事項を確認できません。時間をおいてお問い合わせください。' );
+			}
+			$current_version = $contactless_terms['version'];
 			if ( ! hash_equals( (string) $current_version, (string) $data['contactless_consent_version'] ) ) {
 				throw new DomainException( '注意事項が更新されています。内容を確認してから再度お申し込みください。' );
 			}
 			$data['contactless_consent_version'] = (string) $current_version;
-			$data['contactless_consent_text'] = function_exists( 'visit_booking_get_contactless_terms_text' ) ? (string) visit_booking_get_contactless_terms_text() : '';
+			$data['contactless_consent_text'] = $contactless_terms['text'];
 			$data['contactless_consented_at_utc'] = gmdate( 'Y-m-d H:i:s' );
 		} else {
 			$data['contactless_consent_text'] = '';
@@ -528,6 +544,18 @@ final class Ouchi_Visit_Application_Backend {
 		return $data;
 	}
 
+	private function contactless_terms() {
+		if ( ! function_exists( 'visit_booking_get_contactless_terms_text' ) || ! function_exists( 'visit_booking_get_contactless_terms_version' ) ) {
+			return false;
+		}
+		$text = trim( (string) visit_booking_get_contactless_terms_text() );
+		$version = trim( (string) visit_booking_get_contactless_terms_version() );
+		if ( '' === $text || '' === $version || strlen( $version ) > 80 ) {
+			return false;
+		}
+		return array( 'text' => $text, 'version' => $version );
+	}
+
 	private function encryption_key() {
 		$key_b64 = defined( 'PAYOUT_ENC_KEY_B64' ) ? PAYOUT_ENC_KEY_B64 : getenv( 'PAYOUT_ENC_KEY_B64' );
 		$key = base64_decode( (string) $key_b64, true );
@@ -589,10 +617,11 @@ final class Ouchi_Visit_Application_Backend {
 
 	private function check_schema( PDO $pdo ) {
 		$required = array( 'visit_application_drafts', 'visit_purchase_details', 'visit_pickup_time_slots', 'visit_consent_records', 'visit_slot_reservation_day_locks', 'purchase_requests' );
+		$engine_query = $pdo->prepare( 'SELECT engine FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1' );
 		foreach ( $required as $table ) {
-			$stmt = $pdo->prepare( 'SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1' );
-			$stmt->execute( array( $table ) );
-			if ( ! $stmt->fetchColumn() ) {
+			$engine_query->execute( array( $table ) );
+			$engine = $engine_query->fetchColumn();
+			if ( 'InnoDB' !== $engine ) {
 				throw new RuntimeException( '出張買取用テーブルが未作成です。' );
 			}
 		}
@@ -615,6 +644,21 @@ final class Ouchi_Visit_Application_Backend {
 		$column = $stmt->fetch();
 		if ( ! $column || false === strpos( (string) $column['Type'], 'visit' ) ) {
 			throw new RuntimeException( 'purchase_requests.shipping_choice に visit がありません。' );
+		}
+		$column_stmt = $pdo->prepare( 'SELECT column_name, is_nullable, column_type FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name IN (\'request_code\', \'shipping_method\')' );
+		$column_stmt->execute( array( 'purchase_requests' ) );
+		$write_columns = array();
+		foreach ( $column_stmt->fetchAll() as $write_column ) {
+			$write_columns[ $write_column['column_name'] ] = $write_column;
+		}
+		if ( ! isset( $write_columns['request_code'], $write_columns['shipping_method'] ) || 'YES' !== $write_columns['request_code']['is_nullable'] ) {
+			throw new RuntimeException( 'purchase_requests の受付番号登録方式を確認できません。' );
+		}
+		$shipping_method_type = strtolower( (string) $write_columns['shipping_method']['column_type'] );
+		$shipping_method_has_visit = preg_match( '/^(?:varchar|char)\((\d+)\)/', $shipping_method_type, $method_length ) && (int) $method_length[1] >= 5;
+		$shipping_method_has_visit = $shipping_method_has_visit || ( 0 === strpos( $shipping_method_type, 'enum(' ) && false !== strpos( $shipping_method_type, "'visit'" ) );
+		if ( ! $shipping_method_has_visit ) {
+			throw new RuntimeException( 'purchase_requests.shipping_method が出張買取に対応していません。' );
 		}
 		$parent_columns = array( 'request_code', 'public_token', 'shipping_method', 'payment_method', 'last_name', 'first_name', 'last_name_kana', 'first_name_kana', 'application_zip', 'application_prefecture', 'application_city', 'application_address1', 'address', 'email', 'phone_number', 'birth_date', 'occupation', 'bank_code', 'branch_code', 'bank_name', 'branch_name', 'account_type', 'account_number_enc', 'account_number_iv', 'account_number_tag', 'account_holder_kana_enc', 'account_holder_kana_iv', 'account_holder_kana_tag', 'account_number_last4', 'account_fingerprint', 'pickup_time', 'pickup_zip', 'pickup_prefecture', 'pickup_city', 'pickup_address1', 'box_count', 'register_flg', 'approval_flg', 'receive_flg', 'campaign_code', 'campaign_code_status', 'pickup_date' );
 		$column_stmt = $pdo->prepare( 'SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ?' );
