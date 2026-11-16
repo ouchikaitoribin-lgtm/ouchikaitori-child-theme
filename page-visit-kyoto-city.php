@@ -35,7 +35,7 @@ $visit_address_prefix = (string) $visit_region['address_prefix'];
 $visit_map_center = array( (float) $visit_region['map_center']['lat'], (float) $visit_region['map_center']['lng'] );
 $visit_confirmation_path = '/visit/' . rawurlencode( $visit_region_slug ) . '/application-pending/';
 
-add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_mode, $visit_confirmation_path, $visit_address_prefix, $visit_prefecture_name, $visit_map_center ) {
+add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_mode, $visit_application_backend_enabled, $visit_confirmation_path, $visit_address_prefix, $visit_prefecture_name, $visit_map_center ) {
 	if ( ! is_page_template( 'page-visit-kyoto-city.php' ) ) {
 		return;
 	}
@@ -66,8 +66,8 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 			'availabilityEndpoint' => apply_filters( 'visit_application_availability_endpoint', '' ),
 			'regionSlug' => $visit_region_slug,
 			'applicationConfirmationPageUrl' => home_url( $visit_confirmation_path ),
-			'formPreviewMode' => $visit_form_preview_mode,
-			'applicationSubmissionEnabled' => $visit_application_backend_enabled,
+			'formPreviewMode' => (bool) $visit_form_preview_mode,
+			'applicationSubmissionEnabled' => (bool) $visit_application_backend_enabled,
 			'regionName' => $visit_address_prefix,
 			'prefectureName' => $visit_prefecture_name,
 			'mapCenter' => $visit_map_center,

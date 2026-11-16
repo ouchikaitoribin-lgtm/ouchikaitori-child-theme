@@ -84,6 +84,12 @@ test('staging WordPress mail is pinned to loopback Mailpit with no mail() fallba
   assert.doesNotMatch(mailpitTransport, /isMail\s*\(|smtp-relay|wp_mail_from/);
 });
 
+test('regional form captures the backend readiness flag for frontend submission', () => {
+  assert.match(page, /static function \(\) use \([^)]*\$visit_application_backend_enabled/);
+  assert.match(page, /'applicationSubmissionEnabled'\s*=>\s*\(bool\)\s*\$visit_application_backend_enabled/);
+  assert.match(page, /'formPreviewMode'\s*=>\s*\(bool\)\s*\$visit_form_preview_mode/);
+});
+
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {
   assert.match(backend, /32\s*===\s*strlen\(\s*\$key\s*\)/);
   assert.match(backend, /\$iv = random_bytes\(\s*12\s*\)/);
