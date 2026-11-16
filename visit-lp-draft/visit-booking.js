@@ -26,8 +26,10 @@
   const previewFlag = bookingConfig.formPreviewMode;
   const isStagingFormPreview = previewFlag === true || previewFlag === 1 || previewFlag === '1';
   const isInteractivePreview = isStagingFormPreview;
+  const submissionFlag = bookingConfig.applicationSubmissionEnabled;
+  const isApplicationSubmissionEnabled = submissionFlag === true || submissionFlag === 1 || submissionFlag === '1';
   const applicationFlowReady = !isInteractivePreview
-    && bookingConfig.applicationSubmissionEnabled === true
+    && isApplicationSubmissionEnabled
     && Boolean(bookingConfig.applicationSubmitEndpoint && bookingConfig.applicationStatusEndpoint);
   const bonusInfo = widget.querySelector('[data-bonus-info]');
   const bonusMessage = widget.querySelector('[data-bonus-message]');

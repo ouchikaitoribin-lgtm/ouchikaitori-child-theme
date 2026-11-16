@@ -8,6 +8,7 @@ const backend = readFileSync(join(root, 'visit-lp-draft/plugin/visit-application
 const migration = readFileSync(join(root, 'visit-lp-draft/migrations/003-visit-application-email-outbox.sql'), 'utf8');
 const mailpitTransport = readFileSync(join(root, 'visit-lp-draft/plugin/visit-staging-mailpit-transport.php'), 'utf8');
 const functions = readFileSync(join(root, 'functions.php'), 'utf8');
+const bookingScript = readFileSync(join(root, 'visit-lp-draft/visit-booking.js'), 'utf8');
 const page = readFileSync(join(root, 'page-visit-kyoto-city.php'), 'utf8');
 
 test('expired drafts are not automatically deleted', () => {
@@ -88,6 +89,12 @@ test('regional form captures the backend readiness flag for frontend submission'
   assert.match(page, /static function \(\) use \([^)]*\$visit_application_backend_enabled/);
   assert.match(page, /'applicationSubmissionEnabled'\s*=>\s*\(bool\)\s*\$visit_application_backend_enabled/);
   assert.match(page, /'formPreviewMode'\s*=>\s*\(bool\)\s*\$visit_form_preview_mode/);
+});
+
+test('frontend accepts boolean, numeric, and string staging submission flags', () => {
+  assert.match(bookingScript, /submissionFlag === true \|\| submissionFlag === 1 \|\| submissionFlag === '1'/);
+  assert.match(bookingScript, /&& isApplicationSubmissionEnabled/);
+  assert.doesNotMatch(bookingScript, /bookingConfig\.applicationSubmissionEnabled === true/);
 });
 
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {
