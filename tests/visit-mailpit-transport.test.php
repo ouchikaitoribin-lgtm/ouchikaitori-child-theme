@@ -89,10 +89,10 @@ class Visit_Staging_Mock_Mailer {
 
 function wp_mail( $to, $subject, $message, $headers = array() ) {
 	$atts = array( 'to' => $to, 'subject' => $subject, 'message' => $message, 'headers' => $headers, 'attachments' => array() );
-	$pre  = apply_filters( 'pre_wp_mail', null, $atts );
-	if ( null !== $pre ) { return $pre; }
 	if ( $GLOBALS['visit_staging_inject_cc'] ) { $atts['headers'][] = 'Cc: other@example.com'; }
 	$atts = apply_filters( 'wp_mail', $atts );
+	$pre  = apply_filters( 'pre_wp_mail', null, $atts );
+	if ( null !== $pre ) { return $pre; }
 	$mailer = new Visit_Staging_Mock_Mailer( $atts );
 	$actions = isset( $GLOBALS['visit_staging_actions']['phpmailer_init'] ) ? $GLOBALS['visit_staging_actions']['phpmailer_init'] : array();
 	ksort( $actions );

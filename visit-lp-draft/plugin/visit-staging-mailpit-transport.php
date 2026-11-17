@@ -73,27 +73,6 @@ add_filter(
 	2
 );
 
-add_filter(
-	'wp_mail',
-	static function ( $args ) {
-		if ( 'staging' !== wp_get_environment_type() ) {
-			return $args;
-		}
-		$context = isset( $GLOBALS['ouchi_visit_staging_ses_mail_context'] ) ? $GLOBALS['ouchi_visit_staging_ses_mail_context'] : null;
-		if ( ! is_array( $context ) || empty( $context['active'] ) || empty( $context['in_flight'] ) ) {
-			throw new RuntimeException( 'ステージングではこのメールを送信できません。' );
-		}
-		$to          = isset( $args['to'] ) && is_scalar( $args['to'] ) ? strtolower( trim( (string) $args['to'] ) ) : '';
-		$headers     = isset( $args['headers'] ) ? $args['headers'] : array();
-		$header_text = is_array( $headers ) ? implode( "\n", array_map( 'strval', $headers ) ) : (string) $headers;
-		if ( $to !== $context['recipient'] || ! empty( $args['cc'] ) || ! empty( $args['bcc'] ) || preg_match( '/^\s*(?:cc|bcc)\s*:/im', $header_text ) ) {
-			throw new RuntimeException( 'ステージングメールの宛先を確認できません。' );
-		}
-		return $args;
-	},
-	PHP_INT_MAX
-);
-
 /** Keep the existing parent-theme SES configuration and fail closed on recipients. */
 add_action(
 	'phpmailer_init',
