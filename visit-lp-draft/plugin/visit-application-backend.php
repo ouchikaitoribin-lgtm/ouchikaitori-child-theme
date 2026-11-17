@@ -663,7 +663,7 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function check_schema( PDO $pdo ) {
-		$required = array( 'visit_application_drafts', 'visit_application_confirmation_outbox', 'visit_purchase_details', 'visit_pickup_time_slots', 'visit_consent_records', 'visit_slot_reservation_day_locks', 'visit_application_email_outbox', 'purchase_requests' );
+		$required = array( 'visit_application_drafts', 'visit_application_confirmation_outbox', 'visit_purchase_details', 'visit_pickup_time_slots', 'visit_consent_records', 'visit_slot_reservation_day_locks', 'visit_application_email_outbox', 'purchase_requests', 'task_queue' );
 		$engine_query = $pdo->prepare( 'SELECT engine FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1' );
 		foreach ( $required as $table ) {
 			$engine_query->execute( array( $table ) );
@@ -680,6 +680,7 @@ final class Ouchi_Visit_Application_Backend {
 			'visit_application_email_outbox' => array( 'public_token', 'region_slug', 'delivery_status', 'attempt_count', 'last_attempt_at', 'sent_at', 'created_at' ),
 			'visit_application_confirmation_outbox' => array( 'draft_id', 'region_slug', 'confirmation_token_ciphertext', 'confirmation_token_iv', 'confirmation_token_tag', 'delivery_status', 'attempt_count', 'last_attempt_at', 'sent_at' ),
 			'visit_slot_reservation_day_locks' => array( 'service_date' ),
+			'task_queue' => array( 'public_token', 'task_type', 'status' ),
 		);
 		$columns_query = $pdo->prepare( 'SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ?' );
 		foreach ( $table_columns as $table => $expected_columns ) {
@@ -1083,6 +1084,7 @@ final class Ouchi_Visit_Application_Backend {
 		$request_code = 'VIS-' . wp_date( 'Ymd' ) . '-' . str_pad( (string) $request_id, 6, '0', STR_PAD_LEFT );
 		$update = $pdo->prepare( 'UPDATE purchase_requests SET request_code = :request_code WHERE request_id = :request_id' );
 		$update->execute( array( ':request_code' => $request_code, ':request_id' => $request_id ) );
+		$this->enqueue_bank_account_check( $pdo, $public_token );
 		$confirmed_start = null;
 		$confirmed_end = null;
 		if ( 1 === count( $data['pickup_times'] ) ) {
@@ -1109,6 +1111,17 @@ final class Ouchi_Visit_Application_Backend {
 		$outbox = $pdo->prepare( 'INSERT INTO visit_application_email_outbox (public_token, region_slug, delivery_status) VALUES (?, ?, \'pending\')' );
 		$outbox->execute( array( $public_token, sanitize_key( $data['visit_region_slug'] ) ) );
 		return $public_token;
+	}
+
+	/** Add the bank-account review task inside the caller's application transaction. */
+	private function enqueue_bank_account_check( PDO $pdo, $public_token ) {
+		$sql = 'INSERT INTO task_queue (public_token, task_type, status) VALUES (:public_token, :task_type, :status)';
+		$stmt = $pdo->prepare( $sql );
+		$stmt->execute( array(
+			':public_token' => $public_token,
+			':task_type'    => 'bank_account_check',
+			':status'       => 'pending',
+		) );
 	}
 
 	public function confirm( WP_REST_Request $request ) {

@@ -23,6 +23,25 @@ class WP_REST_Response {
 	public function get_headers() { return $this->headers; }
 }
 
+class VisitTestPDOStatement extends PDOStatement {
+	private $owner;
+	public function __construct( $owner ) { $this->owner = $owner; }
+	public function execute( ?array $params = null ): bool {
+		$this->owner->executed_parameters = $params;
+		return true;
+	}
+}
+
+class VisitTestPDO extends PDO {
+	public $prepared_query;
+	public $executed_parameters;
+	public function __construct() {}
+	public function prepare( string $query, array $options = array() ): PDOStatement|false {
+		$this->prepared_query = $query;
+		return new VisitTestPDOStatement( $this );
+	}
+}
+
 function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) {}
 function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
 	$GLOBALS['visit_test_registered_filters'][ $hook ][] = $callback;
@@ -91,6 +110,13 @@ ob_start();
 $json_served = $serve_confirmation_page->invoke( $booted_instance, false, $json_response, $json_request, null );
 $json_output = ob_get_clean();
 $assert( false === $json_served && '' === $json_output, 'confirmation POST JSON response should remain under the normal REST serializer' );
+$enqueue_bank_check = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'enqueue_bank_account_check' );
+$enqueue_bank_check->setAccessible( true );
+$task_queue_pdo = new VisitTestPDO();
+$synthetic_public_token = str_repeat( 'b', 64 );
+$enqueue_bank_check->invoke( $instance, $task_queue_pdo, $synthetic_public_token );
+$assert( false !== strpos( $task_queue_pdo->prepared_query, 'INSERT INTO task_queue (public_token, task_type, status)' ), 'bank account check should be inserted into task_queue' );
+$assert( array( ':public_token' => $synthetic_public_token, ':task_type' => 'bank_account_check', ':status' => 'pending' ) === $task_queue_pdo->executed_parameters, 'bank account task should use the application public token and pending status' );
 $send = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'send_staging_test_mail' );
 $send->setAccessible( true );
 $test_recipient = 'visit-qa' . '@' . 'example.invalid';
