@@ -110,9 +110,13 @@ test('frontend accepts boolean, numeric, and string staging submission flags', (
   assert.doesNotMatch(bookingScript, /bookingConfig\.applicationSubmissionEnabled === true/);
 });
 
-test('application payload separates the selected area from the full city name', () => {
+test('application payload separates the selected area and derives city from region data', () => {
+  assert.ok(page.includes("'cityName' => $visit_city_name"));
+  assert.ok(page.includes('$visit_address_prefix, $visit_city_name, $visit_prefecture_name'));
+  assert.ok(bookingScript.includes("const cityName = String(bookingConfig.cityName || regionName)"));
   assert.ok(bookingScript.includes("widget.querySelector('[data-form-area]').value = state.area;"));
   assert.ok(bookingScript.includes('cityField.value = '));
+  assert.ok(bookingScript.includes("setValue('city', "));
 });
 
 test('application submission refreshes the WordPress nonce without using cached HTML values', () => {
@@ -133,7 +137,7 @@ test('staging application test prefills safe sample data and enables submit only
 });
 
 test('visit booking script cache version is bumped for the staging form fix', () => {
-  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.3', true );"));
+  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.4', true );"));
 });
 
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {

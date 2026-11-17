@@ -23,6 +23,7 @@
     applicationSubmissionEnabled: false
   };
   const regionName = String(bookingConfig.regionName || '');
+  const cityName = String(bookingConfig.cityName || regionName);
   // wp_localize_script() serializes scalar values as strings, so PHP true arrives as "1".
   const previewFlag = bookingConfig.formPreviewMode;
   const isStagingFormPreview = previewFlag === true || previewFlag === 1 || previewFlag === '1';
@@ -596,7 +597,7 @@
       if (next === 6 && !validateAccountHolder()) return;
       if (next === 4) {
         if (!state.day || state.times.length === 0) return;
-        widget.querySelector('[data-summary-area]').textContent = `${regionName}${state.area}`;
+        widget.querySelector('[data-summary-area]').textContent = `${cityName}${state.area}`;
         widget.querySelector('[data-summary-handoff]').textContent = state.handoff === 'face' ? '対面' : '非対面';
         widget.querySelector('[data-summary-date]').textContent = `${state.day.getFullYear()}年${state.day.getMonth() + 1}月${state.day.getDate()}日`;
         widget.querySelector('[data-summary-time]').textContent = state.times.join('・');
@@ -610,7 +611,7 @@
         widget.querySelector('[data-form-times]').value = state.times.join('|');
         widget.querySelector('[data-form-consented-at]').value = state.handoff === 'contactless' ? consentAt.value : '';
         const cityField = widget.querySelector('[data-city]');
-        cityField.value = `${regionName}${state.area}`;
+        cityField.value = `${cityName}${state.area}`;
       }
       setStep(next);
       scrollToStepTop(next);
@@ -893,7 +894,7 @@
     setValue('phone', '09000000000');
     setValue('postal_code', String(previewAddress.postal_code || '604-8571'));
     setValue('prefecture', String(bookingConfig.prefectureName || ''));
-    setValue('city', `${regionName}${firstAreaOption ? firstAreaOption.value : ''}`);
+    setValue('city', `${cityName}${firstAreaOption ? firstAreaOption.value : ''}`);
     setValue('street', String(previewAddress.street || '寺町通御池上る上本能寺前町488'));
     setValue('building', String(previewAddress.building || 'テスト用'));
     setValue('birth_date', '1990-01-01');

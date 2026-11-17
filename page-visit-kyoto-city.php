@@ -35,7 +35,7 @@ $visit_address_prefix = (string) $visit_region['address_prefix'];
 $visit_map_center = array( (float) $visit_region['map_center']['lat'], (float) $visit_region['map_center']['lng'] );
 $visit_confirmation_path = '/visit/' . rawurlencode( $visit_region_slug ) . '/application-pending/';
 
-add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_mode, $visit_application_backend_enabled, $visit_confirmation_path, $visit_address_prefix, $visit_prefecture_name, $visit_map_center, $visit_region_slug, $visit_region ) {
+add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_mode, $visit_application_backend_enabled, $visit_confirmation_path, $visit_address_prefix, $visit_city_name, $visit_prefecture_name, $visit_map_center, $visit_region_slug, $visit_region ) {
 	if ( ! is_page_template( 'page-visit-kyoto-city.php' ) ) {
 		return;
 	}
@@ -47,7 +47,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 	wp_enqueue_script( 'ouchi-visit-yubinbango', 'https://yubinbango.github.io/yubinbango/yubinbango.js', array(), null, true );
 	wp_enqueue_script( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
 	$booking_script_dependencies = array( 'ouchi-visit-yubinbango', 'ouchi-visit-leaflet' );
-	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.3', true );
+	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.4', true );
 	$visit_booking_defaults = array(
 		'slots'                   => array( '10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00' ),
 		'multiSlotBonusEnabled'   => true,
@@ -70,6 +70,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 			'formPreviewMode' => (bool) $visit_form_preview_mode,
 			'applicationSubmissionEnabled' => (bool) $visit_application_backend_enabled,
 			'regionName' => $visit_address_prefix,
+			'cityName' => $visit_city_name,
 			'prefectureName' => $visit_prefecture_name,
 			'mapCenter' => $visit_map_center,
 			'previewAddress' => $visit_region['preview_address'],
