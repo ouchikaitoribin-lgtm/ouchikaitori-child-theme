@@ -110,6 +110,14 @@ test('frontend accepts boolean, numeric, and string staging submission flags', (
   assert.doesNotMatch(bookingScript, /bookingConfig\.applicationSubmissionEnabled === true/);
 });
 
+test('staging application test prefills safe sample data and enables submit only on final step', () => {
+  assert.ok(bookingScript.includes('const isStagingTestDefaults = isStagingFormPreview || applicationFlowReady'));
+  assert.ok(bookingScript.includes('if (!isStagingTestDefaults) return;'));
+  assert.ok(bookingScript.includes('finalSubmitButton.disabled = step !== 6 || !isStagingTestDefaults'));
+  assert.ok(bookingScript.includes('day && day.available && Array.isArray(day.slots)'));
+  assert.ok(bookingScript.includes("new Option('サンプル銀行（テスト用）', '9999')"));
+});
+
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {
   assert.match(backend, /32\s*===\s*strlen\(\s*\$key\s*\)/);
   assert.match(backend, /\$iv = random_bytes\(\s*12\s*\)/);

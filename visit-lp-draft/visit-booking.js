@@ -31,6 +31,8 @@
   const applicationFlowReady = !isInteractivePreview
     && isApplicationSubmissionEnabled
     && Boolean(bookingConfig.applicationSubmitEndpoint && bookingConfig.applicationStatusEndpoint);
+  // API準備完了はPHPバックエンド側でstagingだけに許可されている。
+  const isStagingTestDefaults = isStagingFormPreview || applicationFlowReady;
   const bonusInfo = widget.querySelector('[data-bonus-info]');
   const bonusMessage = widget.querySelector('[data-bonus-message]');
   const bonusCalculation = widget.querySelector('[data-bonus-calculation]');
@@ -83,6 +85,7 @@
     emailSentMessage.hidden = !emailSentMessage.textContent;
   };
   let stagingTestDefaultsApplied = false;
+  let stagingDefaultsScheduleApplied = false;
   const terms = widget.querySelector('[data-contactless-terms]');
   const pickupPlaceDetails = widget.querySelector('[data-contactless-pickup-details]');
   const pickupPlaceDetailsInput = widget.querySelector('[data-pickup-place-details]');
@@ -112,6 +115,8 @@
       return;
     }
     state.step = step;
+    const finalSubmitButton = widget.querySelector('[data-application-submit]');
+    if (finalSubmitButton) finalSubmitButton.disabled = step !== 6 || !isStagingTestDefaults;
     widget.querySelectorAll('[data-step]').forEach((panel) => {
       panel.hidden = Number(panel.dataset.step) !== step;
     });
@@ -125,7 +130,7 @@
     liveMessage.textContent = `ステップ${step}を表示しています。`;
     if (step === 6) {
       initializePickupMap();
-      if (isStagingFormPreview && stagingTestDefaultsApplied && pickupMap && !pickupMarker) {
+      if (isStagingTestDefaults && stagingTestDefaultsApplied && pickupMap && !pickupMarker) {
         placePickupMarker(pickupMap.getCenter());
       }
       geocodePickupAddress();
@@ -207,7 +212,7 @@
     if (address === lastGeocodedAddress) return;
     lastGeocodedAddress = address;
     const requestId = ++geocodeRequestId;
-    const keepPreviewTestPin = isStagingFormPreview && stagingTestDefaultsApplied && Boolean(pickupMarker);
+    const keepPreviewTestPin = isStagingTestDefaults && stagingTestDefaultsApplied && Boolean(pickupMarker);
     if (pickupMarker && !keepPreviewTestPin) {
       pickupMap.removeLayer(pickupMarker);
       pickupMarker = null;
@@ -426,6 +431,19 @@
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || '空き枠を確認できません。');
         availabilityCache[key] = result.days || {};
+        if (isStagingTestDefaults && applicationFlowReady && stagingTestDefaultsApplied && !stagingDefaultsScheduleApplied && !state.day) {
+          const availableDate = Object.entries(availabilityCache[key]).find(([, day]) =>
+            day && day.available && Array.isArray(day.slots) && day.slots.some((slot) => slot.available)
+          );
+          if (availableDate) {
+            const [dateKey, day] = availableDate;
+            const firstAvailableSlot = day.slots.find((slot) => slot.available);
+            state.day = new Date(dateKey + 'T00:00:00');
+            state.times = [firstAvailableSlot.time];
+            stagingDefaultsScheduleApplied = true;
+            widget.querySelector('[data-next-step="4"]').disabled = false;
+          }
+        }
         renderCalendar();
         renderSlots();
       })
@@ -533,6 +551,7 @@
   widget.querySelectorAll('[name="visit-area"]').forEach((input) => {
     input.addEventListener('change', () => {
       state.area = input.value;
+      stagingDefaultsScheduleApplied = false;
       state.day = null;
       state.times = [];
       renderCalendar();
@@ -817,7 +836,7 @@
   }
 
   function applyStagingTestDefaults() {
-    if (!isStagingFormPreview) return;
+    if (!isStagingTestDefaults) return;
     stagingTestDefaultsApplied = true;
 
     const setRadio = (name, value) => {
@@ -838,12 +857,19 @@
     consentBox.checked = true;
     consentBox.dispatchEvent(new Event('change', { bubbles: true }));
 
-    const previewDay = new Date(earliest);
-    while (![1, 3, 5].includes(previewDay.getDay())) previewDay.setDate(previewDay.getDate() + 1);
-    state.day = previewDay;
-    displayedMonth = new Date(previewDay.getFullYear(), previewDay.getMonth(), 1);
-    state.times = [demoSlots[0]];
-    widget.querySelector('[data-next-step="4"]').disabled = false;
+    if (applicationFlowReady && bookingConfig.availabilityEndpoint) {
+      // 実申込テストでは、APIから返る実際の空き枠を受け取ってから初期選択する。
+      state.day = null;
+      state.times = [];
+      widget.querySelector('[data-next-step="4"]').disabled = true;
+    } else {
+      const previewDay = new Date(earliest);
+      while (![1, 3, 5].includes(previewDay.getDay())) previewDay.setDate(previewDay.getDate() + 1);
+      state.day = previewDay;
+      displayedMonth = new Date(previewDay.getFullYear(), previewDay.getMonth(), 1);
+      state.times = [demoSlots[0]];
+      widget.querySelector('[data-next-step="4"]').disabled = false;
+    }
 
     setValue('last_name', 'テスト');
     setValue('first_name', 'ユーザー');
@@ -862,10 +888,10 @@
 
     const bankSelect = widget.querySelector('#visit-bank-select');
     const branchSelect = widget.querySelector('#visit-branch-select');
-    bankSelect.replaceChildren(new Option('サンプル銀行（テスト用）', 'PREVIEW-BANK'));
-    branchSelect.replaceChildren(new Option('サンプル支店（テスト用）', 'PREVIEW-BRANCH'));
-    bankSelect.value = 'PREVIEW-BANK';
-    branchSelect.value = 'PREVIEW-BRANCH';
+    bankSelect.replaceChildren(new Option('サンプル銀行（テスト用）', '9999'));
+    branchSelect.replaceChildren(new Option('サンプル支店（テスト用）', '999'));
+    bankSelect.value = '9999';
+    branchSelect.value = '999';
     branchSelect.disabled = false;
     widget.querySelector('[data-bank-name]').value = 'サンプル銀行（テスト用）';
     widget.querySelector('[data-branch-name]').value = 'サンプル支店（テスト用）';
