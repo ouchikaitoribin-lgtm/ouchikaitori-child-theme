@@ -110,13 +110,13 @@ $assert = static function ( $condition, $message ) {
 	}
 };
 
-$assert( 10 === has_action( 'phpmailer_init', 'my_smtp_mailer' ), 'the parent's SES mailer must stay registered at priority 10' );
+$assert( 10 === has_action( 'phpmailer_init', 'my_smtp_mailer' ), 'the parent SES mailer must stay registered at priority 10' );
 $assert( isset( $GLOBALS['visit_staging_actions']['phpmailer_init'][ PHP_INT_MAX ] ), 'the staging recipient guard must run after the parent SES setup' );
 $assert( false === wp_mail( 'other@example.com', 'anything', 'body' ), 'unrelated staging mail must be rejected' );
 $assert( false === wp_mail( 'ses-test@example.com', 'subject marker cannot authorize', 'body' ), 'a subject alone must never authorize a send' );
 $assert( 0 === count( $GLOBALS['visit_staging_sent'] ), 'rejected mail must not reach PHPMailer' );
 $assert( false === ouchi_visit_staging_send_test_mail( 'other@example.com', 'confirmation', 'body' ), 'the helper must reject a non-fixed recipient' );
-$assert( true === ouchi_visit_staging_send_test_mail( 'ses-test@example.com', 'confirmation', 'body' ), 'the scoped fixed-recipient send should use the parent's SES setup' );
+$assert( true === ouchi_visit_staging_send_test_mail( 'ses-test@example.com', 'confirmation', 'body' ), 'the scoped fixed-recipient send should use the existing SES setup' );
 $assert( 1 === count( $GLOBALS['visit_staging_sent'] ), 'only the authorized helper call should reach PHPMailer' );
 $assert( 'ses-test@example.com' === $GLOBALS['visit_staging_sent'][0]['to'], 'To must contain only the fixed test address' );
 $assert( ! isset( $GLOBALS['visit_staging_sent'][0]['cc'] ) && ! isset( $GLOBALS['visit_staging_sent'][0]['bcc'] ), 'Cc and Bcc must be absent' );
