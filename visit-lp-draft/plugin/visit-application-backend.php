@@ -697,7 +697,7 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function send_staging_test_mail( $subject, $body ) {
-		if ( ! function_exists( 'wp_get_environment_type' ) || 'staging' !== wp_get_environment_type() || ! function_exists( 'wp_mail' ) ) {
+		if ( ! function_exists( 'wp_get_environment_type' ) || 'staging' !== wp_get_environment_type() || ! function_exists( 'ouchi_visit_staging_send_test_mail' ) ) {
 			return false;
 		}
 		$setting = defined( 'VISIT_CONFIRMATION_TEST_RECIPIENT' ) ? VISIT_CONFIRMATION_TEST_RECIPIENT : getenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
@@ -705,24 +705,7 @@ final class Ouchi_Visit_Application_Backend {
 		if ( ! is_email( $recipient ) ) {
 			return false;
 		}
-		$marker = '[OUCHI-VISIT-STAGING] ';
-		$guard = static function ( $args ) use ( $recipient, $marker ) {
-			if ( ! is_array( $args ) || empty( $args['subject'] ) || 0 !== strpos( (string) $args['subject'], $marker ) ) {
-				return $args;
-			}
-			$args['to'] = array( $recipient );
-			$args['headers'] = array( 'Content-Type: text/plain; charset=UTF-8' );
-			$args['attachments'] = array();
-			return $args;
-		};
-		add_filter( 'wp_mail', $guard, PHP_INT_MAX );
-		try {
-			return (bool) wp_mail( $recipient, $marker . $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ) );
-		} catch ( Throwable $e ) {
-			return false;
-		} finally {
-			remove_filter( 'wp_mail', $guard, PHP_INT_MAX );
-		}
+		return (bool) ouchi_visit_staging_send_test_mail( $recipient, $subject, $body );
 	}
 
 	private function dispatch_confirmation_email( $draft_id ) {

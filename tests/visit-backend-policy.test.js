@@ -6,7 +6,7 @@ const assert = require('node:assert/strict');
 const root = join(__dirname, '..');
 const backend = readFileSync(join(root, 'visit-lp-draft/plugin/visit-application-backend.php'), 'utf8');
 const migration = readFileSync(join(root, 'visit-lp-draft/migrations/003-visit-application-email-outbox.sql'), 'utf8');
-const mailpitTransport = readFileSync(join(root, 'visit-lp-draft/plugin/visit-staging-mailpit-transport.php'), 'utf8');
+const stagingMailGuard = readFileSync(join(root, 'visit-lp-draft/plugin/visit-staging-mailpit-transport.php'), 'utf8');
 const functions = readFileSync(join(root, 'functions.php'), 'utf8');
 const bookingScript = readFileSync(join(root, 'visit-lp-draft/visit-booking.js'), 'utf8');
 const bookingWidget = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/booking-widget.html'), 'utf8');
@@ -22,9 +22,10 @@ test('expired drafts are not automatically deleted', () => {
 test('visit email is restricted to the staging test recipient', () => {
   assert.match(backend, /'staging' !== wp_get_environment_type\(\)/);
   assert.match(backend, /VISIT_CONFIRMATION_TEST_RECIPIENT/);
-  assert.match(backend, /\$args\['to'\]\s*=\s*array\(\s*\$recipient\s*\)/);
-  assert.match(backend, /\$args\['headers'\]\s*=\s*array\(\s*'Content-Type: text\/plain; charset=UTF-8'\s*\)/);
-  assert.equal((backend.match(/\bwp_mail\s*\(/g) || []).length, 1);
+  assert.match(backend, /ouchi_visit_staging_send_test_mail\(\s*\$recipient/);
+  assert.match(stagingMailGuard, /strtolower\(\s*\$allowed\s*\)\s*!==\s*strtolower\(\s*\$recipient\s*\)/);
+  assert.equal((stagingMailGuard.match(/\bwp_mail\s*\(/g) || []).length, 1);
+  assert.doesNotMatch(backend, /\bwp_mail\s*\(/);
   assert.doesNotMatch(backend, /wp_mail\(\s*\$data\[['"]email['"]\]/);
 });
 
@@ -84,13 +85,18 @@ test('API registration is staging-gated and does not call collection services', 
   assert.doesNotMatch(backend, /wp_remote_(?:get|post|request)\s*\(|curl_(?:init|exec)\s*\(/);
 });
 
-test('staging WordPress mail is pinned to loopback Mailpit with no mail() fallback', () => {
+test('staging only sends explicitly authorized visit mail through the parent SES setup', () => {
   assert.match(functions, /'staging' === wp_get_environment_type\(\)[\s\S]*?visit-staging-mailpit-transport\.php/);
-  assert.match(mailpitTransport, /'127\.0\.0\.1'/);
-  assert.match(mailpitTransport, /\$mailer->Port\s*=\s*1025/);
-  assert.match(mailpitTransport, /\$mailer->isSMTP\(\)/);
-  assert.match(mailpitTransport, /\$mailer->SMTPAutoTLS\s*=\s*false/);
-  assert.doesNotMatch(mailpitTransport, /isMail\s*\(|smtp-relay|wp_mail_from/);
+  assert.match(stagingMailGuard, /add_filter\([\s\S]*?'pre_wp_mail'/);
+  assert.match(stagingMailGuard, /return false;/);
+  assert.match(stagingMailGuard, /ouchi_visit_staging_send_test_mail/);
+  assert.match(stagingMailGuard, /has_action\( 'phpmailer_init', 'my_smtp_mailer' \)/);
+  assert.ok(stagingMailGuard.includes('email-smtp') && stagingMailGuard.includes('amazonaws'));
+  assert.match(stagingMailGuard, /getToAddresses\(\)[\s\S]*?getCcAddresses\(\)[\s\S]*?getBccAddresses\(\)/);
+  assert.match(stagingMailGuard, /PHP_INT_MAX/);
+  assert.doesNotMatch(stagingMailGuard, /127\.0\.0\.1|Port\s*=\s*1025|->isSMTP\(\)|isMail\s*\(/);
+  assert.match(backend, /ouchi_visit_staging_send_test_mail\(\s*\$recipient,\s*\$subject,\s*\$body\s*\)/);
+  assert.doesNotMatch(backend, /OUCHI-VISIT-STAGING|wp_mail\(\s*\$recipient/);
 });
 
 test('regional form captures the backend readiness flag for frontend submission', () => {
