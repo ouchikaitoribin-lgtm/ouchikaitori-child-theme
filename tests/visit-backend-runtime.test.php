@@ -36,6 +36,9 @@ function wp_mail( $to, $subject, $message, $headers = '', $attachments = array()
 	$GLOBALS['visit_test_mail_calls'][] = $args;
 	return $GLOBALS['visit_test_mail_result'];
 }
+function ouchi_visit_staging_send_test_mail( $recipient, $subject, $body ) {
+	return wp_mail( array( $recipient ), $subject, $body, array( 'Content-Type: text/plain; charset=UTF-8' ), array() );
+}
 
 require dirname( __DIR__ ) . '/visit-lp-draft/plugin/visit-application-backend.php';
 
