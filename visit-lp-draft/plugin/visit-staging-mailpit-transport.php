@@ -2,7 +2,7 @@
 /**
  * Plugin Name: おうち買取便 ステージング用メール送信ガード
  * Description: staging環境では出張買取の固定テスト宛先のみSESへ通し、それ以外のメールは拒否します。
- * Version: 1.1.0
+ * Version: 1.2.0
  * Requires PHP: 7.4
  */
 
@@ -17,6 +17,10 @@ if ( ! function_exists( 'wp_get_environment_type' ) || 'staging' !== wp_get_envi
 /** Send one staging test message only to the configured fixed recipient. */
 function ouchi_visit_staging_send_test_mail( $recipient, $subject, $body ) {
 	if ( 'staging' !== wp_get_environment_type() || ! function_exists( 'wp_mail' ) || ! function_exists( 'has_action' ) ) {
+		return false;
+	}
+	$mail_enabled = defined( 'VISIT_APPLICATION_EMAIL_ENABLED' ) ? VISIT_APPLICATION_EMAIL_ENABLED : getenv( 'VISIT_APPLICATION_EMAIL_ENABLED' );
+	if ( '1' !== (string) $mail_enabled ) {
 		return false;
 	}
 	$setting   = defined( 'VISIT_CONFIRMATION_TEST_RECIPIENT' ) ? VISIT_CONFIRMATION_TEST_RECIPIENT : getenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
@@ -110,12 +114,15 @@ add_action(
 		}
 
 		$ses_host = is_string( $mailer->Host ) && 1 === preg_match( '/^email-smtp\.[a-z0-9-]+\.amazonaws\.com$/i', $mailer->Host );
+		$ses_port = (int) $mailer->Port;
+		$ses_tls  = strtolower( (string) $mailer->SMTPSecure );
+		$ses_transport = ( 465 === $ses_port && in_array( $ses_tls, array( 'ssl', 'smtps' ), true ) )
+			|| ( 587 === $ses_port && 'tls' === $ses_tls );
 		$ses_ready = isset( $mailer->Mailer, $mailer->Port, $mailer->SMTPAuth, $mailer->SMTPSecure, $mailer->Username, $mailer->Password )
 			&& 'smtp' === strtolower( (string) $mailer->Mailer )
 			&& $ses_host
-			&& 465 === (int) $mailer->Port
+			&& $ses_transport
 			&& true === $mailer->SMTPAuth
-			&& in_array( strtolower( (string) $mailer->SMTPSecure ), array( 'ssl', 'smtps' ), true )
 			&& '' !== (string) $mailer->Username
 			&& '' !== (string) $mailer->Password;
 		if ( ! $ses_ready ) {

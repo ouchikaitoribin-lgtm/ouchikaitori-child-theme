@@ -7,6 +7,7 @@ $GLOBALS['visit_staging_filters']     = array();
 $GLOBALS['visit_staging_sent']        = array();
 $GLOBALS['visit_staging_inject_cc']   = false;
 putenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT=ses-test@example.com' );
+putenv( 'VISIT_APPLICATION_EMAIL_ENABLED=1' );
 
 function wp_get_environment_type() {
 	return $GLOBALS['visit_staging_environment'];
@@ -54,9 +55,9 @@ function apply_filters( $hook, $value, ...$args ) {
 function my_smtp_mailer( $mailer ) {
 	$mailer->Mailer     = 'smtp';
 	$mailer->Host       = 'email-smtp.us-east-1.amazonaws.com';
-	$mailer->Port       = 465;
+	$mailer->Port       = 587;
 	$mailer->SMTPAuth   = true;
-	$mailer->SMTPSecure = 'ssl';
+	$mailer->SMTPSecure = 'tls';
 	$mailer->Username   = 'test-user';
 	$mailer->Password   = 'test-password';
 }
@@ -125,6 +126,9 @@ $GLOBALS['visit_staging_inject_cc'] = true;
 $assert( false === ouchi_visit_staging_send_test_mail( 'ses-test@example.com', 'confirmation', 'body' ), 'a Cc added by another filter must be rejected before send' );
 $GLOBALS['visit_staging_inject_cc'] = false;
 $assert( 1 === count( $GLOBALS['visit_staging_sent'] ), 'recipient rejection must prevent the second send' );
+putenv( 'VISIT_APPLICATION_EMAIL_ENABLED=0' );
+$assert( false === ouchi_visit_staging_send_test_mail( 'ses-test@example.com', 'confirmation', 'body' ), 'the helper must stay disabled when staging mail is disabled' );
+putenv( 'VISIT_APPLICATION_EMAIL_ENABLED' );
 
 $source = file_get_contents( dirname( __DIR__ ) . '/visit-lp-draft/plugin/visit-staging-mailpit-transport.php' );
 $assert( false === strpos( $source, '127.0.0.1' ), 'the staging mail guard must not use Mailpit' );
