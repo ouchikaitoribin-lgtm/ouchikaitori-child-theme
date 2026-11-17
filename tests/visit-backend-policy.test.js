@@ -128,7 +128,7 @@ test('staging application test prefills safe sample data and enables submit only
 });
 
 test('visit booking script cache version is bumped for the staging form fix', () => {
-  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.1', true );"));
+  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.2', true );"));
 });
 
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {
