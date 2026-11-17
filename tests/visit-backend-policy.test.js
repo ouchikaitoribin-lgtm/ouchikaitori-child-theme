@@ -118,6 +118,10 @@ test('staging application test prefills safe sample data and enables submit only
   assert.ok(bookingScript.includes("new Option('サンプル銀行（テスト用）', '9999')"));
 });
 
+test('visit booking script cache version is bumped for the staging form fix', () => {
+  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.1', true );"));
+});
+
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {
   assert.match(backend, /32\s*===\s*strlen\(\s*\$key\s*\)/);
   assert.match(backend, /\$iv = random_bytes\(\s*12\s*\)/);
