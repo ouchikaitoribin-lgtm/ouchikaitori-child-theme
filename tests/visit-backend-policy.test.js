@@ -98,6 +98,11 @@ test('regional form captures the backend readiness flag for frontend submission'
   assert.match(page, /'formPreviewMode'\s*=>\s*\(bool\)\s*\$visit_form_preview_mode/);
 });
 
+test('regional form passes its slug to live availability requests', () => {
+  assert.match(page, /static function \(\) use \([^)]*\$visit_region_slug/);
+  assert.match(page, /'regionSlug'\s*=>\s*\$visit_region_slug/);
+  assert.match(bookingScript, /endpoint\.searchParams\.set\('region_slug', String\(bookingConfig\.regionSlug \|\| ''\)\)/);
+});
 test('frontend accepts boolean, numeric, and string staging submission flags', () => {
   assert.match(bookingScript, /submissionFlag === true \|\| submissionFlag === 1 \|\| submissionFlag === '1'/);
   assert.match(bookingScript, /&& isApplicationSubmissionEnabled/);
