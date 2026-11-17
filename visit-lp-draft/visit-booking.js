@@ -797,6 +797,7 @@
         throw new Error('申込画面の安全確認情報を更新できません。再読み込みしてお試しください。');
       }
       form.elements.visit_application_nonce.value = nonceResult.nonce;
+      form.elements.contactless_consent.value = state.handoff === 'contactless' && consentBox.checked ? 'yes' : '';
 
       const response = await fetch(getSameOriginEndpoint(bookingConfig.applicationSubmitEndpoint), {
         method: 'POST',

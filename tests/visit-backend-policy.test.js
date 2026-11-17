@@ -9,6 +9,7 @@ const migration = readFileSync(join(root, 'visit-lp-draft/migrations/003-visit-a
 const mailpitTransport = readFileSync(join(root, 'visit-lp-draft/plugin/visit-staging-mailpit-transport.php'), 'utf8');
 const functions = readFileSync(join(root, 'functions.php'), 'utf8');
 const bookingScript = readFileSync(join(root, 'visit-lp-draft/visit-booking.js'), 'utf8');
+const bookingWidget = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/booking-widget.html'), 'utf8');
 const page = readFileSync(join(root, 'page-visit-kyoto-city.php'), 'utf8');
 
 test('expired drafts are not automatically deleted', () => {
@@ -119,6 +120,13 @@ test('application payload separates the selected area and derives city from regi
   assert.ok(bookingScript.includes("setValue('city', "));
 });
 
+test('contactless consent is included in the application form payload', () => {
+  assert.match(bookingWidget, /<input type="hidden" name="contactless_consent" value="">/);
+  assert.match(bookingWidget, /name="pickup_place_details" data-pickup-place-details maxlength="240"/);
+  assert.match(bookingScript, /form\.elements\.contactless_consent\.value = state\.handoff === 'contactless' && consentBox\.checked \? 'yes' : '';/);
+  assert.match(backend, /'yes' !== \$data\['contactless_consent'\] \|\| '' === \$data\['pickup_place_details'\]/);
+});
+
 test('application submission refreshes the WordPress nonce without using cached HTML values', () => {
   assert.ok(backend.includes("self::API_NAMESPACE . '/nonce'"));
   assert.ok(backend.includes("array( 'nonce' => wp_create_nonce( 'visit_application_submit' ) )"));
@@ -137,7 +145,7 @@ test('staging application test prefills safe sample data and enables submit only
 });
 
 test('visit booking script cache version is bumped for the staging form fix', () => {
-  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.4', true );"));
+  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.5', true );"));
 });
 
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {
