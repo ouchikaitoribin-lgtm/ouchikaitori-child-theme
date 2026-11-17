@@ -76,6 +76,7 @@ final class Ouchi_Visit_Application_Backend {
 		add_filter( 'visit_application_submit_endpoint', array( $this, 'submit_endpoint' ) );
 		add_filter( 'visit_application_status_endpoint', array( $this, 'status_endpoint' ) );
 		add_filter( 'visit_application_availability_endpoint', array( $this, 'availability_endpoint' ) );
+		add_filter( 'visit_application_nonce_endpoint', array( $this, 'nonce_endpoint' ) );
 		add_filter( 'visit_pending_application_for_public_token', array( $this, 'pending_application' ), 10, 2 );
 		add_action( 'admin_init', array( $this, 'register_capacity_setting' ) );
 		add_action( 'admin_menu', array( $this, 'register_capacity_page' ) );
@@ -91,6 +92,10 @@ final class Ouchi_Visit_Application_Backend {
 
 	public function availability_endpoint( $endpoint ) {
 		return $this->database_ready() ? rest_url( self::API_NAMESPACE . '/availability' ) : '';
+	}
+
+	public function nonce_endpoint( $endpoint ) {
+		return $this->database_ready() ? rest_url( self::API_NAMESPACE . '/nonce' ) : '';
 	}
 
 	private function enabled() {
@@ -216,6 +221,11 @@ final class Ouchi_Visit_Application_Backend {
 		if ( ! $this->database_ready() ) {
 			return;
 		}
+		register_rest_route( self::API_NAMESPACE, '/nonce', array(
+			'methods'             => 'GET',
+			'callback'            => array( $this, 'nonce' ),
+			'permission_callback' => '__return_true',
+		) );
 		register_rest_route( self::API_NAMESPACE, '/availability', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'availability' ),
@@ -285,6 +295,16 @@ final class Ouchi_Visit_Application_Backend {
 				throw new DomainException( '選択した時間帯は満枠になりました。空きのある時間帯を選び直してください。' );
 			}
 		}
+	}
+
+	public function nonce() {
+		$response = new WP_REST_Response(
+			array( 'nonce' => wp_create_nonce( 'visit_application_submit' ) ),
+			200
+		);
+		$response->header( 'Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0' );
+		$response->header( 'Pragma', 'no-cache' );
+		return $response;
 	}
 
 	public function availability( WP_REST_Request $request ) {

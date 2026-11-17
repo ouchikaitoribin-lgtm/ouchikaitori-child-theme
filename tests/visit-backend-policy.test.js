@@ -110,6 +110,15 @@ test('frontend accepts boolean, numeric, and string staging submission flags', (
   assert.doesNotMatch(bookingScript, /bookingConfig\.applicationSubmissionEnabled === true/);
 });
 
+test('application submission refreshes the WordPress nonce without using cached HTML values', () => {
+  assert.ok(backend.includes("self::API_NAMESPACE . '/nonce'"));
+  assert.ok(backend.includes("array( 'nonce' => wp_create_nonce( 'visit_application_submit' ) )"));
+  assert.ok(backend.includes("Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0"));
+  assert.ok(page.includes("'applicationNonceEndpoint' => apply_filters( 'visit_application_nonce_endpoint', '' )"));
+  assert.ok(bookingScript.includes("cache: 'no-store'"));
+  assert.ok(bookingScript.includes('form.elements.visit_application_nonce.value = nonceResult.nonce'));
+});
+
 test('staging application test prefills safe sample data and enables submit only on final step', () => {
   assert.ok(bookingScript.includes('const isStagingTestDefaults = isStagingFormPreview || applicationFlowReady'));
   assert.ok(bookingScript.includes('if (!isStagingTestDefaults) return;'));

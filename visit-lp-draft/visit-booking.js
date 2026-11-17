@@ -15,6 +15,7 @@
     multiSlotBonusPercent: 1,
     applicationSubmitEndpoint: '',
     applicationStatusEndpoint: '',
+    applicationNonceEndpoint: '',
     availabilityEndpoint: '',
     regionSlug: '',
     applicationConfirmationPageUrl: defaultConfirmationPageUrl,
@@ -30,7 +31,7 @@
   const isApplicationSubmissionEnabled = submissionFlag === true || submissionFlag === 1 || submissionFlag === '1';
   const applicationFlowReady = !isInteractivePreview
     && isApplicationSubmissionEnabled
-    && Boolean(bookingConfig.applicationSubmitEndpoint && bookingConfig.applicationStatusEndpoint);
+    && Boolean(bookingConfig.applicationSubmitEndpoint && bookingConfig.applicationStatusEndpoint && bookingConfig.applicationNonceEndpoint);
   // API準備完了はPHPバックエンド側でstagingだけに許可されている。
   const isStagingTestDefaults = isStagingFormPreview || applicationFlowReady;
   const bonusInfo = widget.querySelector('[data-bonus-info]');
@@ -784,6 +785,18 @@
     const submitButton = form.querySelector('[data-application-submit]');
     if (submitButton) submitButton.disabled = true;
     try {
+      const nonceResponse = await fetch(getSameOriginEndpoint(bookingConfig.applicationNonceEndpoint), {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+        cache: 'no-store'
+      });
+      const nonceResult = await readJsonResponse(nonceResponse);
+      if (typeof nonceResult.nonce !== 'string' || !nonceResult.nonce || !form.elements.visit_application_nonce) {
+        throw new Error('申込画面の安全確認情報を更新できません。再読み込みしてお試しください。');
+      }
+      form.elements.visit_application_nonce.value = nonceResult.nonce;
+
       const response = await fetch(getSameOriginEndpoint(bookingConfig.applicationSubmitEndpoint), {
         method: 'POST',
         credentials: 'same-origin',

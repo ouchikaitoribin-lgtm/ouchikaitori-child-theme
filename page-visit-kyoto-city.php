@@ -63,6 +63,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 			'multiSlotBonusPercent' => isset( $visit_bonus_settings['percent'] ) ? (float) $visit_bonus_settings['percent'] : 1,
 			'applicationSubmitEndpoint' => apply_filters( 'visit_application_submit_endpoint', '' ),
 			'applicationStatusEndpoint' => apply_filters( 'visit_application_status_endpoint', '' ),
+			'applicationNonceEndpoint' => apply_filters( 'visit_application_nonce_endpoint', '' ),
 			'availabilityEndpoint' => apply_filters( 'visit_application_availability_endpoint', '' ),
 			'regionSlug' => $visit_region_slug,
 			'applicationConfirmationPageUrl' => home_url( $visit_confirmation_path ),
