@@ -73,6 +73,7 @@ final class Ouchi_Visit_Application_Backend {
 
 	private function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_filter( 'rest_pre_serve_request', array( $this, 'serve_confirmation_page_response' ), 10, 4 );
 		add_filter( 'visit_application_submit_endpoint', array( $this, 'submit_endpoint' ) );
 		add_filter( 'visit_application_status_endpoint', array( $this, 'status_endpoint' ) );
 		add_filter( 'visit_application_availability_endpoint', array( $this, 'availability_endpoint' ) );
@@ -80,6 +81,35 @@ final class Ouchi_Visit_Application_Backend {
 		add_filter( 'visit_pending_application_for_public_token', array( $this, 'pending_application' ), 10, 2 );
 		add_action( 'admin_init', array( $this, 'register_capacity_setting' ) );
 		add_action( 'admin_menu', array( $this, 'register_capacity_page' ) );
+	}
+
+	/**
+	 * Serve the confirmation page as HTML instead of JSON-encoding its string data.
+	 * WordPress REST normally JSON-serializes every response body, including strings.
+	 */
+	public function serve_confirmation_page_response( $served, $result, $request, $server ) {
+		if ( $served || ! ( $request instanceof WP_REST_Request ) || ! ( $result instanceof WP_REST_Response ) ) {
+			return $served;
+		}
+		if ( '/visit/v1/confirm' !== $request->get_route() || 'GET' !== strtoupper( $request->get_method() ) ) {
+			return $served;
+		}
+
+		$headers      = $result->get_headers();
+		$content_type = '';
+		foreach ( $headers as $name => $value ) {
+			if ( 'content-type' === strtolower( (string) $name ) && is_string( $value ) ) {
+				$content_type = $value;
+				break;
+			}
+		}
+		$html = $result->get_data();
+		if ( false === stripos( $content_type, 'text/html' ) || ! is_string( $html ) ) {
+			return $served;
+		}
+
+		echo $html;
+		return true;
 	}
 
 	public function submit_endpoint( $endpoint ) {

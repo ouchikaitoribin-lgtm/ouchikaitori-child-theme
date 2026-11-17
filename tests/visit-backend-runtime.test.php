@@ -5,9 +5,27 @@ $GLOBALS['visit_test_environment'] = 'staging';
 $GLOBALS['visit_test_mail_filters'] = array();
 $GLOBALS['visit_test_mail_calls'] = array();
 $GLOBALS['visit_test_mail_result'] = true;
+$GLOBALS['visit_test_registered_filters'] = array();
+
+class WP_REST_Request {
+	private $method;
+	private $route;
+	public function __construct( $method, $route ) { $this->method = $method; $this->route = $route; }
+	public function get_method() { return $this->method; }
+	public function get_route() { return $this->route; }
+}
+
+class WP_REST_Response {
+	private $data;
+	private $headers;
+	public function __construct( $data, $headers = array() ) { $this->data = $data; $this->headers = $headers; }
+	public function get_data() { return $this->data; }
+	public function get_headers() { return $this->headers; }
+}
 
 function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) {}
 function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) {
+	$GLOBALS['visit_test_registered_filters'][ $hook ][] = $callback;
 	if ( 'wp_mail' === $hook ) {
 		$GLOBALS['visit_test_mail_filters'][ $priority ][] = $callback;
 	}
@@ -48,6 +66,31 @@ $assert = static function ( $condition, $message ) {
 	}
 };
 $instance = ( new ReflectionClass( 'Ouchi_Visit_Application_Backend' ) )->newInstanceWithoutConstructor();
+$booted_instance = Ouchi_Visit_Application_Backend::boot();
+$serve_confirmation_page = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'serve_confirmation_page_response' );
+$serve_confirmation_page->setAccessible( true );
+$confirmation_filter_registered = false;
+foreach ( $GLOBALS['visit_test_registered_filters']['rest_pre_serve_request'] ?? array() as $registered_callback ) {
+	if ( is_array( $registered_callback ) && isset( $registered_callback[1] ) && 'serve_confirmation_page_response' === $registered_callback[1] ) {
+		$confirmation_filter_registered = true;
+		break;
+	}
+}
+$assert( $confirmation_filter_registered, 'confirmation HTML response filter should be registered' );
+$confirmation_html = '<!doctype html><html lang="ja"><main>confirmation page</main></html>';
+$confirmation_response = new WP_REST_Response( $confirmation_html, array( 'Content-Type' => 'text/html; charset=UTF-8' ) );
+$confirmation_request = new WP_REST_Request( 'GET', '/visit/v1/confirm' );
+ob_start();
+$confirmation_served = $serve_confirmation_page->invoke( $booted_instance, false, $confirmation_response, $confirmation_request, null );
+$confirmation_output = ob_get_clean();
+$assert( true === $confirmation_served, 'confirmation HTML should be served directly' );
+$assert( $confirmation_html === $confirmation_output, 'confirmation HTML should not be JSON-encoded' );
+$json_request = new WP_REST_Request( 'POST', '/visit/v1/confirm' );
+$json_response = new WP_REST_Response( array( 'status' => 'complete' ), array( 'Content-Type' => 'application/json; charset=UTF-8' ) );
+ob_start();
+$json_served = $serve_confirmation_page->invoke( $booted_instance, false, $json_response, $json_request, null );
+$json_output = ob_get_clean();
+$assert( false === $json_served && '' === $json_output, 'confirmation POST JSON response should remain under the normal REST serializer' );
 $send = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'send_staging_test_mail' );
 $send->setAccessible( true );
 $test_recipient = 'visit-qa' . '@' . 'example.invalid';
