@@ -604,7 +604,7 @@
         summaryBonus.textContent = !bonusEnabled
           ? '無効'
           : (state.times.length > 1 ? `+${Number((Math.max(0, state.times.length - 1) * bonusPercent).toFixed(2))}%（画面確認用）` : '対象外（1枠選択）');
-        widget.querySelector('[data-form-area]').value = `${regionName}${state.area}`;
+        widget.querySelector('[data-form-area]').value = state.area;
         widget.querySelector('[data-form-handoff]').value = state.handoff;
         widget.querySelector('[data-form-date]').value = `${state.day.getFullYear()}-${String(state.day.getMonth() + 1).padStart(2, '0')}-${String(state.day.getDate()).padStart(2, '0')}`;
         widget.querySelector('[data-form-times]').value = state.times.join('|');

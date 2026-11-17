@@ -110,6 +110,11 @@ test('frontend accepts boolean, numeric, and string staging submission flags', (
   assert.doesNotMatch(bookingScript, /bookingConfig\.applicationSubmissionEnabled === true/);
 });
 
+test('application payload separates the selected area from the full city name', () => {
+  assert.ok(bookingScript.includes("widget.querySelector('[data-form-area]').value = state.area;"));
+  assert.ok(bookingScript.includes('cityField.value = '));
+});
+
 test('application submission refreshes the WordPress nonce without using cached HTML values', () => {
   assert.ok(backend.includes("self::API_NAMESPACE . '/nonce'"));
   assert.ok(backend.includes("array( 'nonce' => wp_create_nonce( 'visit_application_submit' ) )"));
