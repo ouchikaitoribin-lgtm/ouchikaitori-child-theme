@@ -23,6 +23,9 @@
 .visit-pending-id-guide h3 { margin: 0; color: #30483a; font-size: 15px; }
 .visit-pending-id-guide p { margin: 7px 0 0; color: #59685e; font-size: 13px; line-height: 1.8; }
 .visit-pending-id-note { margin: 12px 0 0; color: #778078; font-size: 11px; line-height: 1.7; }
+.visit-pending-id-upload-link { display: inline-flex; align-items: center; justify-content: center; margin-left: 4px; padding: 8px 14px; border-radius: 999px; background: #f47c20; color: #fff; font-size: 13px; font-weight: 750; text-decoration: none; }
+.visit-pending-id-upload-link:hover { background: #d96612; color: #fff; }
+.visit-pending-id-upload-link:focus-visible { outline: 3px solid #254f3d; outline-offset: 3px; }
 .visit-pending-data-note { margin-bottom: 13px; padding: 10px 13px; border: 1px solid #e9d8bd; border-radius: 8px; background: #fffaf0; color: #725b3c; font-size: 11px; line-height: 1.6; }
 .visit-pending-data-note[hidden] { display: none !important; }
 .visit-pending-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #e2e8e0; }

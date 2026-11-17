@@ -47,6 +47,14 @@ if ( '' !== $visit_public_token && strlen( $visit_public_token ) <= 512 ) {
 		);
 	}
 }
+$visit_identity_upload_url = '';
+if (
+	is_array( $visit_pending_application )
+	&& 'contactless' === ( $visit_pending_application['handoff_method'] ?? '' )
+	&& preg_match( '/^[a-f0-9]{64}$/i', $visit_public_token )
+) {
+	$visit_identity_upload_url = add_query_arg( 'token', $visit_public_token, home_url( '/identity-upload2' ) );
+}
 
 add_action( 'wp_enqueue_scripts', static function () {
 	if ( ! is_page_template( 'page-visit-kyoto-city-application-pending.php' ) ) {
@@ -54,7 +62,7 @@ add_action( 'wp_enqueue_scripts', static function () {
 	}
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
 	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.0.0' );
-	wp_enqueue_style( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.css', array( 'ouchi-visit-lp' ), '1.1.0' );
+	wp_enqueue_style( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.css', array( 'ouchi-visit-lp' ), '1.1.1' );
 	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.2', true );
 	wp_script_add_data( 'ouchi-visit-pending', 'strategy', 'defer' );
 } );
@@ -143,7 +151,7 @@ get_header();
           <article class="visit-pending-id-guide" data-handoff-guide="face"><span class="visit-pending-id-guide__icon" aria-hidden="true">対面</span><div><h3>対面で受け渡す場合</h3><p>回収当日、スタッフへ本人確認書類の<strong>原本を提示</strong>してください。</p></div></article>
           <article class="visit-pending-id-guide" data-handoff-guide="contactless"><span class="visit-pending-id-guide__icon" aria-hidden="true">非対面</span><div><h3>非対面で回収する場合</h3><p>インターネット上の所定の本人確認手続きから、本人確認書類を<strong>アップロード</strong>してください。</p></div></article>
         </div>
-        <p class="visit-pending-id-note" data-identity-upload-note>本人確認書類のアップロード画面はシステム接続後に案内します。このプレビューにはアップロード機能はありません。</p>
+        <p class="visit-pending-id-note" data-identity-upload-note><?php if ( '' !== $visit_identity_upload_url ) : ?>本人確認書類は、<a class="visit-pending-id-upload-link" href="<?php echo esc_url( $visit_identity_upload_url ); ?>">アップロードページ</a>から提出してください。<?php else : ?>本人確認書類のアップロードは、非対面でお申し込みの場合に、申込完了後の専用ページから行えます。<?php endif; ?></p>
       </div>
     </section>
 
