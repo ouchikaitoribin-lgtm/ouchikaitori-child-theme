@@ -413,7 +413,7 @@
   }
 
   function loadMonthAvailability(year, month) {
-    if (!applicationFlowReady || !bookingConfig.availabilityEndpoint) return;
+    if (!applicationFlowReady || !bookingConfig.availabilityEndpoint || !state.area) return;
     const key = monthKey(year, month);
     if (Object.prototype.hasOwnProperty.call(availabilityCache, key)) return;
     availabilityCache[key] = null;

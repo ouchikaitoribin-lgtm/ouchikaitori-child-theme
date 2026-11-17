@@ -102,6 +102,7 @@ test('regional form passes its slug to live availability requests', () => {
   assert.match(page, /static function \(\) use \([^)]*\$visit_region_slug/);
   assert.match(page, /'regionSlug'\s*=>\s*\$visit_region_slug/);
   assert.match(bookingScript, /endpoint\.searchParams\.set\('region_slug', String\(bookingConfig\.regionSlug \|\| ''\)\)/);
+  assert.match(bookingScript, /if \(!applicationFlowReady \|\| !bookingConfig\.availabilityEndpoint \|\| !state\.area\) return/);
 });
 test('frontend accepts boolean, numeric, and string staging submission flags', () => {
   assert.match(bookingScript, /submissionFlag === true \|\| submissionFlag === 1 \|\| submissionFlag === '1'/);
