@@ -102,7 +102,7 @@ get_header();
           <a class="visit-button visit-button--primary" href="#kyoto-booking">エリア選択へ進む <span aria-hidden="true">↓</span></a>
           <p class="visit-hero__fineprint">対応地域・日時の選択からお客様情報の入力まで、このページ内で行う構成です。メール確認機能は準備中です。</p>
         </div>
-        <div class="visit-hero-art"><img src="<?php echo esc_url( $asset_uri . 'assets/hero-pickup-v2.webp' ); ?>" width="1536" height="1024" alt="閉じた玄関ドアの外に本やゲーム機を置いておく置き配のイメージ" fetchpriority="high" decoding="async"></div>
+        <div class="visit-hero-art"><img src="<?php echo esc_url( $asset_uri . 'assets/sunny-entryway-pickup.webp' ); ?>" width="1536" height="1024" alt="日差しの差し込む玄関前に、本やゲーム機、カメラが入った笑顔の段ボール箱を置いたイラスト" fetchpriority="high" decoding="async"></div>
       </div>
       <div class="visit-container visit-trust-row"><span><i aria-hidden="true">01</i> ドアを開けずに受け渡し</span><span><i aria-hidden="true">02</i> 回収時の在宅不要</span><span><i aria-hidden="true">03</i> <?php echo esc_html( $visit_city_name . $visit_coverage_label ); ?></span></div>
     </section>

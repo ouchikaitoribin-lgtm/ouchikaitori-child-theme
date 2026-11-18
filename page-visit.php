@@ -66,7 +66,7 @@ get_header();
           <p class="visit-hero__fineprint">非対面回収には事前の本人確認と回収場所の条件があります。<br>予約受付ページは準備中です。</p>
         </div>
         <div class="visit-hero-art">
-          <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/visit-lp-draft/assets/hero-pickup-v2.webp' ); ?>" width="1536" height="1024" alt="閉じた玄関ドアの外に本やゲーム機を置いておく置き配のイメージ" fetchpriority="high" decoding="async">
+          <img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/visit-lp-draft/assets/sunny-entryway-pickup.webp' ); ?>" width="1536" height="1024" alt="日差しの差し込む玄関前に、本やゲーム機、カメラが入った笑顔の段ボール箱を置いたイラスト" fetchpriority="high" decoding="async">
         </div>
       </div>
       <div class="visit-container visit-trust-row">
