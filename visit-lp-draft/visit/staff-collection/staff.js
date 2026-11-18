@@ -117,10 +117,41 @@
     updateCount();
   });
 
-  document.querySelectorAll('.js-image-compress-form').forEach((form) => {
+  const uploadForms = Array.from(document.querySelectorAll('.js-image-compress-form'));
+
+  const getOtherFormWithPendingFiles = (currentForm) => uploadForms.find((otherForm) => {
+    if (otherForm === currentForm) return false;
+    return Array.from(otherForm.querySelectorAll('input[type="file"]'))
+      .some((input) => input.files && input.files.length > 0);
+  });
+
+  const blockWhenOtherFormHasPendingFiles = (currentForm) => {
+    const pendingForm = getOtherFormWithPendingFiles(currentForm);
+    if (!pendingForm) return false;
+
+    const pendingButton = pendingForm.querySelector('button[type="submit"], input[type="submit"]');
+    const buttonLabel = pendingButton && (pendingButton.textContent || pendingButton.value || '').trim();
+    const instruction = buttonLabel
+      ? '先に「' + buttonLabel + '」を押して画像を保存してください。保存後、こちらを送信してください。'
+      : '先にもう一方のフォームの保存ボタンを押して画像を保存してください。保存後、こちらを送信してください。';
+    window.alert('もう一方のフォームに未送信の画像があります。この送信では、もう一方の画像は保存されません。\n' + instruction);
+    if (pendingButton && !pendingButton.disabled) pendingButton.focus();
+    return true;
+  };
+
+  uploadForms.forEach((form) => {
+    form.addEventListener('click', (event) => {
+      const target = event.target;
+      const submitButton = target && typeof target.closest === 'function'
+        ? target.closest('button[type="submit"], input[type="submit"]')
+        : null;
+      if (!submitButton || !form.contains(submitButton)) return;
+      if (blockWhenOtherFormHasPendingFiles(form)) event.preventDefault();
+    });
     form.addEventListener('submit', async (event) => {
       if (form.dataset.compressed === '1') return;
       event.preventDefault();
+      if (blockWhenOtherFormHasPendingFiles(form)) return;
       const photoGroup = form.querySelector('[data-collection-photos]');
       const photoInputs = photoGroup ? Array.from(photoGroup.querySelectorAll('input[type="file"]')) : [];
       const selectedPhotoInputs = photoInputs.filter((input) => input.files && input.files.length > 0);
