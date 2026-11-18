@@ -14,7 +14,7 @@ $visit_staff_view = class_exists( 'Ouchi_Visit_Staff_Collection_Page' )
 	: array( 'state' => 'error', 'errors' => array( 'スタッフページを初期化できません。' ), 'success' => array(), 'application' => null, 'counts' => array(), 'token' => '' );
 
 $visit_staff_asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/visit/staff-collection/';
-wp_enqueue_style( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.css', array(), '1.0.2' );
+wp_enqueue_style( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.css', array(), '1.0.3' );
 wp_enqueue_script( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.js', array(), '1.0.5', true );
 wp_script_add_data( 'ouchi-visit-staff-collection', 'strategy', 'defer' );
 

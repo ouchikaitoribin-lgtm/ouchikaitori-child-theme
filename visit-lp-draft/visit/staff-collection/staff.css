@@ -65,3 +65,8 @@
 .visit-staff-clear-button { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; margin: 0 10px 10px 0; padding: 9px 15px; border: 1px solid #aebcaf; border-radius: 9px; background: #fff; color: #3b5142; font-size: 14px; font-weight: 750; cursor: pointer; }
 .visit-staff-clear-button:hover { background: #f0f5ef; }
 .visit-staff-clear-button[hidden] { display: none; }
+.visit-staff-upload-conflict { margin: 12px 0; padding: 16px; border: 2px solid #d97718; border-radius: 12px; background: #fff7e9; color: #56360f; }
+.visit-staff-upload-conflict p { margin: 0 0 12px; font-size: 14px; font-weight: 750; line-height: 1.7; }
+.visit-staff-upload-conflict__actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.visit-staff-upload-conflict--cleared { border-width: 1px; background: #f1fbf3; color: #2c6740; }
+@media (max-width: 640px) { .visit-staff-upload-conflict__actions { flex-direction: column; } .visit-staff-upload-conflict__actions > button { width: 100%; margin-right: 0; } }

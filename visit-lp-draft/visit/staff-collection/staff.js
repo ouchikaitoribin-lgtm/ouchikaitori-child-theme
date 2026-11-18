@@ -125,22 +125,67 @@
     updateClearButton(form);
   };
 
-  const resolveFileSelectionConflict = (currentForm) => {
+  let activeConflictPanel = null;
+
+  const closeConflictPanel = () => {
+    if (activeConflictPanel) activeConflictPanel.remove();
+    activeConflictPanel = null;
+  };
+
+  const showConflictActionPanel = (currentForm) => {
     const otherForm = getOtherFormWithPendingFiles(currentForm);
     if (!otherForm) return false;
 
-    const currentLabel = currentForm.dataset.uploadLabel || '今回選択したフォーム';
+    closeConflictPanel();
+    document.querySelectorAll('.visit-staff-upload-conflict--cleared').forEach((note) => note.remove());
+    const currentLabel = currentForm.dataset.uploadLabel || '今回のフォーム';
     const otherLabel = otherForm.dataset.uploadLabel || 'もう一方のフォーム';
-    const keepCurrent = window.confirm(
-      '「' + currentLabel + '」と「' + otherLabel + '」の両方に未送信の画像があります。\n' +
-      '同時には送信されません。\n\n' +
-      'OK：今回選択した「' + currentLabel + '」を残し、「' + otherLabel + '」の選択画像をクリアします。\n' +
-      'キャンセル：「' + otherLabel + '」を残し、今回選択した「' + currentLabel + '」の選択画像をクリアします。'
-    );
-    clearFormFiles(keepCurrent ? otherForm : currentForm);
+    const panel = document.createElement('section');
+    panel.className = 'visit-staff-upload-conflict';
+    panel.setAttribute('role', 'alert');
+    panel.setAttribute('aria-live', 'assertive');
+
+    const message = document.createElement('p');
+    message.textContent = '「' + currentLabel + '」を続ける前に、「' + otherLabel + '」の画像を先にアップロードするか、選択画像を削除してください。どちらかを行うまでカメラは起動しません。先にアップロードする場合、ページ再読み込み後にこちらの未送信画像を選び直してください。';
+
+    const uploadButton = document.createElement('button');
+    uploadButton.type = 'button';
+    uploadButton.className = 'visit-staff-button';
+    uploadButton.textContent = 'もう一方の画像をアップロード';
+    uploadButton.addEventListener('click', () => {
+      const submitButton = otherForm.querySelector('button[type="submit"]');
+      if (!otherForm.reportValidity()) return;
+      closeConflictPanel();
+      if (typeof otherForm.requestSubmit === 'function') {
+        otherForm.requestSubmit(submitButton || undefined);
+      } else if (submitButton) {
+        submitButton.click();
+      }
+    });
+
+    const clearButton = document.createElement('button');
+    clearButton.type = 'button';
+    clearButton.className = 'visit-staff-clear-button';
+    clearButton.textContent = 'もう一方の画像を削除';
+    clearButton.addEventListener('click', () => {
+      clearFormFiles(otherForm);
+      closeConflictPanel();
+      const note = document.createElement('p');
+      note.className = 'visit-staff-upload-conflict visit-staff-upload-conflict--cleared';
+      note.setAttribute('role', 'status');
+      note.textContent = 'もう一方の画像を削除しました。続けるには、ファイル欄をもう一度押してください。';
+      currentForm.insertAdjacentElement('beforebegin', note);
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'visit-staff-upload-conflict__actions';
+    actions.append(uploadButton, clearButton);
+    panel.append(message, actions);
+    currentForm.insertAdjacentElement('beforebegin', panel);
+    activeConflictPanel = panel;
+    uploadButton.focus();
     return true;
   };
-
   const refreshUploadFormState = (form) => {
     form.querySelectorAll('input[type="file"]').forEach(renderFilePreviews);
     updateCollectionPhotoCount(form);
@@ -155,20 +200,9 @@
         : null;
       if (!fileInput || !form.contains(fileInput)) return;
 
-      const otherForm = getOtherFormWithPendingFiles(form);
-      if (!otherForm) return;
-
-      const currentLabel = form.dataset.uploadLabel || '今回のフォーム';
-      const otherLabel = otherForm.dataset.uploadLabel || 'もう一方のフォーム';
-      const keepCurrent = window.confirm(
-        'カメラを起動する前に確認してください。「' + otherLabel + '」に未送信画像があります。\n' +
-        'OK：今回の「' + currentLabel + '」へ切り替え、もう一方の選択画像をクリアしてカメラを開きます。\n' +
-        'キャンセル：カメラを開かず、もう一方の画像を残します。'
-      );
-      if (keepCurrent) {
-        clearFormFiles(otherForm);
-      } else {
+      if (getOtherFormWithPendingFiles(form)) {
         event.preventDefault();
+        showConflictActionPanel(form);
       }
     });
     form.addEventListener('change', (event) => {
@@ -177,19 +211,22 @@
       renderFilePreviews(input);
       updateCollectionPhotoCount(form);
       updateClearButton(form);
-      resolveFileSelectionConflict(form);
+      showConflictActionPanel(form);
     });
 
     const clearButton = form.querySelector('[data-clear-upload-files]');
     if (clearButton) {
-      clearButton.addEventListener('click', () => clearFormFiles(form));
+      clearButton.addEventListener('click', () => {
+        clearFormFiles(form);
+        closeConflictPanel();
+      });
     }
     refreshUploadFormState(form);
   });
 
   const formsWithPendingFiles = uploadForms.filter((form) => getSelectedFileInputs(form).length > 0);
   if (formsWithPendingFiles.length > 1) {
-    resolveFileSelectionConflict(formsWithPendingFiles[formsWithPendingFiles.length - 1]);
+    showConflictActionPanel(formsWithPendingFiles[formsWithPendingFiles.length - 1]);
   }
 
   window.addEventListener('pagehide', () => {
@@ -199,7 +236,7 @@
 
   const blockWhenOtherFormHasPendingFiles = (currentForm) => {
     if (!getOtherFormWithPendingFiles(currentForm)) return false;
-    window.alert('両方のフォームに未送信画像があります。各フォームの「選択画像をクリア」ボタンで、送信するフォームの画像だけを残してください。');
+    showConflictActionPanel(currentForm);
     return true;
   };
 
