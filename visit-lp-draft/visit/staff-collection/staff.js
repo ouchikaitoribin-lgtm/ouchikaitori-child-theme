@@ -148,6 +148,29 @@
   };
 
   uploadForms.forEach((form) => {
+    form.addEventListener('click', (event) => {
+      const target = event.target;
+      const fileInput = target && target.closest
+        ? target.closest('input[type="file"]')
+        : null;
+      if (!fileInput || !form.contains(fileInput)) return;
+
+      const otherForm = getOtherFormWithPendingFiles(form);
+      if (!otherForm) return;
+
+      const currentLabel = form.dataset.uploadLabel || '今回のフォーム';
+      const otherLabel = otherForm.dataset.uploadLabel || 'もう一方のフォーム';
+      const keepCurrent = window.confirm(
+        'カメラを起動する前に確認してください。「' + otherLabel + '」に未送信画像があります。\n' +
+        'OK：今回の「' + currentLabel + '」へ切り替え、もう一方の選択画像をクリアしてカメラを開きます。\n' +
+        'キャンセル：カメラを開かず、もう一方の画像を残します。'
+      );
+      if (keepCurrent) {
+        clearFormFiles(otherForm);
+      } else {
+        event.preventDefault();
+      }
+    });
     form.addEventListener('change', (event) => {
       const input = event.target;
       if (!input || !input.matches || !input.matches('input[type="file"]')) return;

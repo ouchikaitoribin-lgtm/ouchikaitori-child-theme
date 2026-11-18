@@ -194,10 +194,12 @@ test('staff uploads are compressed, private, incremental, and migration is addit
   assert.match(staffBackend, /\$pdo->beginTransaction\(\)/);
   assert.match(staffBackend, /\$pdo->rollBack\(\)/);
   assert.match(staffScript, /canvas\.toBlob\(resolve, 'image\/jpeg', 0\.82\)/);
-  assert.match(staffPage, /staff\.js[^\r\n]*'1\.0\.4'/);
+  assert.match(staffPage, /staff\.js[^\r\n]*'1\.0\.5'/);
   assert.match(staffScript, /selectedPhotoInputs\.length > maxPhotos/);
   assert.match(staffScript, /getOtherFormWithPendingFiles/);
   assert.match(staffScript, /resolveFileSelectionConflict/);
+  assert.match(staffScript, /form\.addEventListener\('click'/);
+  assert.match(staffScript, /カメラを起動する前に確認してください/);
   assert.match(staffScript, /window\.confirm/);
   assert.match(staffScript, /clearFormFiles\(keepCurrent \? otherForm : currentForm\)/);
   assert.match(staffPage, /disabled\( \$visit_staff_identity_front_count > 0 \)/);
