@@ -91,6 +91,10 @@
 .visit-section-heading, .visit-area-heading { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 34px; }
 .visit-section-heading .visit-eyebrow, .visit-area-heading .visit-eyebrow { margin-bottom: 10px; }
 .visit-area-heading > p { margin: 0 0 4px; color: var(--visit-muted); font-size: 12px; }
+.visit-area .visit-area-heading { align-items: center; gap: 24px; margin-bottom: 28px; padding: 22px 26px; border: 1px solid #dce7dc; border-left: 5px solid var(--visit-green); border-radius: 14px; background: linear-gradient(120deg, #f1f6ef 0%, #fbfaf5 100%); }
+.visit-area .visit-area-heading .visit-eyebrow { display: inline-flex; align-items: center; min-height: 25px; margin-bottom: 8px; padding: 2px 10px; border: 1px solid #dce7dc; border-radius: 999px; background: #fff; color: var(--visit-green); font-size: 10px; letter-spacing: .12em; }
+.visit-area .visit-area-heading h2 { font-size: clamp(1.45rem, 2.6vw, 2rem); }
+.visit-area .visit-area-heading > p { max-width: 330px; margin: 0; padding-left: 20px; border-left: 1px solid #d7e1d5; font-size: 13px; line-height: 1.8; }
 .visit-items-illustration { overflow: hidden; width: min(35%, 310px); aspect-ratio: 3 / 2; margin: 0; border: 1px solid #e9e6da; border-radius: 5px 22px 5px 22px; background: #f3eddd; }
 .visit-items-illustration img { width: 100%; height: 100%; object-fit: cover; }
 .visit-item-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; margin: 0; padding: 0; list-style: none; }
@@ -206,6 +210,8 @@
   .visit-contactless__copy h2 { font-size: 1.85rem; }
   .visit-section-heading, .visit-area-heading { align-items: flex-start; flex-direction: column; gap: 10px; margin-bottom: 25px; }
   .visit-area-heading > p { font-size: 11px; }
+  .visit-area .visit-area-heading { gap: 12px; margin-bottom: 20px; padding: 17px 18px; }
+  .visit-area .visit-area-heading > p { max-width: none; padding: 10px 0 0; border-top: 1px solid #d7e1d5; border-left: 0; font-size: 12px; }
   .visit-items-illustration { width: min(100%, 300px); }
   .visit-item-grid { grid-template-columns: repeat(2, 1fr); gap: 9px; }
   .visit-item-card { min-height: 153px; padding: 16px 13px; }
