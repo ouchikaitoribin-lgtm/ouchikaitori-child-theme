@@ -94,60 +94,93 @@
     activePreviewUrls.set(input, urls);
   };
 
-  const fileInputs = document.querySelectorAll('.js-image-compress-form input[type="file"]');
-  fileInputs.forEach((input) => {
-    input.addEventListener('change', () => renderFilePreviews(input));
-    renderFilePreviews(input);
+  const uploadForms = Array.from(document.querySelectorAll('.js-image-compress-form'));
+
+  const getSelectedFileInputs = (form) => Array.from(form.querySelectorAll('input[type="file"]'))
+    .filter((input) => input.files && input.files.length > 0);
+
+  const getOtherFormWithPendingFiles = (currentForm) => uploadForms.find((otherForm) => {
+    return otherForm !== currentForm && getSelectedFileInputs(otherForm).length > 0;
   });
+
+  const updateCollectionPhotoCount = (form) => {
+    const group = form.querySelector('[data-collection-photos]');
+    if (!group) return;
+    const count = getSelectedFileInputs(group).length;
+    const output = group.querySelector('[data-collection-photo-count]');
+    if (output) output.textContent = '撮影済み：' + count + ' / 5枚';
+  };
+
+  const updateClearButton = (form) => {
+    const button = form.querySelector('[data-clear-upload-files]');
+    if (button) button.hidden = getSelectedFileInputs(form).length === 0;
+  };
+
+  const clearFormFiles = (form) => {
+    form.querySelectorAll('input[type="file"]').forEach((input) => {
+      input.value = '';
+      renderFilePreviews(input);
+    });
+    updateCollectionPhotoCount(form);
+    updateClearButton(form);
+  };
+
+  const resolveFileSelectionConflict = (currentForm) => {
+    const otherForm = getOtherFormWithPendingFiles(currentForm);
+    if (!otherForm) return false;
+
+    const currentLabel = currentForm.dataset.uploadLabel || '今回選択したフォーム';
+    const otherLabel = otherForm.dataset.uploadLabel || 'もう一方のフォーム';
+    const keepCurrent = window.confirm(
+      '「' + currentLabel + '」と「' + otherLabel + '」の両方に未送信の画像があります。\n' +
+      '同時には送信されません。\n\n' +
+      'OK：今回選択した「' + currentLabel + '」を残し、「' + otherLabel + '」の選択画像をクリアします。\n' +
+      'キャンセル：「' + otherLabel + '」を残し、今回選択した「' + currentLabel + '」の選択画像をクリアします。'
+    );
+    clearFormFiles(keepCurrent ? otherForm : currentForm);
+    return true;
+  };
+
+  const refreshUploadFormState = (form) => {
+    form.querySelectorAll('input[type="file"]').forEach(renderFilePreviews);
+    updateCollectionPhotoCount(form);
+    updateClearButton(form);
+  };
+
+  uploadForms.forEach((form) => {
+    form.addEventListener('change', (event) => {
+      const input = event.target;
+      if (!input || !input.matches || !input.matches('input[type="file"]')) return;
+      renderFilePreviews(input);
+      updateCollectionPhotoCount(form);
+      updateClearButton(form);
+      resolveFileSelectionConflict(form);
+    });
+
+    const clearButton = form.querySelector('[data-clear-upload-files]');
+    if (clearButton) {
+      clearButton.addEventListener('click', () => clearFormFiles(form));
+    }
+    refreshUploadFormState(form);
+  });
+
+  const formsWithPendingFiles = uploadForms.filter((form) => getSelectedFileInputs(form).length > 0);
+  if (formsWithPendingFiles.length > 1) {
+    resolveFileSelectionConflict(formsWithPendingFiles[formsWithPendingFiles.length - 1]);
+  }
+
   window.addEventListener('pagehide', () => {
     activePreviewUrls.forEach((urls) => urls.forEach((url) => URL.revokeObjectURL(url)));
     activePreviewUrls.clear();
   });
 
-  document.querySelectorAll('[data-collection-photos]').forEach((group) => {
-    const updateCount = () => {
-      const count = Array.from(group.querySelectorAll('input[type="file"]'))
-        .filter((input) => input.files && input.files.length > 0).length;
-      const output = group.querySelector('[data-collection-photo-count]');
-      if (output) output.textContent = '撮影済み：' + count + ' / 5枚';
-    };
-    group.querySelectorAll('input[type="file"]').forEach((input) => {
-      input.addEventListener('change', updateCount);
-    });
-    updateCount();
-  });
-
-  const uploadForms = Array.from(document.querySelectorAll('.js-image-compress-form'));
-
-  const getOtherFormWithPendingFiles = (currentForm) => uploadForms.find((otherForm) => {
-    if (otherForm === currentForm) return false;
-    return Array.from(otherForm.querySelectorAll('input[type="file"]'))
-      .some((input) => input.files && input.files.length > 0);
-  });
-
   const blockWhenOtherFormHasPendingFiles = (currentForm) => {
-    const pendingForm = getOtherFormWithPendingFiles(currentForm);
-    if (!pendingForm) return false;
-
-    const pendingButton = pendingForm.querySelector('button[type="submit"], input[type="submit"]');
-    const buttonLabel = pendingButton && (pendingButton.textContent || pendingButton.value || '').trim();
-    const instruction = buttonLabel
-      ? '先に「' + buttonLabel + '」を押して画像を保存してください。保存後にページが再読み込みされた場合は、こちらの画像を選び直してから送信してください。'
-      : '先にもう一方のフォームの保存ボタンを押して画像を保存してください。保存後、こちらを送信してください。';
-    window.alert('もう一方のフォームに未送信の画像があります。この送信では、もう一方の画像は保存されません。\n' + instruction);
-    if (pendingButton && !pendingButton.disabled) pendingButton.focus();
+    if (!getOtherFormWithPendingFiles(currentForm)) return false;
+    window.alert('両方のフォームに未送信画像があります。各フォームの「選択画像をクリア」ボタンで、送信するフォームの画像だけを残してください。');
     return true;
   };
 
   uploadForms.forEach((form) => {
-    form.addEventListener('click', (event) => {
-      const target = event.target;
-      const submitButton = target && typeof target.closest === 'function'
-        ? target.closest('button[type="submit"], input[type="submit"]')
-        : null;
-      if (!submitButton || !form.contains(submitButton)) return;
-      if (blockWhenOtherFormHasPendingFiles(form)) event.preventDefault();
-    });
     form.addEventListener('submit', async (event) => {
       if (form.dataset.compressed === '1') return;
       event.preventDefault();

@@ -171,8 +171,13 @@ if ( ! class_exists( 'Ouchi_Visit_Staff_Collection_Page' ) ) {
 				$view['errors'][] = '身分証明書の表面または裏面の画像を選択してください。';
 				return;
 			}
+			$saved_counts = self::load_upload_counts( $pdo, $token );
 			$batch_id = bin2hex( random_bytes( 16 ) );
 			foreach ( $files as $entry ) {
+				if ( ! empty( $saved_counts[ $entry[0] ] ) ) {
+					$view['errors'][] = ( 'identity_front' === $entry[0] ? '本人確認書類の表面' : '本人確認書類の裏面' ) . 'はすでに保存済みのため、重複保存しませんでした。';
+					continue;
+				}
 				try {
 					self::store_image( $pdo, $token, $batch_id, $entry[0], $document_type, $entry[1] );
 					$view['success'][] = ( 'identity_front' === $entry[0] ? '本人確認書類の表面' : '本人確認書類の裏面' ) . 'を保存しました。';

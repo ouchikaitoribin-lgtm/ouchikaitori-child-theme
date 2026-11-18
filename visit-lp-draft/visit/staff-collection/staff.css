@@ -58,3 +58,10 @@
 @media (max-width: 640px) {
   .visit-staff-photo-inputs { grid-template-columns: 1fr; gap: 0; }
 }
+
+.visit-staff-upload-state { margin: 10px 0; padding: 11px 14px; border-radius: 9px; font-size: 14px; font-weight: 750; line-height: 1.6; }
+.visit-staff-upload-state.is-complete { background: #e8f5e9; color: #24623a; }
+.visit-staff-upload-state.is-pending { background: #fff3df; color: #875317; }
+.visit-staff-clear-button { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; margin: 0 10px 10px 0; padding: 9px 15px; border: 1px solid #aebcaf; border-radius: 9px; background: #fff; color: #3b5142; font-size: 14px; font-weight: 750; cursor: pointer; }
+.visit-staff-clear-button:hover { background: #f0f5ef; }
+.visit-staff-clear-button[hidden] { display: none; }

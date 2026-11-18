@@ -14,8 +14,8 @@ $visit_staff_view = class_exists( 'Ouchi_Visit_Staff_Collection_Page' )
 	: array( 'state' => 'error', 'errors' => array( 'スタッフページを初期化できません。' ), 'success' => array(), 'application' => null, 'counts' => array(), 'token' => '' );
 
 $visit_staff_asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/visit/staff-collection/';
-wp_enqueue_style( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.css', array(), '1.0.1' );
-wp_enqueue_script( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.js', array(), '1.0.3', true );
+wp_enqueue_style( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.css', array(), '1.0.2' );
+wp_enqueue_script( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.js', array(), '1.0.4', true );
 wp_script_add_data( 'ouchi-visit-staff-collection', 'strategy', 'defer' );
 
 $visit_staff_application = $visit_staff_view['application'] ?? null;
@@ -57,6 +57,8 @@ get_header();
         $visit_staff_contactless = 'contactless' === $visit_staff_application['visit_type'];
         $visit_staff_identity_done = '完了' === $visit_staff_application['identity_verification_status'];
         $visit_staff_counts = $visit_staff_view['counts'] ?? array();
+        $visit_staff_identity_front_count = (int) ( $visit_staff_counts['identity_front'] ?? 0 );
+        $visit_staff_identity_back_count = (int) ( $visit_staff_counts['identity_back'] ?? 0 );
         ?>
         <section class="visit-staff-card" aria-labelledby="visit-staff-application-title">
           <div class="visit-staff-section-heading">
@@ -98,16 +100,24 @@ get_header();
           </div>
           <p class="visit-staff-status <?php echo $visit_staff_identity_done ? 'is-complete' : 'is-pending'; ?>">本人確認状況：<strong><?php echo $visit_staff_identity_done ? '完了' : '未完了'; ?></strong></p>
           <p class="visit-staff-note">対面・非対面のどちらでも、当日対面に切り替わる可能性があるため、必要に応じて書類の表面・裏面を撮影して保存できます。ここで画像を保存しても本人確認状況は自動変更されません。</p>
-          <p class="visit-staff-saved-count">保存済み：表面 <?php echo esc_html( $visit_staff_counts['identity_front'] ?? 0 ); ?>枚 ／ 裏面 <?php echo esc_html( $visit_staff_counts['identity_back'] ?? 0 ); ?>枚</p>
-          <form class="visit-staff-form js-image-compress-form" method="post" action="<?php echo esc_url( $visit_staff_form_action ); ?>" enctype="multipart/form-data">
+          <p class="visit-staff-upload-state <?php echo ( $visit_staff_identity_front_count > 0 || $visit_staff_identity_back_count > 0 ) ? 'is-complete' : 'is-pending'; ?>" role="status">
+            <?php if ( $visit_staff_identity_front_count > 0 || $visit_staff_identity_back_count > 0 ) : ?>
+              本人確認書類はこのフォームから送信済みです。保存済みの面は重複送信を防ぐため選択できません。
+            <?php else : ?>
+              本人確認書類はまだ送信されていません。
+            <?php endif; ?>
+          </p>
+          <p class="visit-staff-saved-count">送信済み：表面 <?php echo esc_html( $visit_staff_identity_front_count ); ?>枚 ／ 裏面 <?php echo esc_html( $visit_staff_identity_back_count ); ?>枚</p>
+          <form class="visit-staff-form js-image-compress-form" data-upload-label="本人確認書類" method="post" action="<?php echo esc_url( $visit_staff_form_action ); ?>" enctype="multipart/form-data">
             <input type="hidden" name="token" value="<?php echo esc_attr( $visit_staff_token ); ?>">
             <input type="hidden" name="visit_staff_action" value="identity">
             <?php wp_nonce_field( 'visit_staff_upload_identity_' . $visit_staff_token ); ?>
             <label class="visit-staff-field"><span>書類の種類</span><select name="document_type" required><option value="">選択してください</option><option value="drivers_license">運転免許証</option><option value="mynumber">マイナンバーカード</option><option value="insurance_card">健康保険証・資格確認書</option><option value="passport">パスポート</option><option value="juki_card">写真付き住民基本台帳カード</option><option value="pension_book">年金手帳</option></select></label>
             <div class="visit-staff-upload-grid">
-              <label class="visit-staff-field"><span>本人確認書類・表面</span><input type="file" name="identity_front" accept="image/jpeg,image/png,image/webp" capture="environment"></label>
-              <label class="visit-staff-field"><span>本人確認書類・裏面</span><input type="file" name="identity_back" accept="image/jpeg,image/png,image/webp" capture="environment"></label>
+              <label class="visit-staff-field"><span>本人確認書類・表面<?php echo $visit_staff_identity_front_count > 0 ? '（送信済み）' : ''; ?></span><input type="file" name="identity_front" accept="image/jpeg,image/png,image/webp" capture="environment" <?php disabled( $visit_staff_identity_front_count > 0 ); ?>></label>
+              <label class="visit-staff-field"><span>本人確認書類・裏面<?php echo $visit_staff_identity_back_count > 0 ? '（送信済み）' : ''; ?></span><input type="file" name="identity_back" accept="image/jpeg,image/png,image/webp" capture="environment" <?php disabled( $visit_staff_identity_back_count > 0 ); ?>></label>
             </div>
+            <button class="visit-staff-clear-button" type="button" data-clear-upload-files hidden>本人確認書類の選択画像をクリア</button>
             <button class="visit-staff-button" type="submit">本人確認書類を保存</button>
           </form>
         </section>
@@ -120,7 +130,7 @@ get_header();
             </div>
             <p class="visit-staff-note">荷物を移動する前に、荷物全体・各荷物の回収コード・設置場所が分かる写真を撮影してください。回収コードの照合と回収条件の確認後、撮影した写真を保存します。</p>
             <p class="visit-staff-saved-count">保存済み：<?php echo esc_html( $visit_staff_counts['collection_pre_photo'] ?? 0 ); ?>枚</p>
-            <form class="visit-staff-form js-image-compress-form" method="post" action="<?php echo esc_url( $visit_staff_form_action ); ?>" enctype="multipart/form-data">
+            <form class="visit-staff-form js-image-compress-form" data-upload-label="回収前写真" method="post" action="<?php echo esc_url( $visit_staff_form_action ); ?>" enctype="multipart/form-data">
               <input type="hidden" name="token" value="<?php echo esc_attr( $visit_staff_token ); ?>">
               <input type="hidden" name="visit_staff_action" value="collection">
               <?php wp_nonce_field( 'visit_staff_upload_collection_' . $visit_staff_token ); ?>
@@ -134,6 +144,7 @@ get_header();
                 <label class="visit-staff-field"><span>回収前写真 5</span><input type="file" name="collection_photos[]" accept="image/jpeg,image/png,image/webp" capture="environment" data-preview-label="回収前写真 5"></label>
               </div>
               <p class="visit-staff-note">各欄を押して1枚ずつ撮影してください。撮影した画像は送信前にすべてプレビュー表示されます。エラー時は保存済み枚数を確認し、失敗した写真だけ再撮影して送信できます。</p>
+              <button class="visit-staff-clear-button" type="button" data-clear-upload-files hidden>回収前写真の選択画像をクリア</button>
               <button class="visit-staff-button" type="submit">回収前写真を保存</button>
             </form>
           </section>
