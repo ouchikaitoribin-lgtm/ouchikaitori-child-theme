@@ -44,3 +44,17 @@
   .visit-staff-upload-grid { grid-template-columns: 1fr; gap: 0; }
   .visit-staff-button { width: 100%; box-sizing: border-box; }
 }
+
+.visit-staff-file-preview { margin: 10px 0 2px; }
+.visit-staff-file-preview__summary { margin: 0 0 8px; color: #5d6d62; font-size: 13px; font-weight: 650; line-height: 1.5; }
+.visit-staff-file-preview__summary.is-error { color: #a33d35; }
+.visit-staff-file-preview__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 9px; }
+.visit-staff-file-preview__item { min-width: 0; margin: 0; overflow: hidden; border: 1px solid #dfe7de; border-radius: 9px; background: #f8faf7; }
+.visit-staff-file-preview__item img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; background: #eef2ed; }
+.visit-staff-file-preview__item figcaption { padding: 5px 7px; color: #526357; font-size: 11px; text-align: center; }
+
+.visit-staff-photo-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; }
+.visit-staff-photo-inputs__count { grid-column: 1 / -1; margin: 0 0 10px; color: #304b3b; font-size: 14px; font-weight: 750; }
+@media (max-width: 640px) {
+  .visit-staff-photo-inputs { grid-template-columns: 1fr; gap: 0; }
+}

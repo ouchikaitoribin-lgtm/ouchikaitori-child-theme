@@ -14,8 +14,8 @@ $visit_staff_view = class_exists( 'Ouchi_Visit_Staff_Collection_Page' )
 	: array( 'state' => 'error', 'errors' => array( 'スタッフページを初期化できません。' ), 'success' => array(), 'application' => null, 'counts' => array(), 'token' => '' );
 
 $visit_staff_asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/visit/staff-collection/';
-wp_enqueue_style( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.css', array(), '1.0.0' );
-wp_enqueue_script( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.js', array(), '1.0.0', true );
+wp_enqueue_style( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.css', array(), '1.0.1' );
+wp_enqueue_script( 'ouchi-visit-staff-collection', $visit_staff_asset_uri . 'staff.js', array(), '1.0.1', true );
 wp_script_add_data( 'ouchi-visit-staff-collection', 'strategy', 'defer' );
 
 $visit_staff_application = $visit_staff_view['application'] ?? null;
@@ -125,8 +125,15 @@ get_header();
               <input type="hidden" name="visit_staff_action" value="collection">
               <?php wp_nonce_field( 'visit_staff_upload_collection_' . $visit_staff_token ); ?>
               <label class="visit-staff-field"><span>今回回収する荷物の個数</span><input type="number" name="collection_item_count" min="0" step="1" inputmode="numeric" required></label>
-              <label class="visit-staff-field"><span>回収前写真（1回につき最大5枚）</span><input type="file" name="collection_photos[]" accept="image/jpeg,image/png,image/webp" capture="environment" multiple required data-max-files="5"></label>
-              <p class="visit-staff-note">エラーで一部の写真が保存できない場合は、保存済み枚数を確認し、残りの写真を別の送信で追加してください。</p>
+              <div class="visit-staff-photo-inputs" data-collection-photos data-max-files="5">
+                <p class="visit-staff-photo-inputs__count" data-collection-photo-count aria-live="polite">撮影済み：0 / 5枚</p>
+                <label class="visit-staff-field"><span>回収前写真 1</span><input type="file" name="collection_photos[]" accept="image/jpeg,image/png,image/webp" capture="environment" data-preview-label="回収前写真 1"></label>
+                <label class="visit-staff-field"><span>回収前写真 2</span><input type="file" name="collection_photos[]" accept="image/jpeg,image/png,image/webp" capture="environment" data-preview-label="回収前写真 2"></label>
+                <label class="visit-staff-field"><span>回収前写真 3</span><input type="file" name="collection_photos[]" accept="image/jpeg,image/png,image/webp" capture="environment" data-preview-label="回収前写真 3"></label>
+                <label class="visit-staff-field"><span>回収前写真 4</span><input type="file" name="collection_photos[]" accept="image/jpeg,image/png,image/webp" capture="environment" data-preview-label="回収前写真 4"></label>
+                <label class="visit-staff-field"><span>回収前写真 5</span><input type="file" name="collection_photos[]" accept="image/jpeg,image/png,image/webp" capture="environment" data-preview-label="回収前写真 5"></label>
+              </div>
+              <p class="visit-staff-note">各欄を押して1枚ずつ撮影してください。撮影した画像は送信前にすべてプレビュー表示されます。エラー時は保存済み枚数を確認し、失敗した写真だけ再撮影して送信できます。</p>
               <button class="visit-staff-button" type="submit">回収前写真を保存</button>
             </form>
           </section>

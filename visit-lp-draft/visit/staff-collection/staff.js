@@ -39,13 +39,100 @@
     return new File([blob], 'visit-photo.jpg', { type: 'image/jpeg', lastModified: Date.now() });
   };
 
+  const activePreviewUrls = new Map();
+  const activePreviewElements = new WeakMap();
+
+  const renderFilePreviews = (input) => {
+    const oldUrls = activePreviewUrls.get(input) || [];
+    oldUrls.forEach((url) => URL.revokeObjectURL(url));
+    const urls = [];
+    const label = input.closest('.visit-staff-field');
+    if (!label) return;
+
+    let preview = activePreviewElements.get(input);
+    if (!preview) {
+      preview = document.createElement('div');
+      preview.className = 'visit-staff-file-preview';
+      label.insertAdjacentElement('afterend', preview);
+      activePreviewElements.set(input, preview);
+    }
+    preview.replaceChildren();
+
+    const files = Array.from(input.files || []);
+    const maxFiles = Number(input.dataset.maxFiles || 0);
+    const summary = document.createElement('p');
+    summary.className = 'visit-staff-file-preview__summary';
+    summary.setAttribute('aria-live', 'polite');
+    summary.textContent = files.length
+      ? '選択中：' + files.length + '枚' + (maxFiles && files.length > maxFiles ? '（最大' + maxFiles + '枚）' : '')
+      : '写真を選択すると、送信前にプレビューを確認できます。';
+    if (maxFiles && files.length > maxFiles) summary.classList.add('is-error');
+    preview.appendChild(summary);
+
+    if (files.length) {
+      const grid = document.createElement('div');
+      grid.className = 'visit-staff-file-preview__grid';
+      grid.setAttribute('role', 'group');
+      grid.setAttribute('aria-label', '選択した画像のプレビュー');
+      files.forEach((file, index) => {
+        if (!file.type || !file.type.startsWith('image/')) return;
+        const url = URL.createObjectURL(file);
+        urls.push(url);
+        const figure = document.createElement('figure');
+        figure.className = 'visit-staff-file-preview__item';
+        const image = document.createElement('img');
+        image.src = url;
+        image.alt = '選択した画像' + (index + 1) + 'のプレビュー';
+        image.loading = 'lazy';
+        const caption = document.createElement('figcaption');
+        caption.textContent = input.dataset.previewLabel || ('写真 ' + (index + 1));
+        figure.append(image, caption);
+        grid.appendChild(figure);
+      });
+      preview.appendChild(grid);
+    }
+    activePreviewUrls.set(input, urls);
+  };
+
+  const fileInputs = document.querySelectorAll('.js-image-compress-form input[type="file"]');
+  fileInputs.forEach((input) => {
+    input.addEventListener('change', () => renderFilePreviews(input));
+    renderFilePreviews(input);
+  });
+  window.addEventListener('pagehide', () => {
+    activePreviewUrls.forEach((urls) => urls.forEach((url) => URL.revokeObjectURL(url)));
+    activePreviewUrls.clear();
+  });
+
+  document.querySelectorAll('[data-collection-photos]').forEach((group) => {
+    const updateCount = () => {
+      const count = Array.from(group.querySelectorAll('input[type="file"]'))
+        .filter((input) => input.files && input.files.length > 0).length;
+      const output = group.querySelector('[data-collection-photo-count]');
+      if (output) output.textContent = '撮影済み：' + count + ' / 5枚';
+    };
+    group.querySelectorAll('input[type="file"]').forEach((input) => {
+      input.addEventListener('change', updateCount);
+    });
+    updateCount();
+  });
+
   document.querySelectorAll('.js-image-compress-form').forEach((form) => {
     form.addEventListener('submit', async (event) => {
       if (form.dataset.compressed === '1') return;
       event.preventDefault();
-      const photoInput = form.querySelector('[data-max-files]');
-      if (photoInput && photoInput.files.length > Number(photoInput.dataset.maxFiles || 5)) {
-        window.alert('一度に選択できる写真は5枚までです。');
+      const photoGroup = form.querySelector('[data-collection-photos]');
+      const photoInputs = photoGroup ? Array.from(photoGroup.querySelectorAll('input[type="file"]')) : [];
+      const selectedPhotoInputs = photoInputs.filter((input) => input.files && input.files.length > 0);
+      const maxPhotos = Number(photoGroup && photoGroup.dataset.maxFiles || 5);
+      if (photoGroup && selectedPhotoInputs.length < 1) {
+        window.alert('回収前写真を1枚以上撮影してください。');
+        if (photoInputs[0]) photoInputs[0].focus();
+        return;
+      }
+      if (selectedPhotoInputs.length > maxPhotos) {
+        window.alert('一度に送信できる回収前写真は5枚までです。');
+        if (photoInputs[0]) photoInputs[0].focus();
         return;
       }
       const submit = form.querySelector('button[type="submit"]');
@@ -60,6 +147,7 @@
             const transfer = new DataTransfer();
             for (const file of input.files) transfer.items.add(await compressFile(file));
             input.files = transfer.files;
+            renderFilePreviews(input);
           } catch (_) {
             // Keep original files; the server still validates and recompresses them.
           }
