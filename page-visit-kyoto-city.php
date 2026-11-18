@@ -40,7 +40,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 		return;
 	}
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
-	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.3.2' );
+	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.3.3' );
 	wp_enqueue_style( 'ouchi-visit-kyoto-city', $asset_uri . 'visit/kyoto-city/kyoto-city.css', array( 'ouchi-visit-lp' ), '1.3.2' );
 	wp_enqueue_style( 'ouchi-visit-booking-ui', $asset_uri . 'visit/kyoto-city/booking.css', array( 'ouchi-visit-kyoto-city' ), '1.6.5' );
 	wp_enqueue_style( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
