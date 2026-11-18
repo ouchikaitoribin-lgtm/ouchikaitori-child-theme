@@ -145,6 +145,19 @@ final class Ouchi_Visit_Application_Backend {
 			&& false !== $key && 32 === strlen( $key );
 	}
 
+	/**
+	 * Completed applications remain readable by their public token while new
+	 * submissions and mail delivery are switched off. Keep this lookup staging-only.
+	 */
+	private function public_application_lookup_ready() {
+		return function_exists( 'wp_get_environment_type' )
+			&& 'staging' === wp_get_environment_type()
+			&& extension_loaded( 'pdo_mysql' )
+			&& function_exists( 'visit_connect_app_db' )
+			&& defined( 'OTP_DB_NAME' )
+			&& 'contact_db' === (string) OTP_DB_NAME;
+	}
+
 	public static function is_enabled() {
 		$instance = self::boot();
 		return $instance->database_ready();
@@ -391,8 +404,12 @@ final class Ouchi_Visit_Application_Backend {
 		return new WP_Error( 'visit_application_error', $message, array( 'status' => $status ) );
 	}
 
-	private function db() {
-		if ( ! $this->enabled() ) {
+	private function db( $allow_public_read = false ) {
+		if ( $allow_public_read ) {
+			if ( ! $this->public_application_lookup_ready() ) {
+				throw new RuntimeException( '出張買取申込の照会を利用できません。' );
+			}
+		} elseif ( ! $this->enabled() ) {
 			throw new RuntimeException( '出張買取APIは無効です。' );
 		}
 		if ( ! defined( 'OTP_DB_HOST' ) || ! defined( 'OTP_DB_NAME' ) || ! defined( 'OTP_DB_USER' ) || ! defined( 'OTP_DB_PASS' ) || ! defined( 'OTP_DB_CHARSET' ) ) {
@@ -1175,11 +1192,11 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	public function pending_application( $application, $public_token ) {
-		if ( ! $this->enabled() || ! preg_match( '/^[a-f0-9]{64}$/', (string) $public_token ) ) {
+		if ( ! $this->public_application_lookup_ready() || ! preg_match( '/^[a-f0-9]{64}$/', (string) $public_token ) ) {
 			return null;
 		}
 		try {
-			$pdo = $this->db();
+			$pdo = $this->db( true );
 			$this->check_schema( $pdo );
 			$stmt = $pdo->prepare( "SELECT request_code, last_name, first_name, email, application_city, application_zip, application_prefecture, application_address1, pickup_date, box_count FROM purchase_requests WHERE public_token = ? AND shipping_choice = 'visit' LIMIT 1" );
 			$stmt->execute( array( $public_token ) );
