@@ -72,8 +72,8 @@ test('the page and API share the same contactless terms helpers', () => {
   const apiFallback = backend.match(/function visit_booking_get_contactless_terms_text\(\)\s*\{\s*return\s+"([\s\S]*?)";/);
   assert.ok(pageFallback && apiFallback, 'both fallback terms should be present');
   assert.equal(pageFallback[1], apiFallback[1]);
-  assert.match(page, /:\s*'contactless-v1-draft'/);
-  assert.match(backend, /return 'contactless-v1-draft'/);
+  assert.match(page, /:\s*'contactless-v2'/);
+  assert.match(backend, /return 'contactless-v2'/);
 });
 
 test('contactless placement text is bounded before database insertion', () => {
