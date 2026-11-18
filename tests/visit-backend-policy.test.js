@@ -194,7 +194,7 @@ test('staff uploads are compressed, private, incremental, and migration is addit
   assert.match(staffBackend, /\$pdo->beginTransaction\(\)/);
   assert.match(staffBackend, /\$pdo->rollBack\(\)/);
   assert.match(staffScript, /canvas\.toBlob\(resolve, 'image\/jpeg', 0\.82\)/);
-  assert.match(staffPage, /staff\.js[^\r\n]*'1\.0\.2'/);
+  assert.match(staffPage, /staff\.js[^\r\n]*'1\.0\.3'/);
   assert.match(staffScript, /selectedPhotoInputs\.length > maxPhotos/);
   assert.match(staffScript, /getOtherFormWithPendingFiles/);
   assert.match(staffScript, /もう一方のフォームに未送信の画像があります/);

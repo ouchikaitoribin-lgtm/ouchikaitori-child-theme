@@ -132,7 +132,7 @@
     const pendingButton = pendingForm.querySelector('button[type="submit"], input[type="submit"]');
     const buttonLabel = pendingButton && (pendingButton.textContent || pendingButton.value || '').trim();
     const instruction = buttonLabel
-      ? '先に「' + buttonLabel + '」を押して画像を保存してください。保存後、こちらを送信してください。'
+      ? '先に「' + buttonLabel + '」を押して画像を保存してください。保存後にページが再読み込みされた場合は、こちらの画像を選び直してから送信してください。'
       : '先にもう一方のフォームの保存ボタンを押して画像を保存してください。保存後、こちらを送信してください。';
     window.alert('もう一方のフォームに未送信の画像があります。この送信では、もう一方の画像は保存されません。\n' + instruction);
     if (pendingButton && !pendingButton.disabled) pendingButton.focus();
