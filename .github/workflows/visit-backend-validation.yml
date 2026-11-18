@@ -5,6 +5,7 @@ on:
     paths:
       - 'visit-lp-draft/**'
       - 'page-visit-kyoto-city.php'
+      - 'page-visit-staff-collection.php'
       - 'tests/visit-backend-policy.test.js'
       - 'tests/visit-backend-runtime.test.php'
       - 'tests/visit-mailpit-transport.test.php'
@@ -15,6 +16,7 @@ on:
     paths:
       - 'visit-lp-draft/**'
       - 'page-visit-kyoto-city.php'
+      - 'page-visit-staff-collection.php'
       - 'tests/visit-backend-policy.test.js'
       - 'tests/visit-backend-runtime.test.php'
       - 'tests/visit-mailpit-transport.test.php'
