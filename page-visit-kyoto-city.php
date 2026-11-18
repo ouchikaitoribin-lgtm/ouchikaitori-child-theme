@@ -98,7 +98,7 @@ get_header();
           <h1 id="kyoto-hero-title"><?php echo esc_html( $visit_city_name ); ?>の出張買取。<br><em>玄関前に置くだけ。</em></h1>
           <p class="visit-hero__lead">スタッフと会わずに、自宅にいなくても。<br><?php echo esc_html( $visit_city_name ); ?>のご自宅まで伺い、指定場所から商品を回収します。</p>
           <div class="visit-hero__chips" aria-label="出張買取の特徴"><span>玄関のドアは開けずに回収</span><span>ご不在でも利用可能</span><span>対面も選べます</span></div>
-          <p class="visit-hero__note"><strong>現在の対応地域：<?php echo esc_html( $visit_city_name . '（' . $visit_coverage_label . '）' ); ?></strong><br>本・漫画・CD・DVD・ゲーム・カメラ・小型家電など</p>
+          <p class="visit-hero__note"><strong>現在の対応地域：<?php echo esc_html( $visit_city_name . '（' . $visit_coverage_label . '）' ); ?></strong><br>本・漫画・CD・DVD・ゲーム・カメラ・スマートフォン・パソコンなど</p>
           <a class="visit-button visit-button--primary" href="#kyoto-booking">エリア選択へ進む <span aria-hidden="true">↓</span></a>
           <p class="visit-hero__fineprint">対応地域・日時の選択からお客様情報の入力まで、このページ内で行う構成です。メール確認機能は準備中です。</p>
         </div>
@@ -154,9 +154,22 @@ get_header();
     </section>
 
     <section class="visit-section visit-items" id="kyoto-items" aria-labelledby="kyoto-items-title">
-      <div class="visit-container"><div class="visit-section-heading"><div><p class="visit-eyebrow">WHAT WE BUY</p><h2 id="kyoto-items-title"><?php echo esc_html( $visit_city_name ); ?>で買取できるもの</h2></div><figure class="visit-items-illustration"><img src="<?php echo esc_url( $asset_uri . 'assets/accepted-items.webp' ); ?>" width="1536" height="1024" alt="本、CD、DVD、ゲーム機、カメラ、小型家電のイラスト" loading="lazy" decoding="async"></figure></div>
-        <ul class="visit-item-grid"><li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">本</span><strong>本・漫画・コミック</strong><small>小説、専門書、漫画など</small></li><li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">♫</span><strong>CD</strong><small>音楽CDなど</small></li><li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">▶</span><strong>DVD・Blu-ray</strong><small>映像ソフトなど</small></li><li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">GAME</span><strong>ゲームソフト</strong><small>各種ゲームソフト</small></li><li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">▣</span><strong>ゲーム機本体</strong><small>携帯型・据え置き型</small></li><li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">◎</span><strong>カメラ</strong><small>デジタルカメラなど</small></li><li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">家</span><strong>小型家電</strong><small>大型家電を除く家電製品</small></li></ul>
-        <p class="visit-exclusion"><span aria-hidden="true">!</span><span><strong>買取対象外</strong>テレビ・冷蔵庫・洗濯機・エアコンなどの大型家電</span></p>
+      <div class="visit-container"><div class="visit-section-heading"><div><p class="visit-eyebrow">WHAT WE BUY</p><h2 id="kyoto-items-title"><?php echo esc_html( $visit_city_name ); ?>で買取できるもの</h2></div><figure class="visit-items-illustration"><img src="<?php echo esc_url( $asset_uri . 'assets/accepted-items-visit-v2.webp' ); ?>" width="1536" height="1024" alt="本、CD、DVD、ゲーム機、カメラ、スマートフォン、パソコン、美容機器、AV機器、電動工具のイラスト" loading="lazy" decoding="async"></figure></div>
+        <ul class="visit-item-grid">
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">本</span><strong>本・漫画・コミック</strong><small>小説、専門書、漫画など</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">♫</span><strong>CD</strong><small>音楽CDなど</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">▶</span><strong>DVD・Blu-ray</strong><small>映像ソフトなど</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">GAME</span><strong>ゲームソフト</strong><small>各種ゲームソフト</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">▣</span><strong>ゲーム機本体</strong><small>携帯型・据え置き型</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">◎</span><strong>カメラ</strong><small>デジタルカメラなど</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">▯</span><strong>スマホ</strong><small>スマートフォン</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">▭</span><strong>タブレット</strong><small>各種タブレット端末</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">PC</span><strong>デスクトップパソコン</strong><small>モニタのみは買取不可</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">PC</span><strong>ノートパソコン</strong><small>各種ノートパソコン</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">美</span><strong>美容機器</strong><small>美顔器・脱毛器・小型マッサージ器・電気シェーバー</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">AV</span><strong>AV機器</strong><small>HDDレコーダー・プロジェクター・ICレコーダー（テレビ不可）</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true">⚒</span><strong>電動工具</strong><small>電動工具各種</small></li>
+        </ul>
       </div>
     </section>
 

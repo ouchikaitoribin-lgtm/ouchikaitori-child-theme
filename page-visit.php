@@ -61,7 +61,7 @@ get_header();
           <div class="visit-hero__chips" aria-label="出張買取の特徴">
             <span>非対面で受け渡し</span><span>ご不在でも回収</span><span>箱詰め不要</span>
           </div>
-          <p class="visit-hero__note">本・CD・DVD・ゲーム・カメラ・小型家電など<br><strong>現在の対応地域：<?php echo esc_html( $visit_area_summary ); ?></strong></p>
+          <p class="visit-hero__note">本・CD・DVD・ゲーム・カメラ・スマートフォン・パソコンなど<br><strong>現在の対応地域：<?php echo esc_html( $visit_area_summary ); ?></strong></p>
           <a class="visit-button visit-button--primary" href="#visit-area">対応エリアを確認する <span aria-hidden="true">↓</span></a>
           <p class="visit-hero__fineprint">非対面回収には事前の本人確認と回収場所の条件があります。<br>予約受付ページは準備中です。</p>
         </div>
@@ -122,7 +122,7 @@ get_header();
 
     <section class="visit-section visit-items" id="visit-items" aria-labelledby="visit-items-title">
       <div class="visit-container">
-        <div class="visit-section-heading"><div><p class="visit-eyebrow">WHAT WE BUY</p><h2 id="visit-items-title">買取できるもの</h2></div><figure class="visit-items-illustration"><img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/visit-lp-draft/assets/accepted-items.webp' ); ?>" width="1536" height="1024" alt="本、CD、DVD、ゲーム機、カメラ、小型家電のイラスト" loading="lazy" decoding="async"></figure></div>
+        <div class="visit-section-heading"><div><p class="visit-eyebrow">WHAT WE BUY</p><h2 id="visit-items-title">買取できるもの</h2></div><figure class="visit-items-illustration"><img src="<?php echo esc_url( get_stylesheet_directory_uri() . '/visit-lp-draft/assets/accepted-items-visit-v2.webp' ); ?>" width="1536" height="1024" alt="本、CD、DVD、ゲーム機、カメラ、スマートフォン、パソコン、美容機器、AV機器、電動工具のイラスト" loading="lazy" decoding="async"></figure></div>
         <ul class="visit-item-grid">
           <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M10 8h25v32H10zM15 13h15M15 18h15M15 23h12M35 12h4v28h-4"/></svg></span><strong>本・漫画・コミック</strong><small>小説、専門書、コミックなど</small></li>
           <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="16"/><circle cx="24" cy="24" r="5"/><circle cx="24" cy="24" r="1"/></svg></span><strong>CD</strong><small>音楽CDなど</small></li>
@@ -130,9 +130,14 @@ get_header();
           <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="13" y="6" width="22" height="36" rx="4"/><path d="M20 11h8M21 36h6"/><circle cx="24" cy="25" r="5"/></svg></span><strong>ゲームソフト</strong><small>各種ゲームソフト</small></li>
           <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="15" width="36" height="18" rx="8"/><path d="M15 24h8m-4-4v8m13-6h.1m4 4h.1"/></svg></span><strong>ゲーム機本体</strong><small>携帯型・据え置き型</small></li>
           <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 18h8l4-5h9l4 5h7v20H8z"/><circle cx="24" cy="28" r="8"/><circle cx="24" cy="28" r="4"/><path d="M35 22h.1"/></svg></span><strong>カメラ</strong><small>デジタルカメラなど</small></li>
-          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="12" y="7" width="24" height="34" rx="3"/><path d="M17 13h14v16H17zM19 35h10"/><circle cx="24" cy="33" r="1"/></svg></span><strong>小型家電</strong><small>大型家電を除く家電製品</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="15" y="4" width="18" height="40" rx="4"/><path d="M20 9h8m-7 29h6"/></svg></span><strong>スマホ</strong><small>スマートフォン</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="9" y="4" width="30" height="40" rx="4"/><circle cx="24" cy="38" r="1"/></svg></span><strong>タブレット</strong><small>各種タブレット端末</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="4" y="7" width="28" height="23" rx="2"/><path d="M18 30v7m-7 3h21m-7-10v7"/><rect x="35" y="13" width="9" height="25" rx="2"/></svg></span><strong>デスクトップパソコン</strong><small>モニタのみは買取不可</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 8h32v25H8zM4 38l4-5h32l4 5z"/></svg></span><strong>ノートパソコン</strong><small>各種ノートパソコン</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="10"/><path d="M24 4v6m0 28v6M4 24h6m28 0h6M10 10l5 5m18 18 5 5m0-28-5 5m-18 18-5 5"/></svg></span><strong>美容機器</strong><small>美顔器・脱毛器・小型マッサージ器・電気シェーバー</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="5" y="12" width="38" height="24" rx="4"/><path d="M11 19h13m-13 6h9m8-4h.1m5 4h.1"/></svg></span><strong>AV機器</strong><small>HDDレコーダー・プロジェクター・ICレコーダー（テレビ不可）</small></li>
+          <li class="visit-item-card"><span class="visit-item-icon" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 19h21l8 6-8 6H8zM29 19l4-6h6l-4 10m-18 8 3 9m6-9-2 9m10-16 6-2"/></svg></span><strong>電動工具</strong><small>電動工具各種</small></li>
         </ul>
-        <p class="visit-exclusion"><span aria-hidden="true">!</span><span><strong>買取対象外</strong> テレビ・冷蔵庫・洗濯機・エアコンなどの大型家電は対象外です。</span></p>
       </div>
     </section>
 
@@ -213,7 +218,6 @@ get_header();
           <details class="visit-faq-item"><summary><span>Q</span>非対面での回収はできますか？<i aria-hidden="true"></i></summary><p>はい。事前にWEB上で所定の本人確認を行い、回収場所などの条件を確認したうえで、玄関前など指定場所から回収します。</p></details>
           <details class="visit-faq-item"><summary><span>Q</span>回収時に家にいる必要はありますか？<i aria-hidden="true"></i></summary><p>非対面回収では、事前に決めた場所へ商品を置いていただければ、ご不在中の回収も可能です。場所はスタッフが安全に確認できる範囲に限ります。</p></details>
           <details class="visit-faq-item"><summary><span>Q</span>スタッフに直接渡すこともできますか？<i aria-hidden="true"></i></summary><p>はい。ご希望に応じて、回収時にスタッフへ直接お渡しいただく方法もお選びいただけます。</p></details>
-          <details class="visit-faq-item"><summary><span>Q</span>大型家電も買い取ってもらえますか？<i aria-hidden="true"></i></summary><p>テレビ・冷蔵庫・洗濯機・エアコンなどの大型家電は買取対象外です。小型家電は対象商品としてご案内しています。</p></details>
           <details class="visit-faq-item"><summary><span>Q</span>費用や最低点数、査定後の返却について教えてください。<i aria-hidden="true"></i></summary><p>費用・最低買取数量・返却条件は、公開前に確定した利用条件を設定してご案内します。現時点では本ページに未確定の条件を記載していません。</p></details>
           <details class="visit-faq-item"><summary><span>Q</span>予約はどこからできますか？<i aria-hidden="true"></i></summary><p>予約ページは現在準備中です。対応地域や予約方法が整い次第、このページからご案内します。</p></details>
         </div>
