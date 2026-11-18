@@ -143,7 +143,7 @@ get_header();
 
     <section class="visit-section visit-contactless" id="kyoto-contactless" aria-labelledby="kyoto-contactless-title">
       <div class="visit-container visit-contactless__grid">
-        <div class="visit-contactless__visual"><img class="visit-contactless__image" src="<?php echo esc_url( $asset_uri . 'assets/contactless-pickup-v2.webp' ); ?>" width="1536" height="1024" alt="閉じた玄関ドアの外に置いた買取品を、後からスタッフが回収する置き配のイメージ" loading="lazy" decoding="async"><div class="visit-round-stamp"><span>会わずに<br>完了</span><b>非対面</b></div></div>
+        <div class="visit-contactless__visual"><img class="visit-contactless__image" src="<?php echo esc_url( $asset_uri . 'assets/contactless-pickup-staff.webp' ); ?>" width="1536" height="1024" alt="おうち買取便のスタッフが玄関先で買取品の箱を受け取るイラスト" loading="lazy" decoding="async"><div class="visit-round-stamp"><span>会わずに<br>完了</span><b>非対面</b></div></div>
         <div class="visit-contactless__copy">
           <p class="visit-eyebrow">YOUR TIME, YOUR WAY</p><h2 id="kyoto-contactless-title">会わなくていい。<br>待たなくていい。</h2>
           <p class="visit-body-lead">非対面回収は、荷物を置き配するような受け渡しです。回収時に玄関のドアを開けることはありません。</p>
