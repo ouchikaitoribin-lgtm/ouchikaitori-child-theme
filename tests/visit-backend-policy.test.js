@@ -11,6 +11,10 @@ const functions = readFileSync(join(root, 'functions.php'), 'utf8');
 const bookingScript = readFileSync(join(root, 'visit-lp-draft/visit-booking.js'), 'utf8');
 const bookingWidget = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/booking-widget.html'), 'utf8');
 const page = readFileSync(join(root, 'page-visit-kyoto-city.php'), 'utf8');
+const staffPage = readFileSync(join(root, 'page-visit-staff-collection.php'), 'utf8');
+const staffBackend = readFileSync(join(root, 'visit-lp-draft/plugin/visit-staff-collection.php'), 'utf8');
+const staffMigration = readFileSync(join(root, 'visit-lp-draft/migrations/004-visit-staff-uploads.sql'), 'utf8');
+const staffScript = readFileSync(join(root, 'visit-lp-draft/visit/staff-collection/staff.js'), 'utf8');
 
 test('expired drafts are not automatically deleted', () => {
   assert.doesNotMatch(backend, /\bDELETE\s+FROM\b/i);
@@ -168,4 +172,31 @@ test('single-slot reservations use a date lock and confirmation rolls back on fa
   const confirm = backend.slice(backend.indexOf('public function confirm('), backend.indexOf('public function pending_application('));
   assert.match(confirm, /catch \( Throwable \$e \)[\s\S]*?\$pdo->rollBack\(\)/);
   assert.match(backend, /count\( \$data\['pickup_times'\] \) === 1|1 === count\( \$data\['pickup_times'\] \)/);
+});
+
+test('staff collection page requires WordPress login and resolves only visit tokens', () => {
+  assert.match(staffBackend, /if \( ! is_user_logged_in\(\) \)/);
+  assert.match(staffBackend, /\^\[a-f0-9\]\{64\}\$/i);
+  assert.match(staffBackend, /WHERE public_token = \? AND shipping_choice = 'visit'/);
+  assert.match(staffBackend, /wp_verify_nonce\(/);
+  assert.match(staffPage, /Template Name: 出張買取スタッフ用 集荷ページ/);
+  assert.doesNotMatch(staffBackend, /\bwp_mail\s*\(|UPDATE purchase_requests|(?:FROM|INTO|UPDATE)\s+identity_uploads/);
+});
+
+test('staff uploads are compressed, private, incremental, and migration is additive', () => {
+  assert.match(staffBackend, /MAX_COLLECTION_BATCH = 5/);
+  assert.match(staffBackend, /collection_item_count, storage_key, mime_type/);
+  assert.match(staffBackend, /imagejpeg\( \$destination, \$temp_path, self::JPEG_QUALITY \)/);
+  assert.match(staffBackend, /Require all denied/);
+  assert.match(staffBackend, /0 !== \( \$permissions & 0077 \)/);
+  assert.match(staffBackend, /\$pdo->beginTransaction\(\)/);
+  assert.match(staffBackend, /\$pdo->rollBack\(\)/);
+  assert.match(staffScript, /canvas\.toBlob\(resolve, 'image\/jpeg', 0\.82\)/);
+  assert.match(staffScript, /photoInput\.files\.length > Number\(photoInput\.dataset\.maxFiles \|\| 5\)/);
+  assert.match(staffMigration, /CREATE TABLE IF NOT EXISTS visit_staff_uploads/);
+  assert.match(staffMigration, /public_token CHAR\(64\) NOT NULL/);
+  assert.match(staffMigration, /collection_item_count INT UNSIGNED NULL/);
+  assert.match(staffMigration, /FOREIGN KEY \(public_token\) REFERENCES purchase_requests \(public_token\)/);
+  assert.match(staffMigration, /ON DELETE RESTRICT ON UPDATE RESTRICT/);
+  assert.doesNotMatch(staffMigration, /^\s*(?:ALTER|DROP|UPDATE|DELETE)\s+/im);
 });

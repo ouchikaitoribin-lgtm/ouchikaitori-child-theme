@@ -42,9 +42,11 @@ jobs:
           php -l visit-lp-draft/plugin/visit-application-backend.php
           php -l visit-lp-draft/plugin/visit-staging-mailpit-transport.php
           php -l page-visit-kyoto-city.php
+          php -l page-visit-staff-collection.php
           php -l functions.php
           php -l tests/visit-backend-runtime.test.php
           php -l tests/visit-mailpit-transport.test.php
+          php -l visit-lp-draft/plugin/visit-staff-collection.php
       - name: PHP runtime mocks (no database or email)
         run: |
           php tests/visit-backend-runtime.test.php
@@ -52,6 +54,7 @@ jobs:
       - name: JavaScript syntax and policy checks
         run: |
           node --check visit-lp-draft/visit-booking.js
+          node --check visit-lp-draft/visit/staff-collection/staff.js
           node --test tests/visit-backend-policy.test.js
       - name: Diff whitespace check
         run: git diff --check HEAD^ HEAD

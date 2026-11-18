@@ -1,0 +1,46 @@
+.visit-staff-page { padding: 32px 0 72px; background: #f5f7f4; color: #26372d; }
+.visit-staff-container { width: min(100% - 32px, 900px); margin: 0 auto; }
+.visit-staff-header { margin: 0 0 24px; }
+.visit-staff-header h1 { margin: 0; color: #294735; font-size: clamp(26px, 4vw, 36px); line-height: 1.3; }
+.visit-staff-header > p:last-child { margin: 8px 0 0; color: #65736a; line-height: 1.7; }
+.visit-staff-eyebrow { margin: 0 0 5px; color: #e57924; font-size: 11px; font-weight: 800; letter-spacing: .12em; }
+.visit-staff-card { margin: 0 0 18px; padding: clamp(18px, 4vw, 28px); border: 1px solid #e0e7df; border-radius: 16px; background: #fff; box-shadow: 0 8px 24px rgba(38, 55, 45, .06); }
+.visit-staff-section-heading { margin-bottom: 18px; }
+.visit-staff-section-heading h2, .visit-staff-card > h2 { margin: 0; color: #294735; font-size: 22px; line-height: 1.4; }
+.visit-staff-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0; border-top: 1px solid #e8ece7; }
+.visit-staff-details > div { min-width: 0; padding: 13px 10px; border-bottom: 1px solid #e8ece7; }
+.visit-staff-details > .visit-staff-details__wide { grid-column: 1 / -1; }
+.visit-staff-details dt { margin-bottom: 5px; color: #718077; font-size: 12px; font-weight: 700; }
+.visit-staff-details dd { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; color: #283c30; font-size: 15px; font-weight: 650; line-height: 1.65; overflow-wrap: anywhere; }
+.visit-staff-copy, .visit-staff-map-link { display: inline-flex; align-items: center; min-height: 34px; padding: 5px 11px; border: 1px solid #d6e1d6; border-radius: 8px; background: #f7faf6; color: #285440; font-size: 12px; font-weight: 750; text-decoration: none; cursor: pointer; }
+.visit-staff-copy:hover, .visit-staff-map-link:hover { background: #eaf2e9; color: #1f4937; }
+.visit-staff-code { color: #b45b16 !important; font-size: 20px !important; letter-spacing: .12em; }
+.visit-staff-copy-status { min-height: 1.2em; margin: 8px 0 0; color: #376c4c; font-size: 13px; }
+.visit-staff-status { display: inline-flex; align-items: center; margin: 0 0 12px; padding: 8px 13px; border-radius: 999px; font-size: 14px; }
+.visit-staff-status.is-complete { background: #e8f5e9; color: #24623a; }
+.visit-staff-status.is-pending { background: #fff3df; color: #875317; }
+.visit-staff-note { margin: 9px 0 14px; color: #68766d; font-size: 13px; line-height: 1.8; }
+.visit-staff-saved-count { margin: 10px 0; color: #304b3b; font-size: 14px; font-weight: 750; }
+.visit-staff-form { padding: 16px; border: 1px solid #e4ebe2; border-radius: 12px; background: #fafcf9; }
+.visit-staff-field { display: grid; gap: 8px; margin: 0 0 14px; color: #3d5144; font-size: 13px; font-weight: 750; }
+.visit-staff-field input, .visit-staff-field select { box-sizing: border-box; width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid #ccd7cd; border-radius: 9px; background: #fff; color: #24352a; font: inherit; }
+.visit-staff-field input[type="file"] { padding: 9px; }
+.visit-staff-upload-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.visit-staff-button { display: inline-flex; justify-content: center; align-items: center; min-height: 48px; padding: 11px 20px; border: 0; border-radius: 10px; background: #f47c20; color: #fff; font-size: 15px; font-weight: 800; text-decoration: none; cursor: pointer; }
+.visit-staff-button:hover { background: #dc6815; color: #fff; }
+.visit-staff-button:disabled { opacity: .65; cursor: wait; }
+.visit-staff-alert { margin: 0 0 16px; padding: 12px 16px; border-radius: 10px; }
+.visit-staff-alert p { margin: 4px 0; line-height: 1.6; }
+.visit-staff-alert--error { border: 1px solid #f1c5c5; background: #fff3f3; color: #913c3c; }
+.visit-staff-alert--success { border: 1px solid #c9e5cf; background: #f1fbf3; color: #2c6740; }
+.visit-staff-footer-note { color: #738077; font-size: 12px; line-height: 1.7; }
+.visit-staff-footer-note p { margin: 0; }
+.visit-staff-page :focus-visible { outline: 3px solid #3e7457; outline-offset: 3px; }
+@media (max-width: 640px) {
+  .visit-staff-page { padding-top: 20px; }
+  .visit-staff-container { width: min(100% - 24px, 900px); }
+  .visit-staff-details { grid-template-columns: 1fr; }
+  .visit-staff-details > .visit-staff-details__wide { grid-column: auto; }
+  .visit-staff-upload-grid { grid-template-columns: 1fr; gap: 0; }
+  .visit-staff-button { width: 100%; box-sizing: border-box; }
+}
