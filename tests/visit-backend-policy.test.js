@@ -176,10 +176,12 @@ test('single-slot reservations use a date lock and confirmation rolls back on fa
 
 test('staff collection page requires WordPress login and resolves only visit tokens', () => {
   assert.match(staffBackend, /if \( ! is_user_logged_in\(\) \)/);
+  assert.match(staffBackend, /status_header\( 404 \);\s*wp_die\( 'ページが見つかりません。', 'ページが見つかりません', array\( 'response' => 404 \) \)/);
   assert.match(staffBackend, /\^\[a-f0-9\]\{64\}\$/i);
   assert.match(staffBackend, /WHERE public_token = \? AND shipping_choice = 'visit'/);
   assert.match(staffBackend, /wp_verify_nonce\(/);
   assert.match(staffPage, /Template Name: 出張買取スタッフ用 集荷ページ/);
+  assert.doesNotMatch(staffPage, /ログインが必要です|WordPressログイン/);
   assert.doesNotMatch(staffBackend, /\bwp_mail\s*\(|UPDATE purchase_requests|(?:FROM|INTO|UPDATE)\s+identity_uploads/);
 });
 

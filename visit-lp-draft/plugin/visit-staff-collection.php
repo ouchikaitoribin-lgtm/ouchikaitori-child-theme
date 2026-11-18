@@ -31,12 +31,8 @@ if ( ! class_exists( 'Ouchi_Visit_Staff_Collection_Page' ) ) {
 
 			$view = array( 'state' => 'error', 'errors' => array(), 'success' => array(), 'application' => null, 'counts' => array(), 'token' => '' );
 			if ( ! is_user_logged_in() ) {
-				$login_token = isset( $_GET['token'] ) && is_string( $_GET['token'] ) ? trim( wp_unslash( $_GET['token'] ) ) : '';
-				if ( preg_match( '/^[a-f0-9]{64}$/i', $login_token ) ) {
-					$view['token'] = strtolower( $login_token );
-				}
-				$view['state'] = 'login';
-				return $view;
+				status_header( 404 );
+				wp_die( 'ページが見つかりません。', 'ページが見つかりません', array( 'response' => 404 ) );
 			}
 
 			$method = isset( $_SERVER['REQUEST_METHOD'] ) ? strtoupper( (string) $_SERVER['REQUEST_METHOD'] ) : 'GET';

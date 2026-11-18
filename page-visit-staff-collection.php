@@ -23,9 +23,6 @@ $visit_staff_token = (string) ( $visit_staff_view['token'] ?? '' );
 $visit_staff_form_action = '' !== $visit_staff_token
 	? add_query_arg( 'token', $visit_staff_token, get_permalink() )
 	: get_permalink();
-$visit_staff_login_return = '' !== $visit_staff_token
-	? add_query_arg( 'token', $visit_staff_token, get_permalink() )
-	: get_permalink();
 
 get_header();
 ?>
@@ -34,16 +31,7 @@ get_header();
     <header class="visit-staff-header">
       <p class="visit-staff-eyebrow">STAFF COLLECTION PAGE</p>
       <h1>出張買取 集荷情報</h1>
-      <p>このページはWordPressへログインしている場合に利用できます。</p>
     </header>
-
-    <?php if ( 'login' === ( $visit_staff_view['state'] ?? '' ) ) : ?>
-      <section class="visit-staff-card" aria-labelledby="visit-staff-login-title">
-        <h2 id="visit-staff-login-title">ログインが必要です</h2>
-        <p>WordPressにログインしてから、申込URLをもう一度開いてください。</p>
-        <a class="visit-staff-button" href="<?php echo esc_url( wp_login_url( $visit_staff_login_return ) ); ?>">WordPressログイン</a>
-      </section>
-    <?php else : ?>
 
       <?php if ( ! empty( $visit_staff_view['errors'] ) ) : ?>
         <div class="visit-staff-alert visit-staff-alert--error" role="alert">
@@ -148,7 +136,6 @@ get_header();
             <p>画像はJPEG・PNG・WEBPを受け付け、幅1600px以下に圧縮して保存します。本人確認書類と回収前写真は別のフォルダーに分けて保存されます。</p>
         </section>
       <?php endif; ?>
-    <?php endif; ?>
   </div>
 </main>
 <?php get_footer(); ?>
