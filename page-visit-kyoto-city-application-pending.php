@@ -62,7 +62,7 @@ add_action( 'wp_enqueue_scripts', static function () {
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
 	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.0.0' );
 	wp_enqueue_style( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.css', array( 'ouchi-visit-lp' ), '1.1.3' );
-	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.4', true );
+	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.5', true );
 	wp_script_add_data( 'ouchi-visit-pending', 'strategy', 'defer' );
 } );
 
@@ -180,8 +180,8 @@ get_header();
 
     <section class="visit-pending-section visit-pending-packing" aria-labelledby="pending-packing-title">
       <div class="visit-container">
-        <div class="visit-pending-section__heading"><p class="visit-pending-eyebrow">PICKUP PREPARATION</p><h2 id="pending-packing-title">荷物の置き方・準備</h2><p>受け渡し方法に応じた荷物の準備内容をご確認ください。</p></div>
-        <div class="visit-pending-place-card" data-pending-handoff="contactless" hidden><span class="visit-pending-place-card__icon" aria-hidden="true">⌖</span><div><strong>指定した場所に荷物を置いてください</strong><p>回収前に、申込時に指定した場所へ荷物を置いてください。回収時、スタッフは玄関ドアを開けず、お客様と対面せずに指定場所から回収します。</p></div></div>
+        <div class="visit-pending-section__heading"><p class="visit-pending-eyebrow">PICKUP PREPARATION</p><h2 id="pending-packing-title" data-pending-packing-heading>荷物の置き方・準備</h2><p data-pending-packing-intro>受け渡し方法に応じた荷物の準備内容をご確認ください。</p></div>
+        <div class="visit-pending-place-card" data-pending-handoff="contactless" hidden><span class="visit-pending-place-card__icon" aria-hidden="true">⌖</span><div><strong>荷物を指定の場所に置く</strong><p>申込時に指定した場所へ荷物を置いてください。可能な限り回収時間の直前に置いてください。回収時、スタッフは玄関ドアを開けず、お客様と対面せずに指定場所から回収します。</p></div></div>
         <ol class="visit-pending-packing-list">
           <li><span>01</span><div><strong>回収時間までに荷物を梱包する</strong><p>商品はお客様ご自身で段ボール箱・紙袋・ビニール袋に入れ、回収時間までに梱包を済ませてください。</p></div></li>
           <li><span>02</span><div><strong>中身が出ない状態にする</strong><p>ふたや袋の口を閉じ、商品が飛び出さず、持ち上げても落ちない状態にしてください。</p></div></li>

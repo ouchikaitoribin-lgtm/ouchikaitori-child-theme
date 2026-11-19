@@ -69,6 +69,12 @@
 
   const handoff = application.handoff_method;
   if (handoff === 'face' || handoff === 'contactless') {
+    const packingHeading = document.querySelector('[data-pending-packing-heading]');
+    const packingIntro = document.querySelector('[data-pending-packing-intro]');
+    if (packingHeading) packingHeading.textContent = handoff === 'face' ? '回収までの準備' : '荷物の置き方・準備';
+    if (packingIntro) packingIntro.textContent = handoff === 'face'
+      ? '回収時間までに必要な準備をご確認ください。'
+      : '荷物の置き場所と準備内容をご確認ください。';
     document.querySelectorAll('[data-pending-handoff]').forEach((element) => {
       element.hidden = element.dataset.pendingHandoff !== handoff;
     });

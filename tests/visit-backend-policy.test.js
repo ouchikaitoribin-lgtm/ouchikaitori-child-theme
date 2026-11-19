@@ -130,11 +130,14 @@ test('application pending page shows only requested summary fields with Japanese
   assert.match(backend, /wp_date\( 'H:i', strtotime\( \$slot\['start_at'\] \. ' UTC' \) \)/);
   assert.match(backend, /wp_date\( 'H:i', strtotime\( \$slot\['end_at'\] \. ' UTC' \) \)/);
   assert.match(pendingPage, /pending\.css'.*'1\.1\.3'/);
-  assert.match(pendingPage, /pending\.js'.*'1\.1\.4'/);
+  assert.match(pendingPage, /pending\.js'.*'1\.1\.5'/);
   assert.match(pendingPage, /data-pending-handoff="contactless"[^>]*hidden/);
   assert.match(pendingPage, /<li data-pending-handoff="face" hidden>[\s\S]*?本人確認書類の原本を準備する/);
   assert.match(pendingPage, /回収時間までに荷物を梱包する/);
+  assert.match(pendingPage, /荷物を指定の場所に置く/);
+  assert.match(pendingPage, /可能な限り回収時間の直前に置いてください。/);
   assert.match(pendingScript, /dataset\.pendingHandoff !== handoff/);
+  assert.match(pendingScript, /handoff === 'face' \? '回収までの準備' : '荷物の置き方・準備'/);
   assert.match(backend, /if \( 'contactless' === \$detail\['visit_type'\] \) \{\s*\$application\['pickup_code'\]/);
 });
 
