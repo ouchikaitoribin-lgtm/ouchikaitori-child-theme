@@ -212,8 +212,13 @@ test('visit and all area pages render common FAQ entries from one shared source'
   }
   assert.match(landingPage, /今はどの地域で利用できますか？/);
   assert.match(page, /<\?php echo esc_html\( \$visit_city_name \); \?>のどの地域が対応していますか？/);
-  assert.match(sharedVisitFaq, /'question' => '非対面での回収はできますか？'/);
-  assert.match(sharedVisitFaq, /'question' => '予約はどこからできますか？'/);
+  assert.match(sharedVisitFaq, /'question' => '非対面の集荷（回収）とはなんですか？'/);
+  assert.match(sharedVisitFaq, /'answer'\s*=> '荷物を事前に指定した場所に置いていただき、お客様と対面せず、玄関ドアを開けないままスタッフが回収する方法です。/);
+  assert.match(sharedVisitFaq, /'question' => '回収時に家にいる必要はありますか？'/);
+  assert.match(sharedVisitFaq, /'question' => 'スタッフに直接渡すこともできますか？'/);
+  assert.match(sharedVisitFaq, /'answer'\s*=> '出張買取の回収費用と査定料は無料です。/);
+  assert.match(sharedVisitFaq, /'question' => '査定後の返却について教えてください。'/);
+  assert.match(sharedVisitFaq, /'answer'\s*=> '査定後に商品の返却をご希望の場合は、着払いにて返送します。'/);
   assert.doesNotMatch(page, /非対面回収では玄関のドアを開けますか？|申し込みはどのように完了しますか？/);
 });
 
