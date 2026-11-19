@@ -163,8 +163,7 @@ get_header();
           <div><dt>回収エリア</dt><dd data-pending-field="area">システム接続後に表示</dd></div>
           <div><dt>回収希望日</dt><dd data-pending-field="pickup_date">システム接続後に表示</dd></div>
           <div><dt>回収希望時間帯</dt><dd data-pending-field="pickup_times">システム接続後に表示</dd></div>
-          <div><dt>受け渡し方法</dt><dd data-pending-field="handoff_method">システム接続後に表示</dd></div>
-          <div class="visit-pending-details__wide" data-pending-handoff="contactless" hidden><dt>非対面の場合の荷物の置き場所</dt><dd data-pending-field="placement_location">システム接続後に表示</dd></div>
+          <div><dt>受け渡し方法</dt><dd><span data-pending-field="handoff_method">システム接続後に表示</span><span data-pending-handoff="contactless" hidden> ／ 荷物の置き場所：<span data-pending-field="placement_location">システム接続後に表示</span></span></dd></div>
         </dl>
         <p class="visit-pending-email-note" data-application-state="complete" hidden>その他のお申込内容については送付したメールをご確認ください。</p>
       </div>
