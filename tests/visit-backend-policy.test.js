@@ -11,6 +11,8 @@ const functions = readFileSync(join(root, 'functions.php'), 'utf8');
 const bookingScript = readFileSync(join(root, 'visit-lp-draft/visit-booking.js'), 'utf8');
 const bookingWidget = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/booking-widget.html'), 'utf8');
 const page = readFileSync(join(root, 'page-visit-kyoto-city.php'), 'utf8');
+const pendingPage = readFileSync(join(root, 'page-visit-kyoto-city-application-pending.php'), 'utf8');
+const pendingScript = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/application-pending/pending.js'), 'utf8');
 const staffPage = readFileSync(join(root, 'page-visit-staff-collection.php'), 'utf8');
 const staffBackend = readFileSync(join(root, 'visit-lp-draft/plugin/visit-staff-collection.php'), 'utf8');
 const staffMigration = readFileSync(join(root, 'visit-lp-draft/migrations/004-visit-staff-uploads.sql'), 'utf8');
@@ -111,6 +113,23 @@ test('privacy policy is read in place from the existing WordPress policy post', 
   assert.match(bookingScript, /data-privacy-dialog-close/);
   assert.match(bookingScript, /'Escape' === event\.key/);
   assert.match(bookingWidget, /name="privacy_agreement" required/);
+});
+
+test('application pending page shows only requested summary fields with Japanese handoff labels', () => {
+  for (const field of ['application_number', 'area', 'pickup_date', 'pickup_times', 'handoff_method']) {
+    assert.match(pendingPage, new RegExp(`data-pending-field="${field}"`));
+  }
+  for (const field of ['customer_name', 'email', 'pickup_address', 'building_type', 'nameplate', 'pickup_place', 'box_count', 'pickup_notes']) {
+    assert.doesNotMatch(pendingPage, new RegExp(`data-pending-field="${field}"`));
+  }
+  assert.match(pendingPage, /その他のお申込内容については送付したメールをご確認ください。/);
+  assert.match(pendingScript, /value === 'face' \? '対面' : value === 'contactless' \? '非対面'/);
+  assert.match(pendingScript, /key === 'pickup_date'/);
+  assert.match(backend, /SELECT request_code, application_city, pickup_date FROM purchase_requests/);
+  assert.match(backend, /wp_date\( 'H:i', strtotime\( \$slot\['start_at'\] \. ' UTC' \) \)/);
+  assert.match(backend, /wp_date\( 'H:i', strtotime\( \$slot\['end_at'\] \. ' UTC' \) \)/);
+  assert.match(pendingPage, /pending\.css'.*'1\.1\.2'/);
+  assert.match(pendingPage, /pending\.js'.*'1\.1\.3'/);
 });
 
 test('visit terms agreement displays the existing WordPress terms post 57 in place', () => {

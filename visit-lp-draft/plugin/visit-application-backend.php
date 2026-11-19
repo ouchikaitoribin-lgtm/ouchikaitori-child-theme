@@ -1199,11 +1199,11 @@ final class Ouchi_Visit_Application_Backend {
 		try {
 			$pdo = $this->db( true );
 			$this->check_schema( $pdo );
-			$stmt = $pdo->prepare( "SELECT request_code, last_name, first_name, email, application_city, application_zip, application_prefecture, application_address1, pickup_date, box_count FROM purchase_requests WHERE public_token = ? AND shipping_choice = 'visit' LIMIT 1" );
+			$stmt = $pdo->prepare( "SELECT request_code, application_city, pickup_date FROM purchase_requests WHERE public_token = ? AND shipping_choice = 'visit' LIMIT 1" );
 			$stmt->execute( array( $public_token ) );
 			$row = $stmt->fetch();
 			if ( ! $row ) { return null; }
-			$detail_stmt = $pdo->prepare( 'SELECT collection_code, visit_type, building_type, nameplate_status, nameplate_name, placement_location, access_note FROM visit_purchase_details WHERE public_token = ? LIMIT 1' );
+			$detail_stmt = $pdo->prepare( 'SELECT collection_code, visit_type FROM visit_purchase_details WHERE public_token = ? LIMIT 1' );
 			$detail_stmt->execute( array( $public_token ) );
 			$detail = $detail_stmt->fetch();
 			if ( ! $detail ) { return null; }
@@ -1212,19 +1212,12 @@ final class Ouchi_Visit_Application_Backend {
 			$slots_stmt->execute( array( $public_token ) );
 			$slots = array();
 			foreach ( $slots_stmt->fetchAll() as $slot ) {
-				$slots[] = wp_date( 'n月j日 H:i', strtotime( $slot['start_at'] . ' UTC' ) ) . '〜' . wp_date( 'H:i', strtotime( $slot['end_at'] . ' UTC' ) );
+				$slots[] = wp_date( 'H:i', strtotime( $slot['start_at'] . ' UTC' ) ) . '〜' . wp_date( 'H:i', strtotime( $slot['end_at'] . ' UTC' ) );
 			}
-			$building = array( 'detached' => '一軒家', 'multi_unit' => '集合住宅' )[ $detail['building_type'] ] ?? '';
-			$nameplate = 'yes' === $detail['nameplate_status'] ? 'あり' : 'なし';
-			if ( 'no' === $detail['nameplate_status'] && '' !== (string) $detail['nameplate_name'] ) { $nameplate .= '（' . $detail['nameplate_name'] . '）'; }
 			return array(
 				'public_token_valid' => true, 'application_status' => 'complete', 'application_number' => (string) $row['request_code'],
-				'customer_name' => trim( $row['last_name'] . ' ' . $row['first_name'] ), 'email' => (string) $row['email'],
 				'area' => (string) $row['application_city'], 'pickup_date' => (string) $row['pickup_date'], 'pickup_times' => $slots,
-				'handoff_method' => (string) $detail['visit_type'],
-				'pickup_address' => trim( $row['application_zip'] . ' ' . $row['application_prefecture'] . $row['application_city'] . ' ' . $row['application_address1'] ),
-				'building_type' => $building, 'nameplate' => $nameplate, 'pickup_place' => (string) $detail['placement_location'],
-				'box_count' => (string) $row['box_count'], 'pickup_notes' => (string) $detail['access_note'], 'pickup_code' => (string) $detail['collection_code'],
+				'handoff_method' => (string) $detail['visit_type'], 'pickup_code' => (string) $detail['collection_code'],
 			);
 		} catch ( Throwable $e ) {
 			error_log( '[visit-application] pending lookup failed' );

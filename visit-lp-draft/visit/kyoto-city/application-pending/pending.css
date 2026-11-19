@@ -33,6 +33,7 @@
 .visit-pending-details > .visit-pending-details__wide { grid-column: 1 / -1; }
 .visit-pending-details dt { color: #69756c; font-size: 12px; font-weight: 700; }
 .visit-pending-details dd { margin: 0; color: #2f4236; font-size: 13px; font-weight: 650; line-height: 1.65; overflow-wrap: anywhere; }
+.visit-pending-email-note { margin: 16px 0 0; padding: 13px 16px; border-left: 3px solid #7e9f73; border-radius: 4px 10px 10px 4px; background: #f3f7ef; color: #415747; font-size: 13px; font-weight: 650; line-height: 1.7; }
 .visit-pending-code-section { padding: 0 0 clamp(36px, 5vw, 58px); }
 .visit-pending-code-card { display: grid; justify-items: start; gap: 9px; padding: clamp(20px, 4vw, 32px); border: 1px solid #cfddc8; border-radius: 7px 24px 7px 24px; background: #f4f8f1; }
 .visit-pending-code-card > p:not(.visit-pending-eyebrow) { margin: 0; color: #53645a; font-size: 13px; line-height: 1.75; }

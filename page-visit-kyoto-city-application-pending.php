@@ -39,9 +39,8 @@ if ( '' !== $visit_public_token && strlen( $visit_public_token ) <= 512 ) {
 			$visit_pending_application,
 			array_flip(
 				array(
-					'public_token_valid', 'application_status', 'application_number', 'customer_name',
-					'email', 'area', 'pickup_date', 'pickup_times', 'handoff_method', 'pickup_address',
-					'building_type', 'nameplate', 'pickup_place', 'box_count', 'pickup_notes', 'pickup_code',
+					'public_token_valid', 'application_status', 'application_number', 'area',
+					'pickup_date', 'pickup_times', 'handoff_method', 'pickup_code',
 				)
 			)
 		);
@@ -62,8 +61,8 @@ add_action( 'wp_enqueue_scripts', static function () {
 	}
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
 	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.0.0' );
-	wp_enqueue_style( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.css', array( 'ouchi-visit-lp' ), '1.1.1' );
-	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.2', true );
+	wp_enqueue_style( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.css', array( 'ouchi-visit-lp' ), '1.1.2' );
+	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.3', true );
 	wp_script_add_data( 'ouchi-visit-pending', 'strategy', 'defer' );
 } );
 
@@ -157,23 +156,16 @@ get_header();
 
     <section class="visit-pending-section" aria-labelledby="pending-details-title">
       <div class="visit-container">
-        <div class="visit-pending-section__heading"><p class="visit-pending-eyebrow">APPLICATION DETAILS</p><h2 id="pending-details-title">お申し込み内容</h2><p>申込内容と回収先を確認してください。</p></div>
+        <div class="visit-pending-section__heading"><p class="visit-pending-eyebrow">APPLICATION DETAILS</p><h2 id="pending-details-title">お申し込み内容</h2><p>申込番号と回収の希望内容をご確認ください。</p></div>
         <div class="visit-pending-data-note" data-pending-data-note role="status">申込内容は、仮申込システム接続後にここへ表示されます。</div>
         <dl class="visit-pending-details">
           <div><dt>申込番号</dt><dd data-pending-field="application_number">システム接続後に表示</dd></div>
-          <div><dt>お名前</dt><dd data-pending-field="customer_name">システム接続後に表示</dd></div>
-          <div><dt>メールアドレス</dt><dd data-pending-field="email">システム接続後に表示</dd></div>
           <div><dt>回収エリア</dt><dd data-pending-field="area">システム接続後に表示</dd></div>
           <div><dt>回収希望日</dt><dd data-pending-field="pickup_date">システム接続後に表示</dd></div>
           <div><dt>回収希望時間帯</dt><dd data-pending-field="pickup_times">システム接続後に表示</dd></div>
           <div><dt>受け渡し方法</dt><dd data-pending-field="handoff_method">システム接続後に表示</dd></div>
-          <div><dt>回収先住所</dt><dd data-pending-field="pickup_address">システム接続後に表示</dd></div>
-          <div><dt>建物の種類</dt><dd data-pending-field="building_type">システム接続後に表示</dd></div>
-          <div><dt>表札の申告</dt><dd data-pending-field="nameplate">システム接続後に表示</dd></div>
-          <div><dt>荷物の置き場所</dt><dd data-pending-field="pickup_place">システム接続後に表示</dd></div>
-          <div><dt>おおよその箱数</dt><dd data-pending-field="box_count">システム接続後に表示</dd></div>
-          <div class="visit-pending-details__wide"><dt>備考</dt><dd data-pending-field="pickup_notes">システム接続後に表示</dd></div>
         </dl>
+        <p class="visit-pending-email-note" data-application-state="complete" hidden>その他のお申込内容については送付したメールをご確認ください。</p>
       </div>
     </section>
 

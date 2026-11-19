@@ -42,14 +42,21 @@
 
   if (!application || typeof application !== 'object') return;
 
-  const formatValue = (value) => {
+  const formatValue = (key, value) => {
+    if (key === 'handoff_method') {
+      return value === 'face' ? '対面' : value === 'contactless' ? '非対面' : '';
+    }
+    if (key === 'pickup_date' && typeof value === 'string') {
+      const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (match) return `${match[1]}年${Number(match[2])}月${Number(match[3])}日`;
+    }
     if (Array.isArray(value)) return value.join('・');
     if (value === null || value === undefined || value === '') return '';
     return String(value);
   };
   document.querySelectorAll('[data-pending-field]').forEach((element) => {
     const key = element.dataset.pendingField;
-    const value = formatValue(application[key]);
+    const value = formatValue(key, application[key]);
     if (!value) return;
     element.textContent = value;
     if (key === 'pickup_code') element.classList.add('is-issued');
