@@ -149,6 +149,13 @@ $assert( 16 === strlen( $decoded_tag ), 'AES-GCM tag should be 16 bytes' );
 $plaintext = openssl_decrypt( base64_decode( $ciphertext, true ), 'aes-256-gcm', base64_decode( getenv( 'PAYOUT_ENC_KEY_B64' ), true ), OPENSSL_RAW_DATA, $decoded_iv, $decoded_tag );
 $assert( 'SYNTHETIC-ACCOUNT-1234567' === $plaintext, 'AES-GCM ciphertext should round-trip with the test key' );
 
+$confirmation_code = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'confirmation_code' );
+$confirmation_code->setAccessible( true );
+$code_token = bin2hex( random_bytes( 32 ) );
+$derived_code = $confirmation_code->invoke( $instance, $code_token );
+$assert( preg_match( '/^[0-9]{4}$/', $derived_code ), 'confirmation code should contain exactly four digits, including possible leading zeroes' );
+$assert( $derived_code === $confirmation_code->invoke( $instance, $code_token ), 'confirmation code should remain stable for encrypted-outbox retries' );
+
 $encrypt_private_token = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'encrypt_private_token' );
 $encrypt_private_token->setAccessible( true );
 $decrypt_private_token = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'decrypt_private_token' );

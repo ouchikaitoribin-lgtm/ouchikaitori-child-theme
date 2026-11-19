@@ -690,7 +690,7 @@ final class Ouchi_Visit_Application_Backend {
 			}
 		}
 		$table_columns = array(
-			'visit_application_drafts' => array( 'submission_key_hash', 'confirmation_token_hash', 'poll_token_hash', 'payload_ciphertext', 'payload_iv', 'payload_tag', 'poll_token_ciphertext', 'poll_token_iv', 'poll_token_tag', 'expires_at', 'draft_status', 'public_token' ),
+			'visit_application_drafts' => array( 'submission_key_hash', 'confirmation_token_hash', 'verification_attempt_count', 'poll_token_hash', 'payload_ciphertext', 'payload_iv', 'payload_tag', 'poll_token_ciphertext', 'poll_token_iv', 'poll_token_tag', 'expires_at', 'draft_status', 'public_token' ),
 			'visit_purchase_details' => array( 'public_token', 'collection_code', 'visit_type', 'latitude', 'longitude', 'placement_location', 'placement_note', 'nameplate_status', 'nameplate_name', 'building_type', 'access_note', 'confirmed_start_at', 'confirmed_end_at', 'collection_status', 'collected_at' ),
 			'visit_pickup_time_slots' => array( 'public_token', 'preference_order', 'start_at', 'end_at' ),
 			'visit_consent_records' => array( 'public_token', 'consent_type', 'consent_version', 'consent_text', 'consented_at' ),
@@ -738,6 +738,16 @@ final class Ouchi_Visit_Application_Backend {
 
 	private function token() {
 		return bin2hex( random_bytes( 32 ) );
+	}
+
+	/**
+	 * Derive a stable confirmation code from the private token without storing the code.
+	 * The email outbox can therefore resend the same code while the draft remains pending.
+	 */
+	private function confirmation_code( $token ) {
+		$mac = hash_hmac( 'sha256', 'visit-email-confirmation-code|' . $token, $this->encryption_key(), true );
+		$number = unpack( 'N', substr( $mac, 0, 4 ) );
+		return str_pad( (string) ( $number[1] % 10000 ), 4, '0', STR_PAD_LEFT );
 	}
 
 	private function mail_link( $token, $region_slug ) {
@@ -805,8 +815,8 @@ final class Ouchi_Visit_Application_Backend {
 			}
 			$pdo->commit();
 			$token = $this->decrypt_private_token( $outbox['confirmation_token_ciphertext'], $outbox['confirmation_token_iv'], $outbox['confirmation_token_tag'] );
-			$body = "ステージング環境の出張買取メール確認テストです。\n\n" . $this->mail_link( $token, $outbox['region_slug'] ) . "\n\nこのメールは固定テスト宛先にのみ送信されています。申込者の入力メールアドレスには送信していません。\nリンクの有効期限は5時間です。";
-			$sent = $this->send_staging_test_mail( 'おうち買取便 出張買取：確認リンク（ステージングテスト）', $body );
+			$body = "ステージング環境の出張買取メール確認テストです。\n\nメール確認番号：" . $this->confirmation_code( $token ) . "\n\n確認ページを開き、上記4桁の番号を入力してください。\n" . $this->mail_link( $token, $outbox['region_slug'] ) . "\n\nこのメールは固定テスト宛先にのみ送信されています。申込者の入力メールアドレスには送信していません。\n確認期限は5時間です。";
+			$sent = $this->send_staging_test_mail( 'おうち買取便 出張買取：メール確認番号（ステージングテスト）', $body );
 			if ( $sent ) {
 				$mail_was_accepted = true;
 				$finish = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'sent', sent_at = UTC_TIMESTAMP() WHERE draft_id = ? AND delivery_status = 'sending'" );
@@ -1067,7 +1077,7 @@ final class Ouchi_Visit_Application_Backend {
 			return new WP_REST_Response( '<!doctype html><meta charset="utf-8"><title>確認リンク</title><p>確認リンクが無効です。</p>', 400, array( 'Content-Type' => 'text/html; charset=UTF-8', 'Cache-Control' => 'no-store', 'Referrer-Policy' => 'no-referrer', 'X-Robots-Tag' => 'noindex, nofollow' ) );
 		}
 		$confirmation_page_url = home_url( '/visit/' . rawurlencode( $region_slug ) . '/application-pending/' );
-		$html = '<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>メール確認｜おうち買取便</title><style>body{font-family:system-ui,sans-serif;margin:0;background:#f5f7f5;color:#24352a}.wrap{max-width:620px;margin:8vh auto;padding:24px}.card{background:#fff;border-radius:18px;padding:clamp(24px,6vw,48px);box-shadow:0 12px 36px #263b2518}h1{font-size:clamp(1.5rem,5vw,2.2rem);line-height:1.4}p{line-height:1.8}button{border:0;border-radius:999px;background:#f47c20;color:white;font-weight:700;font-size:1rem;padding:16px 26px;cursor:pointer}button:disabled{opacity:.6}#status{margin-top:1rem}</style><main class="wrap"><section class="card"><p>おうち買取便 出張買取</p><h1>メールアドレスを確認します</h1><p>下のボタンを押すと、出張買取の申込内容が登録されます。</p><form id="confirm"><input type="hidden" name="token" value="' . esc_attr( $token ) . '"><button type="submit">メールを確認して申込内容を登録</button></form><p id="status" role="status" aria-live="polite"></p></section></main><script>document.getElementById("confirm").addEventListener("submit",async function(e){e.preventDefault();var b=this.querySelector("button"),s=document.getElementById("status");b.disabled=true;s.textContent="確認しています…";try{var r=await fetch(' . wp_json_encode( rest_url( self::API_NAMESPACE . '/confirm' ) ) . ',{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({token:this.elements.token.value})});var d=await r.json();if(!r.ok)throw new Error(d.message||"確認できませんでした。");var u=new URL(' . wp_json_encode( $confirmation_page_url ) . ');u.searchParams.set("public_token",d.public_token);location.assign(u.toString())}catch(err){s.textContent=err.message;b.disabled=false}});</script></html>';
+		$html = '<!doctype html><html lang="ja"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>メール確認｜おうち買取便</title><style>body{font-family:system-ui,sans-serif;margin:0;background:#f5f7f5;color:#24352a}.wrap{max-width:620px;margin:8vh auto;padding:24px}.card{background:#fff;border-radius:18px;padding:clamp(24px,6vw,48px);box-shadow:0 12px 36px #263b2518}h1{font-size:clamp(1.5rem,5vw,2.2rem);line-height:1.4}p{line-height:1.8}label{display:block;font-weight:700;margin:1rem 0 .4rem}input{box-sizing:border-box;width:100%;max-width:18rem;padding:14px;border:1px solid #aeb9af;border-radius:10px;font:inherit;font-size:1.25rem;letter-spacing:.25em}button{border:0;border-radius:999px;background:#f47c20;color:white;font-weight:700;font-size:1rem;padding:16px 26px;cursor:pointer;margin-top:1rem}button:disabled{opacity:.6}#status{margin-top:1rem}</style><main class="wrap"><section class="card"><p>おうち買取便 出張買取</p><h1>メールアドレスを確認します</h1><p>メールに記載された4桁の確認番号を入力してください。確認が完了すると、出張買取の申込内容が登録されます。</p><form id="confirm"><input type="hidden" name="token" value="' . esc_attr( $token ) . '"><label for="confirmation-code">メール確認番号（4桁）</label><input id="confirmation-code" name="code" type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="one-time-code" required><p>確認番号を5回間違えると、この確認リンクは利用できなくなります。</p><button type="submit">番号を送信して申込内容を登録</button></form><p id="status" role="status" aria-live="polite"></p></section></main><script>document.getElementById("confirm").addEventListener("submit",async function(e){e.preventDefault();var b=this.querySelector("button"),s=document.getElementById("status");b.disabled=true;s.textContent="確認しています…";try{var r=await fetch(' . wp_json_encode( rest_url( self::API_NAMESPACE . '/confirm' ) ) . ',{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({token:this.elements.token.value,code:this.elements.code.value})});var d=await r.json();if(!r.ok)throw new Error(d.message||"確認できませんでした。");var u=new URL(' . wp_json_encode( $confirmation_page_url ) . ');u.searchParams.set("public_token",d.public_token);location.assign(u.toString())}catch(err){s.textContent=err.message;b.disabled=false;this.elements.code.focus()}});</script></html>';
 		return new WP_REST_Response( $html, 200, array( 'Content-Type' => 'text/html; charset=UTF-8', 'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0', 'Referrer-Policy' => 'no-referrer', 'X-Robots-Tag' => 'noindex, nofollow, noarchive' ) );
 	}
 
@@ -1147,6 +1157,8 @@ final class Ouchi_Visit_Application_Backend {
 			return $this->response_error( '確認処理を利用できません。', 503 );
 		}
 		$token = sanitize_text_field( (string) $request->get_param( 'token' ) );
+		$code_param = $request->get_param( 'code' );
+		$code = is_string( $code_param ) ? $code_param : '';
 		if ( ! preg_match( '/^[a-f0-9]{64}$/i', $token ) ) {
 			return $this->response_error( '確認リンクが無効です。', 400 );
 		}
@@ -1173,6 +1185,22 @@ final class Ouchi_Visit_Application_Backend {
 				$expire->execute( array( random_bytes( 64 ), random_bytes( 12 ), random_bytes( 16 ), $draft['draft_id'] ) );
 				$pdo->commit();
 				return $this->response_error( '確認リンクが無効または期限切れです。', 410 );
+			}
+			$attempt_count = (int) $draft['verification_attempt_count'];
+			if ( $attempt_count >= 5 ) {
+				$pdo->rollBack();
+				return $this->response_error( '確認番号の入力上限に達しました。申込を最初からやり直してください。', 429 );
+			}
+			$expected_code = $this->confirmation_code( $token );
+			if ( ! preg_match( '/^[0-9]{4}$/', $code ) || ! hash_equals( $expected_code, $code ) ) {
+				$attempt_count++;
+				$attempt_update = $pdo->prepare( 'UPDATE visit_application_drafts SET verification_attempt_count = ? WHERE draft_id = ?' );
+				$attempt_update->execute( array( $attempt_count, $draft['draft_id'] ) );
+				$pdo->commit();
+				if ( $attempt_count >= 5 ) {
+					return $this->response_error( '確認番号の入力上限に達しました。申込を最初からやり直してください。', 429 );
+				}
+				return $this->response_error( '確認番号が一致しません。メールに記載された4桁の番号をご確認ください。', 400 );
 			}
 			$public_token = $this->insert_confirmed_application( $pdo, $draft );
 			$update = $pdo->prepare( "UPDATE visit_application_drafts SET draft_status = 'confirmed', public_token = ?, confirmation_token_hash = ?, payload_ciphertext = ?, payload_iv = ?, payload_tag = ?, poll_token_ciphertext = ?, poll_token_iv = ?, poll_token_tag = ? WHERE draft_id = ?" );

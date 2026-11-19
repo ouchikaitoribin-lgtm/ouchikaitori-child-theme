@@ -6,6 +6,7 @@ const assert = require('node:assert/strict');
 const root = join(__dirname, '..');
 const backend = readFileSync(join(root, 'visit-lp-draft/plugin/visit-application-backend.php'), 'utf8');
 const migration = readFileSync(join(root, 'visit-lp-draft/migrations/003-visit-application-email-outbox.sql'), 'utf8');
+const confirmationCodeMigration = readFileSync(join(root, 'visit-lp-draft/migrations/005-visit-confirmation-code-attempts.sql'), 'utf8');
 const stagingMailGuard = readFileSync(join(root, 'visit-lp-draft/plugin/visit-staging-mailpit-transport.php'), 'utf8');
 const functions = readFileSync(join(root, 'functions.php'), 'utf8');
 const bookingScript = readFileSync(join(root, 'visit-lp-draft/visit-booking.js'), 'utf8');
@@ -43,6 +44,24 @@ test('completion email has a durable outbox record and sends after transaction c
   assert.ok(confirm.indexOf('$pdo->commit();') < confirm.indexOf('$this->dispatch_completion_email('));
   assert.match(backend, /delivery_status = 'pending'.*delivery_status = 'sending'/s);
   assert.match(backend, /delivery_status = 'sent'/);
+});
+
+test('email confirmation requires a four-digit code and limits each draft to five attempts', () => {
+  assert.match(confirmationCodeMigration, /ADD COLUMN IF NOT EXISTS verification_attempt_count TINYINT UNSIGNED NOT NULL DEFAULT 0/);
+  assert.doesNotMatch(confirmationCodeMigration, /DROP\s+|DELETE\s+FROM|UPDATE\s+.+\s+SET/i);
+  assert.match(backend, /'verification_attempt_count'/);
+  assert.match(backend, /hash_hmac\( 'sha256',[\s\S]*?visit-email-confirmation-code/);
+  assert.match(backend, /メール確認番号：.*confirmation_code/s);
+  const confirm = backend.slice(backend.indexOf('public function confirm('), backend.indexOf('public function pending_application('));
+  assert.match(confirm, /SELECT \* FROM visit_application_drafts WHERE confirmation_token_hash = \? FOR UPDATE/);
+  assert.match(confirm, /verification_attempt_count/);
+  assert.match(confirm, /attempt_count >= 5/);
+  assert.match(confirm, /UPDATE visit_application_drafts SET verification_attempt_count = \?/);
+  assert.match(confirm, /hash_equals\( \$expected_code, \$code \)/);
+  assert.match(confirm, /\$pdo->commit\(\);[\s\S]*?確認番号が一致しません/);
+  assert.match(backend, /name=\"code\" type=\"text\" inputmode=\"numeric\"/);
+  assert.match(backend, /pattern=\"\[0-9\]\{4\}\" maxlength=\"4\"/);
+  assert.match(backend, /JSON\.stringify\(\{token:this\.elements\.token\.value,code:this\.elements\.code\.value\}\)/);
 });
 
 test('confirmation mail failure retains an encrypted one-time token for retry', () => {
