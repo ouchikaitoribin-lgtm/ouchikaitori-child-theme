@@ -129,6 +129,23 @@
 .visit-pickup-place-details { grid-column: 1 / -1; }
 .visit-pickup-place-details[hidden] { display: none !important; }
 .visit-form-consents { display: grid; gap: 11px; background: #fffaf5; border-color: #efdfd1; }
+.visit-consent-policy { display: grid; justify-items: start; gap: 6px; }
+.visit-privacy-open { min-height: 32px; padding: 0; border: 0; background: transparent; color: #317252; font: inherit; font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.visit-privacy-dialog[hidden] { display: none !important; }
+.visit-privacy-dialog { position: fixed; z-index: 10050; inset: 0; display: grid; place-items: center; padding: 18px; }
+.visit-privacy-dialog__backdrop { position: absolute; inset: 0; background: rgba(24, 39, 30, .58); }
+.visit-privacy-dialog__panel { position: relative; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(760px, 100%); max-height: min(86vh, 820px); overflow: hidden; border: 1px solid #dbe4d8; border-radius: 16px; background: #fff; box-shadow: 0 22px 70px rgba(20, 35, 25, .24); color: #293b30; }
+.visit-privacy-dialog__header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 17px 20px; border-bottom: 1px solid #e5ebe3; background: #f5f8f2; }
+.visit-privacy-dialog__header h2 { margin: 0; color: #244b35; font-size: 18px; line-height: 1.5; }
+.visit-privacy-dialog__close { display: grid; width: 38px; height: 38px; flex: 0 0 38px; place-items: center; border: 1px solid #d5dfd3; border-radius: 50%; background: #fff; color: #345340; font-size: 25px; cursor: pointer; }
+.visit-privacy-dialog__body { min-height: 0; overflow: auto; padding: clamp(18px, 4vw, 30px); color: #3f5146; font-size: 14px; line-height: 1.9; overscroll-behavior: contain; }
+.visit-privacy-dialog__body > :first-child { margin-top: 0; }
+.visit-privacy-dialog__body > :last-child { margin-bottom: 0; }
+.visit-privacy-dialog__body h1, .visit-privacy-dialog__body h2, .visit-privacy-dialog__body h3 { margin: 1.5em 0 .55em; color: #294c38; line-height: 1.5; }
+.visit-privacy-dialog__body p, .visit-privacy-dialog__body ul, .visit-privacy-dialog__body ol { margin: .7em 0; }
+.visit-privacy-dialog__body ul, .visit-privacy-dialog__body ol { padding-left: 1.5em; }
+.visit-privacy-dialog__body a { color: #276b4b; text-decoration: underline; text-underline-offset: 2px; }
+.visit-privacy-dialog__footer { display: flex; justify-content: flex-end; padding: 13px 20px; border-top: 1px solid #e5ebe3; background: #fbfcfa; }
 .visit-pickup-code-panel { display: grid; justify-items: start; gap: 8px; margin-top: 18px; padding: 18px 20px; border: 1px solid #d8e4d4; border-radius: 12px; background: #f4f8f1; }
 .visit-pickup-code-panel h4 { margin: 0; color: #30483a; font-size: 15px; }
 .visit-pickup-code-panel p { margin: 0; color: #53645a; font-size: 12px; line-height: 1.7; }
@@ -189,4 +206,10 @@
   .visit-kana-index button { min-width: 31px; min-height: 34px; padding: 4px 6px; font-size: 11px; }
   .visit-form-choice { gap: 7px; }
   .visit-form-choice label { min-height: 40px; padding: 7px 11px; }
+  .visit-privacy-dialog { padding: 10px; }
+  .visit-privacy-dialog__panel { max-height: 92vh; border-radius: 12px; }
+  .visit-privacy-dialog__header { padding: 13px 15px; }
+  .visit-privacy-dialog__header h2 { font-size: 16px; }
+  .visit-privacy-dialog__body { padding: 18px 16px; font-size: 13px; }
+  .visit-privacy-dialog__footer { padding: 10px 15px; }
 }

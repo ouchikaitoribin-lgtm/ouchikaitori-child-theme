@@ -42,12 +42,12 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
 	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.3.5' );
 	wp_enqueue_style( 'ouchi-visit-kyoto-city', $asset_uri . 'visit/kyoto-city/kyoto-city.css', array( 'ouchi-visit-lp' ), '1.3.3' );
-	wp_enqueue_style( 'ouchi-visit-booking-ui', $asset_uri . 'visit/kyoto-city/booking.css', array( 'ouchi-visit-kyoto-city' ), '1.6.6' );
+	wp_enqueue_style( 'ouchi-visit-booking-ui', $asset_uri . 'visit/kyoto-city/booking.css', array( 'ouchi-visit-kyoto-city' ), '1.6.7' );
 	wp_enqueue_style( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
 	wp_enqueue_script( 'ouchi-visit-yubinbango', 'https://yubinbango.github.io/yubinbango/yubinbango.js', array(), null, true );
 	wp_enqueue_script( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
 	$booking_script_dependencies = array( 'ouchi-visit-yubinbango', 'ouchi-visit-leaflet' );
-	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.6', true );
+	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.7', true );
 	$visit_booking_defaults = array(
 		'slots'                   => array( '10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00' ),
 		'multiSlotBonusEnabled'   => true,
@@ -137,6 +137,13 @@ get_header();
         $booking_widget_html = str_replace( 'name="visit_region_slug" value="kyoto-city"', 'name="visit_region_slug" value="' . esc_attr( $visit_region_slug ) . '"', $booking_widget_html );
         $application_nonce = wp_nonce_field( 'visit_application_submit', 'visit_application_nonce', false, false );
         $booking_widget_html = str_replace( '<!-- VISIT_APPLICATION_NONCE -->', $application_nonce, $booking_widget_html );
+		$privacy_policy_content = get_post_field( 'post_content', 59 );
+		$privacy_policy_content = is_string( $privacy_policy_content ) ? trim( $privacy_policy_content ) : '';
+		$privacy_policy_body = '' !== $privacy_policy_content
+			? wp_kses_post( apply_filters( 'the_content', $privacy_policy_content ) )
+			: '<p>プライバシーポリシーを読み込めませんでした。下記のページで内容をご確認ください。</p><p><a href="' . esc_url( get_permalink( 59 ) ) . '">プライバシーポリシーを開く</a></p>';
+		$privacy_policy_markup = '<div class="visit-privacy-dialog" data-privacy-policy-dialog hidden><div class="visit-privacy-dialog__backdrop" data-privacy-dialog-backdrop></div><section class="visit-privacy-dialog__panel" role="dialog" aria-modal="true" aria-labelledby="visit-privacy-policy-title" tabindex="-1"><header class="visit-privacy-dialog__header"><h2 id="visit-privacy-policy-title">プライバシーポリシー</h2><button type="button" class="visit-privacy-dialog__close" data-privacy-dialog-close aria-label="プライバシーポリシーを閉じる">×</button></header><div class="visit-privacy-dialog__body">' . $privacy_policy_body . '</div><footer class="visit-privacy-dialog__footer"><button type="button" class="visit-button visit-button--quiet" data-privacy-dialog-close>閉じる</button></footer></section></div>';
+		$booking_widget_html = str_replace( '<!-- VISIT_PRIVACY_POLICY_DIALOG -->', $privacy_policy_markup, $booking_widget_html );
         echo $booking_widget_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- 固定HTML断片を使用し、差し込み値は個別にエスケープ済み
     }
     ?>

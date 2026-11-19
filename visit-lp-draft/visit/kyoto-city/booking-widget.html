@@ -148,7 +148,7 @@
               <small>回収コードの発行・保存は申込システム接続後に有効になります。</small>
             </div>
             <div class="visit-form-section visit-form-consents">
-              <label><input type="checkbox" name="privacy_agreement" required><span>プライバシーポリシーを確認し、個人情報の取扱いに同意します。</span></label>
+              <div class="visit-consent-policy"><label><input type="checkbox" name="privacy_agreement" required><span>プライバシーポリシーを確認し、個人情報の取扱いに同意します。</span></label><button class="visit-privacy-open" type="button" data-open-privacy-policy aria-haspopup="dialog" aria-controls="visit-privacy-policy-dialog">プライバシーポリシーを読む</button></div>
               <label><input type="checkbox" name="terms_agreement" required><span>申込内容および出張買取の利用条件を確認しました。</span></label>
               <p>送信後、確認メールをお送りします。メール内のリンクを開くまで申込は完了しません。</p>
             </div>
@@ -179,6 +179,7 @@
               <button class="visit-button visit-button--primary" type="button" data-preview-confirmation-link hidden>確認リンクをクリック（画面プレビュー） <span aria-hidden="true">→</span></button>
             </section>
         </form>
+        <!-- VISIT_PRIVACY_POLICY_DIALOG -->
         <p class="visit-booking-live-message" data-booking-message aria-live="polite"></p>
       </div>
     </section>

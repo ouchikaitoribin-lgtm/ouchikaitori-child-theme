@@ -73,6 +73,46 @@
   const consentBox = widget.querySelector('[name="contactless-consent"]');
   const consentAt = widget.querySelector('[name="contactless-consented-at"]');
   const form = widget.querySelector('[data-application-form]');
+  const privacyDialog = widget.querySelector('[data-privacy-policy-dialog]');
+  const privacyOpenButton = widget.querySelector('[data-open-privacy-policy]');
+  if (privacyDialog && privacyOpenButton) {
+    const privacyPanel = privacyDialog.querySelector('[role="dialog"]');
+    const privacyCloseButtons = [...privacyDialog.querySelectorAll('[data-privacy-dialog-close]')];
+    let privacyTrigger = null;
+    const closePrivacyDialog = () => {
+      privacyDialog.hidden = true;
+      if (privacyTrigger) privacyTrigger.focus();
+    };
+    privacyOpenButton.addEventListener('click', () => {
+      privacyTrigger = document.activeElement;
+      privacyDialog.hidden = false;
+      const closeButton = privacyDialog.querySelector('[data-privacy-dialog-close]');
+      if (closeButton) closeButton.focus();
+      else if (privacyPanel) privacyPanel.focus();
+    });
+    privacyCloseButtons.forEach((button) => button.addEventListener('click', closePrivacyDialog));
+    privacyDialog.querySelector('[data-privacy-dialog-backdrop]')?.addEventListener('click', closePrivacyDialog);
+    privacyDialog.addEventListener('keydown', (event) => {
+      if ('Escape' === event.key) {
+        event.preventDefault();
+        closePrivacyDialog();
+        return;
+      }
+      if ('Tab' !== event.key) return;
+      const focusable = [...privacyDialog.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+        .filter((element) => element.getClientRects().length > 0);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+  }
   const formResult = widget.querySelector('[data-application-result]');
   const applicationWaiting = widget.querySelector('[data-application-waiting]');
   const emailSentMessage = widget.querySelector('[data-email-sent-message]');
