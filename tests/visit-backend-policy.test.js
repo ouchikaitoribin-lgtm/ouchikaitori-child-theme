@@ -86,11 +86,26 @@ test('confirmation mail failure retains an encrypted one-time token for retry', 
   assert.match(backend, /\$this->dispatch_confirmation_email\(\s*\$row\['draft_id'\]\s*\)/);
 });
 
-test('completion message omits bank and identity document data', () => {
+test('completion message includes submitted form details, masks account number and omits consent notices', () => {
   const bodyBuilder = backend.slice(backend.indexOf('private function completion_email_body('), backend.indexOf('private function dispatch_completion_email('));
-  assert.doesNotMatch(bodyBuilder, /\$[A-Za-z_][A-Za-z0-9_]*\[['"](?:account_number|bank_code|account_holder)/);
+  for (const field of [
+    'payment_method', 'last_name_kana', 'first_name_kana', 'birth_date', 'occupation', 'application_zip',
+    'application_prefecture', 'application_city', 'application_address1', 'bank_code',
+    'bank_name', 'branch_code', 'branch_name', 'account_type', 'account_number_last4',
+    'account_holder_kana_enc', 'box_count', 'campaign_code', 'register_flg', 'approval_flg',
+    'receive_flg', 'latitude', 'longitude', 'nameplate_status', 'nameplate_name', 'building_type', 'access_note'
+  ]) {
+    assert.match(bodyBuilder, new RegExp(field), `completion mail should include ${field}`);
+  }
+  assert.match(bodyBuilder, /口座番号：xxx['"]?\s*\.\s*\$row\[['"]account_number_last4['"]\]/);
+  assert.doesNotMatch(bodyBuilder, /\$row\[['"]account_number['"]\]/);
+  assert.match(bodyBuilder, /査定結果を自動承認する/);
+  assert.match(bodyBuilder, /査定結果を確認してから承認する/);
+  assert.match(bodyBuilder, /会員登録：/);
+  assert.match(bodyBuilder, /お知らせメール配信：/);
   assert.match(bodyBuilder, /collection_code/);
-  assert.match(bodyBuilder, /consent_text/);
+  assert.doesNotMatch(bodyBuilder, /consent_text|consent_query|確認・同意いただいた注意事項/);
+  assert.match(backend, /private function decrypt_encrypted_field\(/);
 });
 
 test('the page and API share the same contactless terms helpers', () => {

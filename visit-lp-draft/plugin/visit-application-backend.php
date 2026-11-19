@@ -636,6 +636,20 @@ final class Ouchi_Visit_Application_Backend {
 		return array( base64_encode( $cipher ), base64_encode( $iv ), base64_encode( $tag ) );
 	}
 
+	private function decrypt_encrypted_field( $ciphertext, $iv, $tag ) {
+		$ciphertext = base64_decode( (string) $ciphertext, true );
+		$iv = base64_decode( (string) $iv, true );
+		$tag = base64_decode( (string) $tag, true );
+		if ( false === $ciphertext || false === $iv || 12 !== strlen( $iv ) || false === $tag || 16 !== strlen( $tag ) ) {
+			throw new RuntimeException( '申込情報を確認できません。' );
+		}
+		$plaintext = openssl_decrypt( $ciphertext, 'aes-256-gcm', $this->encryption_key(), OPENSSL_RAW_DATA, $iv, $tag );
+		if ( false === $plaintext ) {
+			throw new RuntimeException( '申込情報を確認できません。' );
+		}
+		return $plaintext;
+	}
+
 	private function encrypt_draft( $payload ) {
 		$key = $this->encryption_key();
 		$iv = random_bytes( 12 );
@@ -842,10 +856,10 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function completion_email_body( PDO $pdo, $public_token, $outbox ) {
-		$request = $pdo->prepare( "SELECT request_code, last_name, first_name, email, phone_number, application_zip, application_prefecture, application_city, application_address1, pickup_date FROM purchase_requests WHERE public_token = ? AND shipping_choice = 'visit' LIMIT 1" );
+		$request = $pdo->prepare( "SELECT request_code, payment_method, last_name, first_name, last_name_kana, first_name_kana, email, phone_number, application_zip, application_prefecture, application_city, application_address1, birth_date, occupation, bank_code, bank_name, branch_code, branch_name, account_type, account_holder_kana_enc, account_holder_kana_iv, account_holder_kana_tag, account_number_last4, pickup_date, box_count, register_flg, approval_flg, receive_flg, campaign_code FROM purchase_requests WHERE public_token = ? AND shipping_choice = 'visit' LIMIT 1" );
 		$request->execute( array( $public_token ) );
 		$row = $request->fetch();
-		$detail_query = $pdo->prepare( 'SELECT collection_code, visit_type, placement_location, confirmed_start_at, confirmed_end_at FROM visit_purchase_details WHERE public_token = ? LIMIT 1' );
+		$detail_query = $pdo->prepare( 'SELECT collection_code, visit_type, latitude, longitude, placement_location, nameplate_status, nameplate_name, building_type, access_note, confirmed_start_at, confirmed_end_at FROM visit_purchase_details WHERE public_token = ? LIMIT 1' );
 		$detail_query->execute( array( $public_token ) );
 		$detail = $detail_query->fetch();
 		$slot_query = $pdo->prepare( 'SELECT start_at, end_at FROM visit_pickup_time_slots WHERE public_token = ? ORDER BY preference_order ASC' );
@@ -866,6 +880,15 @@ final class Ouchi_Visit_Application_Backend {
 		$region_slug = sanitize_key( (string) $outbox['region_slug'] );
 		$application_url = home_url( '/visit/' . rawurlencode( $region_slug ) . '/application-pending/?public_token=' . rawurlencode( $public_token ) );
 		$handoff = 'contactless' === $detail['visit_type'] ? '非対面' : '対面';
+		$account_type = array( 'ordinary' => '普通', 'checking' => '当座' )[ (string) $row['account_type'] ] ?? '未設定';
+		$holder_kana = $this->decrypt_encrypted_field( $row['account_holder_kana_enc'], $row['account_holder_kana_iv'], $row['account_holder_kana_tag'] );
+		$building_type = array( 'detached' => '一軒家', 'multi_unit' => '集合住宅' )[ (string) $detail['building_type'] ] ?? '未設定';
+		$nameplate = 'yes' === $detail['nameplate_status'] ? 'あり' : ( 'no' === $detail['nameplate_status'] ? 'なし' : '未設定' );
+		$register = ! empty( $row['register_flg'] ) ? '希望する' : '希望しない';
+		$approval = ! empty( $row['approval_flg'] ) ? '査定結果を自動承認する' : '査定結果を確認してから承認する';
+		$receive = ! empty( $row['receive_flg'] ) ? '受け取る' : '受け取らない';
+		$latitude = null === $detail['latitude'] ? '' : (string) $detail['latitude'];
+		$longitude = null === $detail['longitude'] ? '' : (string) $detail['longitude'];
 		$lines = array(
 			"{$row['last_name']} {$row['first_name']} 様",
 			'',
@@ -873,12 +896,39 @@ final class Ouchi_Visit_Application_Backend {
 			'',
 			'受付番号：' . $row['request_code'],
 			'申込日時：' . wp_date( 'Y年n月j日 H:i', strtotime( $outbox['created_at'] . ' UTC' ) ),
+			'氏名：' . $row['last_name'] . ' ' . $row['first_name'],
+			'フリガナ：' . $row['last_name_kana'] . ' ' . $row['first_name_kana'],
 			'メールアドレス：' . $row['email'],
+			'メールアドレス（確認用）：' . $row['email'],
 			'電話番号：' . $row['phone_number'],
+			'生年月日：' . $row['birth_date'],
+			'職業：' . $row['occupation'],
+			'郵便番号：' . $row['application_zip'],
+			'都道府県：' . $row['application_prefecture'],
+			'市区町村・対応エリア：' . $row['application_city'],
+			'住所・建物名：' . $row['application_address1'],
 			'回収先住所：' . $address,
 			'受け渡し方法：' . $handoff,
+			'建物種別：' . $building_type,
+			'申込者姓の表札：' . $nameplate,
+			'表札がない場合の回収先補足：' . ( 'no' === $detail['nameplate_status'] && '' !== (string) $detail['nameplate_name'] ? $detail['nameplate_name'] : '該当なし' ),
+			'回収場所の補足：' . ( '' !== (string) $detail['access_note'] ? $detail['access_note'] : '入力なし' ),
+			'回収場所の地図座標：' . ( '' !== $latitude && '' !== $longitude ? $latitude . ', ' . $longitude : '記録なし' ),
 			'回収希望日時：' . ( $slot_lines ? implode( '／', $slot_lines ) : '記録なし' ),
 			'確定した回収日時：' . ( '' !== $confirmed ? $confirmed : '現在、確定日時はありません。' ),
+			'買取代金の受取方法：' . $row['payment_method'],
+			'銀行名：' . $row['bank_name'],
+			'銀行コード：' . $row['bank_code'],
+			'支店名：' . $row['branch_name'],
+			'支店コード：' . $row['branch_code'],
+			'口座種別：' . $account_type,
+			'口座番号：xxx' . $row['account_number_last4'],
+			'口座名義（カナ）：' . $holder_kana,
+			'箱数：' . $row['box_count'],
+			'キャンペーンコード：' . ( '' !== (string) $row['campaign_code'] ? $row['campaign_code'] : '入力なし' ),
+			'会員登録：' . $register,
+			'査定結果の承認方法：' . $approval,
+			'お知らせメール配信：' . $receive,
 			'申込内容確認ページ：' . $application_url,
 			'',
 			'本人確認について：対面の場合は回収時に本人確認書類の原本をご提示ください。非対面の場合はWEB上で所定の本人確認手続きを行ってください。',
@@ -889,14 +939,6 @@ final class Ouchi_Visit_Application_Backend {
 			$lines[] = '荷物は段ボール箱・紙袋・ビニール袋のいずれかに入れ、箱のふたまたは袋の口を閉じてください。回収するすべての荷物に、同じ回収コードを外から見えるように記載してください。';
 			$lines[] = '回収コード：' . $detail['collection_code'];
 			$lines[] = '荷物の設置場所：' . (string) $detail['placement_location'];
-			$consent_query = $pdo->prepare( "SELECT consent_text FROM visit_consent_records WHERE public_token = ? AND consent_type = 'contactless_pickup' ORDER BY consented_at DESC LIMIT 1" );
-			$consent_query->execute( array( $public_token ) );
-			$consent_text = (string) $consent_query->fetchColumn();
-			if ( '' !== $consent_text ) {
-				$lines[] = '';
-				$lines[] = 'お申し込み時に確認・同意いただいた注意事項：';
-				$lines[] = $consent_text;
-			}
 		}
 		$lines[] = '';
 		$lines[] = 'ご不明な点は、おうち買取便公式サイトのお問い合わせ案内をご確認ください。';
