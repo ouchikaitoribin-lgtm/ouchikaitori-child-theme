@@ -45,7 +45,7 @@ add_action( 'wp_enqueue_scripts', static function () {
     }
 
     $visit_asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
-    wp_enqueue_style( 'ouchi-visit-lp', $visit_asset_uri . 'visit.css', array(), '1.0.3' );
+    wp_enqueue_style( 'ouchi-visit-lp', $visit_asset_uri . 'visit.css', array(), '1.0.4' );
     wp_enqueue_script( 'ouchi-visit-lp', $visit_asset_uri . 'visit.js', array(), '1.0.0', true );
 } );
 
@@ -63,7 +63,7 @@ get_header();
             <span>非対面で受け渡し</span><span>ご不在でも回収</span><span>箱詰め不要</span>
           </div>
           <p class="visit-hero__note">本・CD・DVD・ゲーム・カメラ・スマートフォン・パソコンなど<br><strong>現在の対応地域：<?php echo esc_html( $visit_area_summary ); ?></strong></p>
-          <a class="visit-button visit-button--primary" href="#visit-area">対応エリアを確認する <span aria-hidden="true">↓</span></a>
+          <a class="visit-button visit-button--primary" href="#visit-area">お申し込みはこちらから <span aria-hidden="true">↓</span></a>
           <p class="visit-hero__fineprint">非対面回収には事前の本人確認と回収場所の条件があります。<br>予約受付ページは準備中です。</p>
         </div>
         <div class="visit-hero-art">
@@ -96,6 +96,10 @@ get_header();
         </div>
       </div>
     </section>
+    <div class="visit-container visit-area-cta">
+      <a class="visit-button visit-button--primary" href="#visit-area">お申し込みはこちらから <span aria-hidden="true">↓</span></a>
+      <p class="visit-area-cta__note">対応エリアを確認して、地域ページへお進みください。</p>
+    </div>
 
     <!-- 既存トップページの口コミコードを挿入する枠。開発プレビューでのみ表示できます。 -->
     <section class="visit-insert visit-reviews" aria-labelledby="visit-reviews-title">
@@ -141,6 +145,10 @@ get_header();
         </ul>
       </div>
     </section>
+    <div class="visit-container visit-area-cta">
+      <a class="visit-button visit-button--primary" href="#visit-area">お申し込みはこちらから <span aria-hidden="true">↓</span></a>
+      <p class="visit-area-cta__note">対応エリアを確認して、地域ページへお進みください。</p>
+    </div>
 
     <!-- 既存トップページの最新買取価格コードを挿入する枠。開発プレビューでのみ表示できます。 -->
     <section class="visit-insert visit-prices" aria-labelledby="visit-prices-title">
@@ -163,6 +171,10 @@ get_header();
         <p class="visit-flow-note">※ご利用条件・予約方法は受付開始時にご案内します。予約ページは現在準備中です。</p>
       </div>
     </section>
+    <div class="visit-container visit-area-cta">
+      <a class="visit-button visit-button--primary" href="#visit-area">お申し込みはこちらから <span aria-hidden="true">↓</span></a>
+      <p class="visit-area-cta__note">対応エリアを確認して、地域ページへお進みください。</p>
+    </div>
 
     <section class="visit-section visit-area" id="visit-area" aria-labelledby="visit-area-title">
       <div class="visit-container">
@@ -231,7 +243,7 @@ get_header();
     </section>
 
     <section class="visit-final-cta" aria-labelledby="visit-final-cta-title">
-      <div class="visit-container visit-final-cta__inner"><div class="visit-final-cta__text"><p class="visit-eyebrow">SERVICE AREAS</p><h2 id="visit-final-cta-title">まずは対応エリアを<br>ご確認ください。</h2><p>現在対応中の地域：<?php echo esc_html( $visit_area_summary ); ?>。予約受付ページは準備中です。</p></div><a class="visit-button visit-button--light" href="#visit-area">対応エリアを見る <span aria-hidden="true">↑</span></a><span class="visit-final-cta__spark" aria-hidden="true">✳</span></div>
+      <div class="visit-container visit-final-cta__inner"><div class="visit-final-cta__text"><p class="visit-eyebrow">SERVICE AREAS</p><h2 id="visit-final-cta-title">まずは対応エリアを<br>ご確認ください。</h2><p>現在対応中の地域：<?php echo esc_html( $visit_area_summary ); ?>。予約受付ページは準備中です。</p></div><a class="visit-button visit-button--light" href="#visit-area">お申し込みはこちらから <span aria-hidden="true">↑</span></a><span class="visit-final-cta__spark" aria-hidden="true">✳</span></div>
     </section>
   </main></div>
 <?php get_footer(); ?>
