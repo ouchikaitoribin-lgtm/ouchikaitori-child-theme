@@ -198,9 +198,13 @@ test('supported municipality cards link to their configured regional pages visib
   assert.match(landingPage, /'url' => home_url\( '\/visit\/' \. rawurlencode\( \(string\) \$visit_region_slug \) \. '\/' \)/);
   assert.match(landingPage, /if \( ! empty\( \$visit_city\['url'\] \) \) : \?>[\s\S]*?<a class="visit-city-detail-link" href="<\?php echo esc_url\( \$visit_city\['url'\] \); \?>"[\s\S]*?対応地域ページを見る/);
   assert.match(landingPage, /else : \?>\s*<\?php echo esc_html\( \$visit_city\['name'\] \. '（' \. \$visit_city\['coverage'\] \. '）' \); \?>/);
-  assert.match(landingPage, /ouchi-visit-lp'.*'1\.0\.2'/);
+  assert.match(landingPage, /class="visit-prefecture-link" href="<\?php echo esc_url\( \$visit_area\['municipalities'\]\[0\]\['url'\] \); \?>"/);
+  assert.match(landingPage, /class="visit-area-district-link" href="<\?php echo esc_url\( \$visit_city\['url'\] \); \?>"/);
+  assert.match(landingPage, /ouchi-visit-lp'.*'1\.0\.3'/);
   assert.match(landingCss, /\.visit-city-detail-link::after\s*\{[^}]*content:\s*"→"/);
   assert.match(landingCss, /\.visit-city-detail-link:focus-visible/);
+  assert.match(landingCss, /\.visit-area-district-link:hover/);
+  assert.match(landingCss, /\.visit-area-district-link:focus-visible/);
 });
 
 test('visit and all area pages render common FAQ entries from one shared source', () => {

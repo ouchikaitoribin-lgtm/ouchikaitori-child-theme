@@ -45,7 +45,7 @@ add_action( 'wp_enqueue_scripts', static function () {
     }
 
     $visit_asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
-    wp_enqueue_style( 'ouchi-visit-lp', $visit_asset_uri . 'visit.css', array(), '1.0.2' );
+    wp_enqueue_style( 'ouchi-visit-lp', $visit_asset_uri . 'visit.css', array(), '1.0.3' );
     wp_enqueue_script( 'ouchi-visit-lp', $visit_asset_uri . 'visit.js', array(), '1.0.0', true );
 } );
 
@@ -172,7 +172,7 @@ get_header();
             <article class="visit-prefecture-card" data-prefecture="<?php echo esc_attr( $visit_area['prefecture'] ); ?>">
               <div class="visit-prefecture-card__top">
                 <span class="visit-prefecture-card__pin" aria-hidden="true">⌖</span>
-                <div><span class="visit-prefecture-card__status"><i></i> 対応中</span><h3><?php echo esc_html( $visit_area['prefecture'] ); ?></h3></div>
+                <div><span class="visit-prefecture-card__status"><i></i> 対応中</span><h3><?php if ( 1 === count( $visit_area['municipalities'] ) && ! empty( $visit_area['municipalities'][0]['url'] ) ) : ?><a class="visit-prefecture-link" href="<?php echo esc_url( $visit_area['municipalities'][0]['url'] ); ?>" aria-label="<?php echo esc_attr( $visit_area['prefecture'] . '（' . $visit_area['municipalities'][0]['name'] . '）の対応地域ページを見る' ); ?>"><?php echo esc_html( $visit_area['prefecture'] ); ?></a><?php else : ?><?php echo esc_html( $visit_area['prefecture'] ); ?><?php endif; ?></h3></div>
                 <span class="visit-prefecture-card__count"><?php echo esc_html( (string) count( $visit_area['municipalities'] ) ); ?> <small>自治体</small></span>
               </div>
               <?php foreach ( $visit_area['municipalities'] as $visit_city ) : ?>
@@ -190,7 +190,7 @@ get_header();
                   <p><?php echo esc_html( $visit_city['description'] ); ?></p>
                   <?php if ( ! empty( $visit_city['districts'] ) ) : ?>
                     <ul aria-label="<?php echo esc_attr( $visit_city['name'] . 'の対応区' ); ?>">
-                      <?php foreach ( $visit_city['districts'] as $visit_district ) : ?><li><?php echo esc_html( $visit_district ); ?></li><?php endforeach; ?>
+                      <?php foreach ( $visit_city['districts'] as $visit_district ) : ?><li><a class="visit-area-district-link" href="<?php echo esc_url( $visit_city['url'] ); ?>" aria-label="<?php echo esc_attr( $visit_city['name'] . 'の出張買取対応地域（' . $visit_district . '）を確認する' ); ?>"><?php echo esc_html( $visit_district ); ?></a></li><?php endforeach; ?>
                     </ul>
                   <?php endif; ?>
                 </div>

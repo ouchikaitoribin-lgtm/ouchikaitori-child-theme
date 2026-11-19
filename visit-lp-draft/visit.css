@@ -124,6 +124,9 @@
 .visit-prefecture-card__status { display: flex; align-items: center; gap: 6px; color: var(--visit-green); font-size: 10px; font-weight: 750; }
 .visit-prefecture-card__status i { width: 7px; height: 7px; border-radius: 50%; background: #62a172; box-shadow: 0 0 0 3px #e7f2e8; }
 .visit-prefecture-card h3 { margin: 0; font-size: 19px; }
+.visit-prefecture-link { color: inherit; text-decoration: underline !important; text-decoration-color: #afc2b0 !important; text-underline-offset: 4px; }
+.visit-prefecture-link:hover { color: var(--visit-coral) !important; }
+.visit-prefecture-link:focus-visible, .visit-area-district-link:focus-visible { border-radius: 3px; outline: 3px solid #f4a45f; outline-offset: 3px; }
 .visit-prefecture-card__count { margin-left: auto; color: var(--visit-green); font-size: 22px; font-weight: 800; }
 .visit-prefecture-card__count small { font-size: 10px; font-weight: 600; }
 .visit-municipality { padding-top: 16px; }
@@ -136,7 +139,9 @@
 .visit-municipality__heading span { padding: 3px 9px; border-radius: 99px; background: #edf5ed; color: #4d8057; font-size: 9px; font-weight: 700; }
 .visit-municipality p { margin: 5px 0 13px; color: var(--visit-muted); font-size: 11px; }
 .visit-municipality ul { display: flex; flex-wrap: wrap; gap: 7px; margin: 0; padding: 0; list-style: none; }
-.visit-municipality li { padding: 4px 9px; border: 1px solid #e4e8df; border-radius: 5px; color: #56635a; font-size: 10px; }
+.visit-municipality li { overflow: hidden; border: 1px solid #e4e8df; border-radius: 5px; color: #56635a; font-size: 10px; }
+.visit-area-district-link { display: block; padding: 4px 9px; color: inherit; text-decoration: none; transition: color .18s ease, background-color .18s ease; }
+.visit-area-district-link:hover { background: var(--visit-green-pale); color: var(--visit-green-dark); text-decoration: underline; text-underline-offset: 2px; }
 .visit-area-footnote { display: flex; align-items: flex-start; gap: 8px; margin: 16px 0 0; color: #69746c; font-size: 10px; }
 .visit-area-footnote span { display: grid; width: 16px; height: 16px; flex: 0 0 16px; place-items: center; margin-top: 1px; border: 1px solid #a9b4a7; border-radius: 50%; color: #637466; font-size: 10px; font-style: italic; font-weight: 750; }
 .visit-faq { background: var(--visit-cream); }
