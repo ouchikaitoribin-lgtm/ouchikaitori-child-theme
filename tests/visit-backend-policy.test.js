@@ -13,6 +13,7 @@ const bookingScript = readFileSync(join(root, 'visit-lp-draft/visit-booking.js')
 const bookingWidget = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/booking-widget.html'), 'utf8');
 const landingPage = readFileSync(join(root, 'page-visit.php'), 'utf8');
 const landingCss = readFileSync(join(root, 'visit-lp-draft/visit.css'), 'utf8');
+const sharedVisitFaq = readFileSync(join(root, 'visit-lp-draft/visit/faq-common.php'), 'utf8');
 const page = readFileSync(join(root, 'page-visit-kyoto-city.php'), 'utf8');
 const pendingPage = readFileSync(join(root, 'page-visit-kyoto-city-application-pending.php'), 'utf8');
 const pendingScript = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/application-pending/pending.js'), 'utf8');
@@ -200,6 +201,20 @@ test('supported municipality cards link to their configured regional pages visib
   assert.match(landingPage, /ouchi-visit-lp'.*'1\.0\.2'/);
   assert.match(landingCss, /\.visit-city-detail-link::after\s*\{[^}]*content:\s*"→"/);
   assert.match(landingCss, /\.visit-city-detail-link:focus-visible/);
+});
+
+test('visit and all area pages render common FAQ entries from one shared source', () => {
+  for (const template of [landingPage, page]) {
+    assert.match(template, /\$visit_common_faq_items = require get_stylesheet_directory\(\) \. '\/visit-lp-draft\/visit\/faq-common\.php'/);
+    assert.match(template, /foreach \( \$visit_common_faq_items as \$visit_faq_item \)/);
+    assert.match(template, /esc_html\( \$visit_faq_item\['question'\] \)/);
+    assert.match(template, /esc_html\( \$visit_faq_item\['answer'\] \)/);
+  }
+  assert.match(landingPage, /今はどの地域で利用できますか？/);
+  assert.match(page, /<\?php echo esc_html\( \$visit_city_name \); \?>のどの地域が対応していますか？/);
+  assert.match(sharedVisitFaq, /'question' => '非対面での回収はできますか？'/);
+  assert.match(sharedVisitFaq, /'question' => '予約はどこからできますか？'/);
+  assert.doesNotMatch(page, /非対面回収では玄関のドアを開けますか？|申し込みはどのように完了しますか？/);
 });
 
 test('visit terms agreement displays the existing WordPress terms post 57 in place', () => {

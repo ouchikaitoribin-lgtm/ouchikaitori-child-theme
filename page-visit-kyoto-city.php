@@ -33,6 +33,7 @@ $visit_city_name = (string) $visit_region['city'];
 $visit_prefecture_name = (string) $visit_region['prefecture'];
 $visit_address_prefix = (string) $visit_region['address_prefix'];
 $visit_map_center = array( (float) $visit_region['map_center']['lat'], (float) $visit_region['map_center']['lng'] );
+$visit_common_faq_items = require get_stylesheet_directory() . '/visit-lp-draft/visit/faq-common.php';
 $visit_confirmation_path = '/visit/' . rawurlencode( $visit_region_slug ) . '/application-pending/';
 
 add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_mode, $visit_application_backend_enabled, $visit_confirmation_path, $visit_address_prefix, $visit_city_name, $visit_prefecture_name, $visit_map_center, $visit_region_slug, $visit_region ) {
@@ -197,10 +198,9 @@ get_header();
 
     <section class="visit-section visit-faq" id="kyoto-faq" aria-labelledby="kyoto-faq-title"><div class="visit-container visit-faq__grid"><div class="visit-faq__intro"><p class="visit-eyebrow">FAQ</p><h2 id="kyoto-faq-title"><?php echo esc_html( $visit_city_name ); ?>の出張買取<br>よくある質問</h2><p>非対面回収や、対応地域についてご案内します。</p><span class="visit-faq__decor" aria-hidden="true">?</span></div><div class="visit-faq-list">
       <details class="visit-faq-item"><summary><span>Q</span><?php echo esc_html( $visit_city_name ); ?>のどの地域が対応していますか？<i aria-hidden="true"></i></summary><p><?php echo esc_html( implode( '・', $visit_region['areas'] ) . 'の' . $visit_coverage_label . 'です。対応地域はこのページの一覧をご確認ください。' ); ?></p></details>
-      <details class="visit-faq-item"><summary><span>Q</span>非対面回収では玄関のドアを開けますか？<i aria-hidden="true"></i></summary><p>いいえ。置き配のように、玄関のドアを閉めたまま、事前に指定した場所の荷物を回収する方式です。本人確認と回収場所の条件があります。</p></details>
-      <details class="visit-faq-item"><summary><span>Q</span>回収のとき家にいる必要はありますか？<i aria-hidden="true"></i></summary><p>非対面回収では、事前手続きと場所の条件を満たせば、回収時にご在宅いただく必要はありません。対面での受け渡しも選べます。</p></details>
-      <details class="visit-faq-item"><summary><span>Q</span>出張費や最低点数、査定後の返却条件は？<i aria-hidden="true"></i></summary><p>費用・最低点数・返却条件は、現時点で確定した公開情報がありません。受付開始前に確定条件をご案内します。</p></details>
-      <details class="visit-faq-item"><summary><span>Q</span>申し込みはどのように完了しますか？<i aria-hidden="true"></i></summary><p>このページで日時とお客様情報を入力し、仮申込を送信した後、確認メール内のリンクを開くと申込完了となる予定です。現在は申込保存・メール確認のバックエンドが未接続です。</p></details>
+      <?php foreach ( $visit_common_faq_items as $visit_faq_item ) : ?>
+        <details class="visit-faq-item"><summary><span>Q</span><?php echo esc_html( $visit_faq_item['question'] ); ?><i aria-hidden="true"></i></summary><p><?php echo esc_html( $visit_faq_item['answer'] ); ?></p></details>
+      <?php endforeach; ?>
     </div></div></section>
 
     <section class="visit-final-cta visit-kyoto-final" aria-labelledby="kyoto-final-title"><div class="visit-container visit-final-cta__inner"><div class="visit-final-cta__text"><p class="visit-eyebrow">AVAILABLE SERVICE AREA</p><h2 id="kyoto-final-title"><?php echo esc_html( $visit_city_name . '（' . $visit_coverage_label . '）' ); ?>で<br>出張買取に対応しています。</h2><p>日時と申込情報の入力から確認メールによる完了まで、このページ内で行う構成です。現在はバックエンド準備中です。</p></div><a class="visit-button visit-button--light" href="#kyoto-booking">申込フォームを見る <span aria-hidden="true">↑</span></a><span class="visit-final-cta__spark" aria-hidden="true">✳</span></div></section>

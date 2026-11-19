@@ -37,6 +37,7 @@ foreach ( $visit_regions as $visit_region ) {
     $visit_area_summary_parts[] = (string) $visit_region['city'] . '（' . $visit_coverage . '）';
 }
 $visit_area_summary = implode( '、', $visit_area_summary_parts );
+$visit_common_faq_items = require get_stylesheet_directory() . '/visit-lp-draft/visit/faq-common.php';
 
 add_action( 'wp_enqueue_scripts', static function () {
     if ( ! is_page_template( 'page-visit.php' ) ) {
@@ -214,11 +215,9 @@ get_header();
         <div class="visit-faq__intro"><p class="visit-eyebrow">FAQ</p><h2 id="visit-faq-title">よくある質問</h2><p>出張買取・非対面回収について、よくいただくご質問をまとめました。</p><span class="visit-faq__decor" aria-hidden="true">?</span></div>
         <div class="visit-faq-list">
           <details class="visit-faq-item"><summary><span>Q</span>今はどの地域で利用できますか？<i aria-hidden="true"></i></summary><p>現在の対応地域は<?php echo esc_html( $visit_area_summary ); ?>です。都道府県全域ではなく、カードに記載した市区町村が対象です。</p></details>
-          <details class="visit-faq-item"><summary><span>Q</span>非対面での回収はできますか？<i aria-hidden="true"></i></summary><p>はい。事前にWEB上で所定の本人確認を行い、回収場所などの条件を確認したうえで、玄関前など指定場所から回収します。</p></details>
-          <details class="visit-faq-item"><summary><span>Q</span>回収時に家にいる必要はありますか？<i aria-hidden="true"></i></summary><p>非対面回収では、事前に決めた場所へ商品を置いていただければ、ご不在中の回収も可能です。場所はスタッフが安全に確認できる範囲に限ります。</p></details>
-          <details class="visit-faq-item"><summary><span>Q</span>スタッフに直接渡すこともできますか？<i aria-hidden="true"></i></summary><p>はい。ご希望に応じて、回収時にスタッフへ直接お渡しいただく方法もお選びいただけます。</p></details>
-          <details class="visit-faq-item"><summary><span>Q</span>費用や最低点数、査定後の返却について教えてください。<i aria-hidden="true"></i></summary><p>費用・最低買取数量・返却条件は、公開前に確定した利用条件を設定してご案内します。現時点では本ページに未確定の条件を記載していません。</p></details>
-          <details class="visit-faq-item"><summary><span>Q</span>予約はどこからできますか？<i aria-hidden="true"></i></summary><p>予約ページは現在準備中です。対応地域や予約方法が整い次第、このページからご案内します。</p></details>
+          <?php foreach ( $visit_common_faq_items as $visit_faq_item ) : ?>
+            <details class="visit-faq-item"><summary><span>Q</span><?php echo esc_html( $visit_faq_item['question'] ); ?><i aria-hidden="true"></i></summary><p><?php echo esc_html( $visit_faq_item['answer'] ); ?></p></details>
+          <?php endforeach; ?>
         </div>
       </div>
     </section>
