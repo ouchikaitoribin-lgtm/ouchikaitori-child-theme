@@ -61,8 +61,8 @@ add_action( 'wp_enqueue_scripts', static function () {
 	}
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
 	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.0.0' );
-	wp_enqueue_style( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.css', array( 'ouchi-visit-lp' ), '1.1.2' );
-	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.3', true );
+	wp_enqueue_style( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.css', array( 'ouchi-visit-lp' ), '1.1.3' );
+	wp_enqueue_script( 'ouchi-visit-pending', $asset_uri . 'visit/kyoto-city/application-pending/pending.js', array(), '1.1.4', true );
 	wp_script_add_data( 'ouchi-visit-pending', 'strategy', 'defer' );
 } );
 
@@ -147,7 +147,7 @@ get_header();
       <div class="visit-container">
         <div class="visit-pending-section__heading"><p class="visit-pending-eyebrow">IDENTITY VERIFICATION</p><h2 id="pending-identity-title">本人確認書類のご案内</h2><p>お申し込み時に選んだ受け渡し方法に応じて、本人確認を行います。</p></div>
         <div class="visit-pending-id-guides">
-          <article class="visit-pending-id-guide" data-handoff-guide="face"><span class="visit-pending-id-guide__icon" aria-hidden="true">対面</span><div><h3>対面で受け渡す場合</h3><p>回収当日、スタッフへ本人確認書類の<strong>原本を提示</strong>してください。</p></div></article>
+          <article class="visit-pending-id-guide" data-handoff-guide="face"><span class="visit-pending-id-guide__icon" aria-hidden="true">対面</span><div><h3>対面で受け渡す場合</h3><p>回収当日、スタッフへ本人確認書類の<strong>原本を提示</strong>してください。スタッフが内容を確認し、本人確認書類を撮影します。</p></div></article>
           <article class="visit-pending-id-guide" data-handoff-guide="contactless"><span class="visit-pending-id-guide__icon" aria-hidden="true">非対面</span><div><h3>非対面で回収する場合</h3><p>インターネット上の所定の本人確認手続きから、本人確認書類を<strong>アップロード</strong>してください。</p></div></article>
         </div>
         <p class="visit-pending-id-note" data-identity-upload-note><?php if ( '' !== $visit_identity_upload_url ) : ?>本人確認書類は、<a class="visit-pending-id-upload-link" href="<?php echo esc_url( $visit_identity_upload_url ); ?>">アップロードページ</a>から提出してください。<?php else : ?>本人確認書類のアップロードは、非対面でお申し込みの場合に、申込完了後の専用ページから行えます。<?php endif; ?></p>
@@ -169,7 +169,7 @@ get_header();
       </div>
     </section>
 
-    <section class="visit-pending-code-section" aria-labelledby="pending-code-title">
+    <section class="visit-pending-code-section" data-pending-handoff="contactless" aria-labelledby="pending-code-title" hidden>
       <div class="visit-container"><div class="visit-pending-code-card">
         <p class="visit-pending-eyebrow">PICKUP CODE</p><h2 id="pending-code-title">荷物に記載する回収コード</h2>
         <p>回収するすべての段ボール・袋に、同じ回収コードを外側から見えるように記載してください。</p>
@@ -180,13 +180,13 @@ get_header();
 
     <section class="visit-pending-section visit-pending-packing" aria-labelledby="pending-packing-title">
       <div class="visit-container">
-        <div class="visit-pending-section__heading"><p class="visit-pending-eyebrow">PICKUP PREPARATION</p><h2 id="pending-packing-title">荷物の置き方・準備</h2><p>申込時に指定した置き場所と、荷物の準備内容をご確認ください。</p></div>
-        <div class="visit-pending-place-card"><span class="visit-pending-place-card__icon" aria-hidden="true">⌖</span><div><strong>指定した場所に置いてください</strong><p>回収対象は、申込時に指定した設置場所にある荷物です。荷物の置き場所は申込内容欄でご確認ください。</p></div></div>
+        <div class="visit-pending-section__heading"><p class="visit-pending-eyebrow">PICKUP PREPARATION</p><h2 id="pending-packing-title">荷物の置き方・準備</h2><p>受け渡し方法に応じた荷物の準備内容をご確認ください。</p></div>
+        <div class="visit-pending-place-card" data-pending-handoff="contactless" hidden><span class="visit-pending-place-card__icon" aria-hidden="true">⌖</span><div><strong>指定した場所に荷物を置いてください</strong><p>回収前に、申込時に指定した場所へ荷物を置いてください。回収時、スタッフは玄関ドアを開けず、お客様と対面せずに指定場所から回収します。</p></div></div>
         <ol class="visit-pending-packing-list">
-          <li><span>01</span><div><strong>段ボール箱・紙袋・ビニール袋に入れる</strong><p>商品は必ずいずれかの梱包資材に入れてください。</p></div></li>
+          <li><span>01</span><div><strong>回収時間までに荷物を梱包する</strong><p>商品はお客様ご自身で段ボール箱・紙袋・ビニール袋に入れ、回収時間までに梱包を済ませてください。</p></div></li>
           <li><span>02</span><div><strong>中身が出ない状態にする</strong><p>ふたや袋の口を閉じ、商品が飛び出さず、持ち上げても落ちない状態にしてください。</p></div></li>
-          <li><span>03</span><div><strong>すべての荷物に回収コードを付ける</strong><p>荷物ごとに同じコードを、外側から確認できる分かりやすい位置に記載してください。コードは開封せずに確認でき、文字が隠れていない状態にしてください。</p></div></li>
-          <li data-pending-contactless hidden><span>04</span><div><strong>非対面の場合は玄関ドアを開けずに置く</strong><p>申込時に指定した場所へ荷物を置いてください。スタッフはお客様と対面せず、指定場所から回収します。</p></div></li>
+          <li data-pending-handoff="face" hidden><span>03</span><div><strong>本人確認書類の原本を準備する</strong><p>回収当日にスタッフへ提示してください。スタッフが内容を確認し、本人確認書類を撮影します。</p></div></li>
+          <li data-pending-handoff="contactless" hidden><span>03</span><div><strong>すべての荷物に回収コードを付ける</strong><p>荷物ごとに同じコードを、外側から確認できる分かりやすい位置に記載してください。コードは開封せずに確認でき、文字が隠れていない状態にしてください。</p></div></li>
         </ol>
       </div>
     </section>

@@ -6,7 +6,6 @@
   const application = window.VISIT_PENDING_APPLICATION;
   const isPreview = window.VISIT_PENDING_PREVIEW === true && !publicToken;
   const pendingNote = document.querySelector('[data-pending-data-note]');
-  const contactlessDetails = document.querySelector('[data-pending-contactless]');
   const tokenStatus = document.querySelector('[data-public-token-status]');
   const invalidNotice = document.querySelector('[data-public-token-invalid]');
   const hasToken = typeof publicToken === 'string' && publicToken.length > 0;
@@ -69,8 +68,10 @@
   if (hasApplicationData && pendingNote) pendingNote.hidden = true;
 
   const handoff = application.handoff_method;
-  if (contactlessDetails) contactlessDetails.hidden = handoff !== 'contactless';
   if (handoff === 'face' || handoff === 'contactless') {
+    document.querySelectorAll('[data-pending-handoff]').forEach((element) => {
+      element.hidden = element.dataset.pendingHandoff !== handoff;
+    });
     document.querySelectorAll('[data-handoff-guide]').forEach((guide) => {
       guide.hidden = guide.dataset.handoffGuide !== handoff;
     });

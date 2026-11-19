@@ -129,8 +129,13 @@ test('application pending page shows only requested summary fields with Japanese
   assert.match(backend, /SELECT request_code, application_city, pickup_date FROM purchase_requests/);
   assert.match(backend, /wp_date\( 'H:i', strtotime\( \$slot\['start_at'\] \. ' UTC' \) \)/);
   assert.match(backend, /wp_date\( 'H:i', strtotime\( \$slot\['end_at'\] \. ' UTC' \) \)/);
-  assert.match(pendingPage, /pending\.css'.*'1\.1\.2'/);
-  assert.match(pendingPage, /pending\.js'.*'1\.1\.3'/);
+  assert.match(pendingPage, /pending\.css'.*'1\.1\.3'/);
+  assert.match(pendingPage, /pending\.js'.*'1\.1\.4'/);
+  assert.match(pendingPage, /data-pending-handoff="contactless"[^>]*hidden/);
+  assert.match(pendingPage, /<li data-pending-handoff="face" hidden>[\s\S]*?本人確認書類の原本を準備する/);
+  assert.match(pendingPage, /回収時間までに荷物を梱包する/);
+  assert.match(pendingScript, /dataset\.pendingHandoff !== handoff/);
+  assert.match(backend, /if \( 'contactless' === \$detail\['visit_type'\] \) \{\s*\$application\['pickup_code'\]/);
 });
 
 test('visit terms agreement displays the existing WordPress terms post 57 in place', () => {
