@@ -9,7 +9,7 @@
         </div>
         <div class="visit-booking-demo" data-booking-demo role="note" hidden>画面確認用のデモです。表示される空き枠は仮データで、予約は保存されません。</div>
         <ol class="visit-booking-progress" aria-label="申し込みのステップ">
-          <li class="is-current" data-progress="1"><span>1</span><b>エリア</b></li><li data-progress="2"><span>2</span><b>受け渡し</b></li><li data-progress="3"><span>3</span><b>日時</b></li><li data-progress="4"><span>4</span><b>お客様情報</b></li><li data-progress="5"><span>5</span><b>振込口座</b></li><li data-progress="6"><span>6</span><b>申込設定</b></li>
+          <li class="is-current" data-progress="1"><span>1</span><b>エリア</b></li><li data-progress="2"><span>2</span><b>受け渡し</b></li><li data-progress="3"><span>3</span><b>日時</b></li><li data-progress="4"><span>4</span><b>お客様情報</b></li><li data-progress="5"><span>5</span><b>振込口座</b></li><li data-progress="6"><span>6</span><b>集荷場所</b></li><li data-progress="7"><span>7</span><b>申込内容</b></li>
         </ol>
 
         <div class="visit-booking-step" data-step="1">
@@ -106,7 +106,7 @@
           </div>
 
           <div class="visit-booking-step" data-step="6" hidden>
-            <div class="visit-booking-step__heading"><span>STEP 06</span><h3>お申込み内容・集荷場所</h3><p>集荷場所とお申込み内容を入力してください。</p></div>
+            <div class="visit-booking-step__heading"><span>STEP 06</span><h3>集荷場所</h3><p>スタッフが迷わず回収できるよう、建物と集荷場所についてお知らせください。</p></div>
             <div class="visit-form-section"><h4>集荷場所について</h4>
               <div class="visit-form-grid">
                 <fieldset class="visit-form-choice visit-form-grid__wide"><legend>一軒家ですか、集合住宅ですか？</legend><label><input type="radio" name="building_type" value="detached" required><span>一軒家</span></label><label><input type="radio" name="building_type" value="multi_unit" required><span>集合住宅</span></label></fieldset>
@@ -125,12 +125,19 @@
                 </div>
               </div>
             </div>
+            <div class="visit-booking-actions"><button class="visit-button visit-button--quiet" type="button" data-previous-step="5">口座情報に戻る</button><button class="visit-button visit-button--primary" type="button" data-next-step="7">申込内容を入力 <span aria-hidden="true">→</span></button></div>
+          </div>
+
+          <div class="visit-booking-step" data-step="7" hidden>
+            <div class="visit-booking-step__heading"><span>STEP 07</span><h3>お申込み内容</h3><p>箱数やご希望の査定方法を選択してください。</p></div>
             <div class="visit-form-section"><h4>お申込み内容</h4>
               <div class="visit-form-grid">
                 <label>おおよその箱数<input name="box_count" type="number" min="0" max="255" inputmode="numeric" placeholder="例：3" required><small>回収するお品物のおおよその箱数をご入力ください。</small></label>
                 <label>キャンペーンコード<input name="campaign_code" type="text" maxlength="10" autocomplete="off" placeholder="お持ちの場合に入力"><small>コードの適用はバックエンド接続時に確認します。</small></label>
                 <fieldset class="visit-form-choice visit-form-grid__wide"><legend>会員登録</legend><label><input type="radio" name="register_choice" value="yes" required><span>登録する</span></label><label><input type="radio" name="register_choice" value="no" required><span>登録しない</span></label></fieldset>
                 <fieldset class="visit-form-choice visit-form-grid__wide"><legend>お得なお知らせメール</legend><label><input type="radio" name="receive_choice" value="yes" required><span>受け取る</span></label><label><input type="radio" name="receive_choice" value="no" required><span>受け取らない</span></label></fieldset>
+                <fieldset class="visit-form-choice visit-form-grid__wide"><legend>査定結果の確認方法</legend><label><input type="radio" name="approval_choice" value="1" required><span>最短でお振込み（自動承認）</span></label><label><input type="radio" name="approval_choice" value="0" required><span>査定結果を見てからお振込み</span></label></fieldset>
+                <p class="visit-form-help visit-form-grid__wide">自動承認を選択した場合、査定結果の確認や返却希望のお手続きはできません。</p>
               </div>
             </div>
             <div class="visit-pickup-code-panel" data-pickup-code-panel hidden>
@@ -156,14 +163,14 @@
             <input type="hidden" name="contactless_consented_at" data-form-consented-at>
             <!-- WordPress組み込み時に申込用nonceを挿入する -->
             <!-- VISIT_APPLICATION_NONCE -->
-            <div class="visit-booking-actions"><button class="visit-button visit-button--quiet" type="button" data-previous-step="5">口座情報に戻る</button><button class="visit-button visit-button--primary" type="submit" data-application-submit disabled>仮申し込みを送信 <span aria-hidden="true">→</span></button></div>
+            <div class="visit-booking-actions"><button class="visit-button visit-button--quiet" type="button" data-previous-step="6">集荷場所に戻る</button><button class="visit-button visit-button--primary" type="submit" data-application-submit disabled>仮申し込みを送信 <span aria-hidden="true">→</span></button></div>
           </div>
             <p class="visit-booking-submit-note" data-submit-note>現在はデザイン確認用です。送信・個人情報の保存・確認メールの送付は行われません。</p>
             <div class="visit-application-result" data-application-result role="status" aria-live="polite" hidden></div>
             <section class="visit-booking-step visit-application-waiting" data-application-waiting aria-labelledby="application-waiting-title" hidden>
               <p class="visit-application-waiting__sent" data-email-sent-message role="status" aria-live="polite" hidden></p>
               <div class="visit-booking-step__heading">
-                <span>STEP 07 · EMAIL CONFIRMATION</span>
+                <span>EMAIL CONFIRMATION</span>
                 <h3 id="application-waiting-title">メールを開いて、確認リンクをクリックしてください</h3>
                 <p data-application-waiting-lead>入力したメールアドレスに届く確認メールを開き、メール内のリンクをクリックしてください。</p>
               </div>

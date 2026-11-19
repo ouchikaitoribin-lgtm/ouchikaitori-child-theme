@@ -83,6 +83,24 @@ test('contactless placement text is bounded before database insertion', () => {
   assert.match(validation, /throw new DomainException/);
 });
 
+test('appraisal approval choice is required and maps the existing 0/1 values to approval_flg', () => {
+  assert.match(bookingWidget, /name="approval_choice" value="1" required/);
+  assert.match(bookingWidget, /name="approval_choice" value="0" required/);
+  assert.match(backend, /'approval_choice'/);
+  assert.match(backend, /! in_array\( \$data\['approval_choice'\], array\( '0', '1' \), true \)/);
+  assert.match(backend, /\$approval = '1' === \$data\['approval_choice'\] \? 1 : 0/);
+  assert.match(backend, /approval_flg, receive_flg[\s\S]*?:approval_flg, :receive_flg/);
+  assert.match(backend, /':approval_flg' => \$approval/);
+});
+
+test('application contents and pickup location are separate in-form steps', () => {
+  assert.match(bookingWidget, /data-step="6"[\s\S]*?集荷場所[\s\S]*?name="pickup_latitude"[\s\S]*?data-next-step="7"/);
+  assert.match(bookingWidget, /data-step="7"[\s\S]*?お申込み内容[\s\S]*?name="box_count"[\s\S]*?name="approval_choice"/);
+  assert.match(bookingScript, /step > 7/);
+  assert.match(bookingScript, /finalSubmitButton\.disabled = step !== 7/);
+  assert.match(bookingScript, /for \(const step of \[4, 5, 6, 7\]\)/);
+});
+
 test('API registration is staging-gated and does not call collection services', () => {
   assert.match(backend, /'staging' === wp_get_environment_type\(\)/);
   assert.match(backend, /if \( ! \$this->database_ready\(\) \)\s*\{\s*return;\s*\}/);
@@ -149,13 +167,13 @@ test('application submission refreshes the WordPress nonce without using cached 
 test('staging application test prefills safe sample data and enables submit only on final step', () => {
   assert.ok(bookingScript.includes('const isStagingTestDefaults = isStagingFormPreview || applicationFlowReady'));
   assert.ok(bookingScript.includes('if (!isStagingTestDefaults) return;'));
-  assert.ok(bookingScript.includes('finalSubmitButton.disabled = step !== 6 || !isStagingTestDefaults'));
+  assert.ok(bookingScript.includes('finalSubmitButton.disabled = step !== 7 || !isStagingTestDefaults'));
   assert.ok(bookingScript.includes('day && day.available && Array.isArray(day.slots)'));
   assert.ok(bookingScript.includes("new Option('サンプル銀行（テスト用）', '9999')"));
 });
 
 test('visit booking script cache version is bumped for the staging form fix', () => {
-  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.5', true );"));
+  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.6', true );"));
 });
 
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {

@@ -112,13 +112,13 @@
   const bonusEnabled = bookingConfig.multiSlotBonusEnabled !== false;
   const bonusPercent = Number(bookingConfig.multiSlotBonusPercent) > 0 ? Number(bookingConfig.multiSlotBonusPercent) : 1;
   function setStep(step) {
-    if (!Number.isInteger(step) || step < 1 || step > 6) {
+    if (!Number.isInteger(step) || step < 1 || step > 7) {
       liveMessage.textContent = '指定された入力画面を表示できません。';
       return;
     }
     state.step = step;
     const finalSubmitButton = widget.querySelector('[data-application-submit]');
-    if (finalSubmitButton) finalSubmitButton.disabled = step !== 6 || !isStagingTestDefaults;
+    if (finalSubmitButton) finalSubmitButton.disabled = step !== 7 || !isStagingTestDefaults;
     widget.querySelectorAll('[data-step]').forEach((panel) => {
       panel.hidden = Number(panel.dataset.step) !== step;
     });
@@ -593,8 +593,15 @@
     button.addEventListener('click', () => {
       const next = Number(button.dataset.nextStep);
       if (next === 3 && (!state.handoff || (state.handoff === 'contactless' && !state.consent))) return;
-      if ((next === 5 && !validateFormStep(4)) || (next === 6 && !validateFormStep(5))) return;
+      if ((next === 5 && !validateFormStep(4)) || (next === 6 && !validateFormStep(5)) || (next === 7 && !validateFormStep(6))) return;
       if (next === 6 && !validateAccountHolder()) return;
+      if (next === 7 && (!pickupLatitude.value || !pickupLongitude.value)) {
+        setStep(6);
+        pickupMapStatus.textContent = '地図をクリックして集荷場所にピンを置いてください。';
+        pickupMapStatus.classList.add('is-error');
+        pickupMapElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
       if (next === 4) {
         if (!state.day || state.times.length === 0) return;
         widget.querySelector('[data-summary-area]').textContent = `${cityName}${state.area}`;
@@ -745,7 +752,7 @@
     const email = form.elements.email.value.trim().toLowerCase();
     const emailConfirm = form.elements.email_confirm.value.trim().toLowerCase();
     if (form.elements.website.value) return;
-    for (const step of [4, 5, 6]) {
+    for (const step of [4, 5, 6, 7]) {
       if (!validateFormStep(step)) { setStep(step); return; }
     }
     if (!pickupLatitude.value || !pickupLongitude.value) {
@@ -921,6 +928,7 @@
     setValue('pickup_notes', '画面確認用のテスト入力です。');
     setValue('box_count', '2');
     setRadio('register_choice', 'no');
+    setRadio('approval_choice', '0');
     setRadio('receive_choice', 'no');
     form.elements.privacy_agreement.checked = true;
     form.elements.terms_agreement.checked = true;
