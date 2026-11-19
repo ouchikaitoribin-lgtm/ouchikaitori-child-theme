@@ -113,6 +113,16 @@ test('privacy policy is read in place from the existing WordPress policy post', 
   assert.match(bookingWidget, /name="privacy_agreement" required/);
 });
 
+test('visit terms agreement displays the existing WordPress terms post 57 in place', () => {
+  assert.match(bookingWidget, /name="terms_agreement" required><span>利用規約を確認しました。<\/span>/);
+  assert.match(bookingWidget, /data-open-visit-terms[\s\S]*aria-controls="visit-terms-dialog"/);
+  assert.match(bookingWidget, /VISIT_TERMS_DIALOG/);
+  assert.match(page, /get_post_field\( 'post_content', 57 \)/);
+  assert.match(page, /apply_filters\( 'the_content', \$visit_terms_content \)/);
+  assert.match(page, /data-visit-terms-dialog/);
+  assert.match(bookingScript, /bindPolicyDialog\(visitTermsOpenButton, visitTermsDialog\)/);
+});
+
 test('API registration is staging-gated and does not call collection services', () => {
   assert.match(backend, /'staging' === wp_get_environment_type\(\)/);
   assert.match(backend, /if \( ! \$this->database_ready\(\) \)\s*\{\s*return;\s*\}/);
@@ -185,7 +195,7 @@ test('staging application test prefills safe sample data and enables submit only
 });
 
 test('visit booking script cache version is bumped for the staging form fix', () => {
-  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.7', true );"));
+  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.8', true );"));
 });
 
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {

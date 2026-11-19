@@ -149,7 +149,7 @@
             </div>
             <div class="visit-form-section visit-form-consents">
               <div class="visit-consent-policy"><label><input type="checkbox" name="privacy_agreement" required><span>プライバシーポリシーを確認し、個人情報の取扱いに同意します。</span></label><button class="visit-privacy-open" type="button" data-open-privacy-policy aria-haspopup="dialog" aria-controls="visit-privacy-policy-dialog">プライバシーポリシーを読む</button></div>
-              <label><input type="checkbox" name="terms_agreement" required><span>申込内容および出張買取の利用条件を確認しました。</span></label>
+              <div class="visit-consent-policy"><label><input type="checkbox" name="terms_agreement" required><span>利用規約を確認しました。</span></label><button class="visit-privacy-open" type="button" data-open-visit-terms aria-haspopup="dialog" aria-controls="visit-terms-dialog">利用規約を読む</button></div>
               <p>送信後、確認メールをお送りします。メール内のリンクを開くまで申込は完了しません。</p>
             </div>
             <input type="text" name="website" class="visit-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
@@ -180,6 +180,7 @@
             </section>
         </form>
         <!-- VISIT_PRIVACY_POLICY_DIALOG -->
+        <!-- VISIT_TERMS_DIALOG -->
         <p class="visit-booking-live-message" data-booking-message aria-live="polite"></p>
       </div>
     </section>

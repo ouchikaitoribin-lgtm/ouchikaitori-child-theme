@@ -75,31 +75,33 @@
   const form = widget.querySelector('[data-application-form]');
   const privacyDialog = widget.querySelector('[data-privacy-policy-dialog]');
   const privacyOpenButton = widget.querySelector('[data-open-privacy-policy]');
-  if (privacyDialog && privacyOpenButton) {
-    const privacyPanel = privacyDialog.querySelector('[role="dialog"]');
-    const privacyCloseButtons = [...privacyDialog.querySelectorAll('[data-privacy-dialog-close]')];
-    let privacyTrigger = null;
-    const closePrivacyDialog = () => {
-      privacyDialog.hidden = true;
-      if (privacyTrigger) privacyTrigger.focus();
+  const visitTermsDialog = widget.querySelector('[data-visit-terms-dialog]');
+  const visitTermsOpenButton = widget.querySelector('[data-open-visit-terms]');
+  const bindPolicyDialog = (openButton, dialog) => {
+    if (!openButton || !dialog) return;
+    const policyPanel = dialog.querySelector('[role="dialog"]');
+    let policyTrigger = null;
+    const closePolicyDialog = () => {
+      dialog.hidden = true;
+      if (policyTrigger) policyTrigger.focus();
     };
-    privacyOpenButton.addEventListener('click', () => {
-      privacyTrigger = document.activeElement;
-      privacyDialog.hidden = false;
-      const closeButton = privacyDialog.querySelector('[data-privacy-dialog-close]');
+    openButton.addEventListener('click', () => {
+      policyTrigger = document.activeElement;
+      dialog.hidden = false;
+      const closeButton = dialog.querySelector('[data-privacy-dialog-close]');
       if (closeButton) closeButton.focus();
-      else if (privacyPanel) privacyPanel.focus();
+      else if (policyPanel) policyPanel.focus();
     });
-    privacyCloseButtons.forEach((button) => button.addEventListener('click', closePrivacyDialog));
-    privacyDialog.querySelector('[data-privacy-dialog-backdrop]')?.addEventListener('click', closePrivacyDialog);
-    privacyDialog.addEventListener('keydown', (event) => {
+    dialog.querySelectorAll('[data-privacy-dialog-close]').forEach((button) => button.addEventListener('click', closePolicyDialog));
+    dialog.querySelector('[data-privacy-dialog-backdrop]')?.addEventListener('click', closePolicyDialog);
+    dialog.addEventListener('keydown', (event) => {
       if ('Escape' === event.key) {
         event.preventDefault();
-        closePrivacyDialog();
+        closePolicyDialog();
         return;
       }
       if ('Tab' !== event.key) return;
-      const focusable = [...privacyDialog.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+      const focusable = [...dialog.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
         .filter((element) => element.getClientRects().length > 0);
       if (!focusable.length) return;
       const first = focusable[0];
@@ -112,7 +114,9 @@
         first.focus();
       }
     });
-  }
+  };
+  bindPolicyDialog(privacyOpenButton, privacyDialog);
+  bindPolicyDialog(visitTermsOpenButton, visitTermsDialog);
   const formResult = widget.querySelector('[data-application-result]');
   const applicationWaiting = widget.querySelector('[data-application-waiting]');
   const emailSentMessage = widget.querySelector('[data-email-sent-message]');
