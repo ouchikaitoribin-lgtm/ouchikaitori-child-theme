@@ -177,7 +177,7 @@ test('application pending page shows only requested summary fields with Japanese
   assert.match(pendingPage, /pending\.css'.*'1\.1\.3'/);
   assert.match(pendingPage, /pending\.js'.*'1\.1\.5'/);
   assert.match(pendingPage, /data-pending-handoff="contactless"[^>]*hidden/);
-  assert.match(pendingPage, /<div><dt>受け渡し方法<\/dt><dd><span data-pending-field="handoff_method">[\s\S]*?<span data-pending-handoff="contactless" hidden> ／ 荷物の置き場所：<span data-pending-field="placement_location">/);
+  assert.match(pendingPage, /<div><dt>受け渡し方法<\/dt><dd data-pending-field="handoff_method">[\s\S]*?<div data-pending-handoff="contactless" hidden><dt>荷物の置き場所<\/dt><dd data-pending-field="placement_location">/);
   assert.match(pendingPage, /'pickup_code', 'placement_location'/);
   assert.match(backend, /SELECT collection_code, visit_type, placement_location FROM visit_purchase_details/);
   assert.match(backend, /if \( 'contactless' === \$detail\['visit_type'\] \) \{[\s\S]*?\$application\['placement_location'\]/);
