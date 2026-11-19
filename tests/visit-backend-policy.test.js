@@ -213,7 +213,7 @@ test('visit and all area pages render common FAQ entries from one shared source'
   assert.match(landingPage, /今はどの地域で利用できますか？/);
   assert.match(page, /<\?php echo esc_html\( \$visit_city_name \); \?>のどの地域が対応していますか？/);
   assert.match(sharedVisitFaq, /'question' => '非対面の集荷（回収）とはなんですか？'/);
-  assert.match(sharedVisitFaq, /'answer'\s*=> '荷物を事前に指定した場所に置いていただき、お客様と対面せず、玄関ドアを開けないままスタッフが回収する方法です。/);
+  assert.match(sharedVisitFaq, /'answer'\s*=> '荷物を事前に指定した場所（玄関など）に置いていただき、お客様と対面せず、チャイムも鳴らさずスタッフが回収する方法です。ご利用には本人確認と回収場所などの条件があります。宅配の置き配のようなイメージです。'/);
   assert.match(sharedVisitFaq, /'question' => '回収のとき家にいる必要はありますか？'/);
   assert.match(sharedVisitFaq, /'question' => 'スタッフに直接渡すこともできますか？'/);
   assert.match(sharedVisitFaq, /'answer'\s*=> '出張買取の回収費用と査定料は無料です。最低点数は、本20冊以上、ゲームソフト5本以上、CD・DVD10点以上、携帯ゲーム機1点以上です。'/);
