@@ -123,6 +123,7 @@ test('application pending page shows only requested summary fields with Japanese
     assert.doesNotMatch(pendingPage, new RegExp(`data-pending-field="${field}"`));
   }
   assert.match(pendingPage, /その他のお申込内容については送付したメールをご確認ください。/);
+  assert.match(pendingPage, /荷物ごとに同じコードを、外側から確認できる分かりやすい位置に記載してください。/);
   assert.match(pendingScript, /value === 'face' \? '対面' : value === 'contactless' \? '非対面'/);
   assert.match(pendingScript, /key === 'pickup_date'/);
   assert.match(backend, /SELECT request_code, application_city, pickup_date FROM purchase_requests/);

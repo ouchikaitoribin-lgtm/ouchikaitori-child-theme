@@ -185,7 +185,7 @@ get_header();
         <ol class="visit-pending-packing-list">
           <li><span>01</span><div><strong>段ボール箱・紙袋・ビニール袋に入れる</strong><p>商品は必ずいずれかの梱包資材に入れてください。</p></div></li>
           <li><span>02</span><div><strong>中身が出ない状態にする</strong><p>ふたや袋の口を閉じ、商品が飛び出さず、持ち上げても落ちない状態にしてください。</p></div></li>
-          <li><span>03</span><div><strong>すべての荷物に回収コードを付ける</strong><p>荷物ごとに同じコードを、外側から確認できる位置に記載してください。コードは開封せずに確認でき、文字が隠れていない状態にしてください。</p></div></li>
+          <li><span>03</span><div><strong>すべての荷物に回収コードを付ける</strong><p>荷物ごとに同じコードを、外側から確認できる分かりやすい位置に記載してください。コードは開封せずに確認でき、文字が隠れていない状態にしてください。</p></div></li>
           <li data-pending-contactless hidden><span>04</span><div><strong>非対面の場合は玄関ドアを開けずに置く</strong><p>申込時に指定した場所へ荷物を置いてください。スタッフはお客様と対面せず、指定場所から回収します。</p></div></li>
         </ol>
       </div>
