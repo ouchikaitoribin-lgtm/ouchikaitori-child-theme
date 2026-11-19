@@ -815,8 +815,8 @@ final class Ouchi_Visit_Application_Backend {
 			}
 			$pdo->commit();
 			$token = $this->decrypt_private_token( $outbox['confirmation_token_ciphertext'], $outbox['confirmation_token_iv'], $outbox['confirmation_token_tag'] );
-			$body = "ステージング環境の出張買取メール確認テストです。\n\nメール確認番号：" . $this->confirmation_code( $token ) . "\n\n確認ページを開き、上記4桁の番号を入力してください。\n" . $this->mail_link( $token, $outbox['region_slug'] ) . "\n\nこのメールは固定テスト宛先にのみ送信されています。申込者の入力メールアドレスには送信していません。\n確認期限は5時間です。";
-			$sent = $this->send_staging_test_mail( 'おうち買取便 出張買取：メール確認番号（ステージングテスト）', $body );
+			$body = "おうち買取便の出張買取にお申し込みいただき、ありがとうございます。\n\nメールアドレスの確認を完了すると、お申し込み内容が登録されます。\n\n次の確認ページを開き、メールに記載された4桁の確認番号を入力して送信してください。\n\n確認番号：" . $this->confirmation_code( $token ) . "\n\n確認ページ：\n" . $this->mail_link( $token, $outbox['region_slug'] ) . "\n\n確認番号の有効期限は、お申し込みから5時間です。期限内に確認を完了してください。\n\nこのメールに心当たりがない場合は、確認操作を行わず、このメールを破棄してください。\n\n────────────────────────\nおうち買取便 サポート窓口\nメール：support@ouchikaitori.jp\n受付時間：平日 10:00～17:00\n────────────────────────\n\nこれはテストメールです";
+			$sent = $this->send_staging_test_mail( '【おうち買取便】出張買取のお申し込み確認（テスト）', $body );
 			if ( $sent ) {
 				$mail_was_accepted = true;
 				$finish = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'sent', sent_at = UTC_TIMESTAMP() WHERE draft_id = ? AND delivery_status = 'sending'" );

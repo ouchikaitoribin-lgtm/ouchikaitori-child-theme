@@ -51,7 +51,7 @@ test('email confirmation requires a four-digit code and limits each draft to fiv
   assert.doesNotMatch(confirmationCodeMigration, /DROP\s+|DELETE\s+FROM|UPDATE\s+.+\s+SET/i);
   assert.match(backend, /'verification_attempt_count'/);
   assert.match(backend, /hash_hmac\( 'sha256',[\s\S]*?visit-email-confirmation-code/);
-  assert.match(backend, /メール確認番号：.*confirmation_code/s);
+  assert.match(backend, /確認番号：.*confirmation_code/s);
   const confirm = backend.slice(backend.indexOf('public function confirm('), backend.indexOf('public function pending_application('));
   assert.match(confirm, /SELECT \* FROM visit_application_drafts WHERE confirmation_token_hash = \? FOR UPDATE/);
   assert.match(confirm, /verification_attempt_count/);
@@ -62,6 +62,17 @@ test('email confirmation requires a four-digit code and limits each draft to fiv
   assert.match(backend, /name=\"code\" type=\"text\" inputmode=\"numeric\"/);
   assert.match(backend, /pattern=\"\[0-9\]\{4\}\" maxlength=\"4\"/);
   assert.match(backend, /JSON\.stringify\(\{token:this\.elements\.token\.value,code:this\.elements\.code\.value\}\)/);
+});
+
+test('provisional confirmation mail uses production copy with an explicit test marker', () => {
+  assert.match(backend, /send_staging_test_mail\( '【おうち買取便】出張買取のお申し込み確認（テスト）', \$body \)/);
+  assert.match(backend, /メールアドレスの確認を完了すると、お申し込み内容が登録されます。/);
+  assert.match(backend, /4桁の確認番号を入力して送信してください。/);
+  assert.match(backend, /確認番号の有効期限は、お申し込みから5時間です。/);
+  assert.match(backend, /メール：support@ouchikaitori\.jp/);
+  assert.match(backend, /これはテストメールです\"/);
+  assert.doesNotMatch(backend, /ステージング環境の出張買取メール確認テストです。/);
+  assert.doesNotMatch(backend, /このメールは固定テスト宛先にのみ送信されています/);
 });
 
 test('confirmation mail failure retains an encrypted one-time token for retry', () => {
