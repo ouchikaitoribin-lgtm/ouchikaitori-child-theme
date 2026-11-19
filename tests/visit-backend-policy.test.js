@@ -161,7 +161,7 @@ test('privacy policy is read in place from the existing WordPress policy post', 
 });
 
 test('application pending page shows only requested summary fields with Japanese handoff labels', () => {
-  for (const field of ['application_number', 'area', 'pickup_date', 'pickup_times', 'handoff_method']) {
+  for (const field of ['application_number', 'area', 'pickup_date', 'pickup_times', 'handoff_method', 'placement_location']) {
     assert.match(pendingPage, new RegExp(`data-pending-field="${field}"`));
   }
   for (const field of ['customer_name', 'email', 'pickup_address', 'building_type', 'nameplate', 'pickup_place', 'box_count', 'pickup_notes']) {
@@ -177,6 +177,10 @@ test('application pending page shows only requested summary fields with Japanese
   assert.match(pendingPage, /pending\.css'.*'1\.1\.3'/);
   assert.match(pendingPage, /pending\.js'.*'1\.1\.5'/);
   assert.match(pendingPage, /data-pending-handoff="contactless"[^>]*hidden/);
+  assert.match(pendingPage, /<div class="visit-pending-details__wide" data-pending-handoff="contactless" hidden><dt>非対面の場合の荷物の置き場所<\/dt><dd data-pending-field="placement_location">/);
+  assert.match(pendingPage, /'pickup_code', 'placement_location'/);
+  assert.match(backend, /SELECT collection_code, visit_type, placement_location FROM visit_purchase_details/);
+  assert.match(backend, /if \( 'contactless' === \$detail\['visit_type'\] \) \{[\s\S]*?\$application\['placement_location'\]/);
   assert.match(pendingPage, /<li data-pending-handoff="face" hidden>[\s\S]*?本人確認書類の原本を準備する/);
   assert.match(pendingPage, /回収時間までに荷物を梱包する/);
   assert.match(pendingPage, /荷物を指定の場所に置く/);

@@ -1273,7 +1273,7 @@ final class Ouchi_Visit_Application_Backend {
 			$stmt->execute( array( $public_token ) );
 			$row = $stmt->fetch();
 			if ( ! $row ) { return null; }
-			$detail_stmt = $pdo->prepare( 'SELECT collection_code, visit_type FROM visit_purchase_details WHERE public_token = ? LIMIT 1' );
+			$detail_stmt = $pdo->prepare( 'SELECT collection_code, visit_type, placement_location FROM visit_purchase_details WHERE public_token = ? LIMIT 1' );
 			$detail_stmt->execute( array( $public_token ) );
 			$detail = $detail_stmt->fetch();
 			if ( ! $detail ) { return null; }
@@ -1291,6 +1291,7 @@ final class Ouchi_Visit_Application_Backend {
 			);
 			if ( 'contactless' === $detail['visit_type'] ) {
 				$application['pickup_code'] = (string) $detail['collection_code'];
+				$application['placement_location'] = (string) $detail['placement_location'];
 			}
 			return $application;
 		} catch ( Throwable $e ) {
