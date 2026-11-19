@@ -136,6 +136,7 @@ test('application pending page shows only requested summary fields with Japanese
   assert.match(pendingPage, /回収時間までに荷物を梱包する/);
   assert.match(pendingPage, /荷物を指定の場所に置く/);
   assert.match(pendingPage, /可能な限り回収時間の直前に置いてください。/);
+  assert.match(pendingPage, /data-pending-handoff="contactless" hidden><span>03<\/span>[\s\S]*?すべての荷物に回収コードを付ける[\s\S]*?<li class="visit-pending-place-card" data-pending-handoff="contactless" hidden><span>04<\/span>[\s\S]*?荷物を指定の場所に置く/);
   assert.match(pendingScript, /dataset\.pendingHandoff !== handoff/);
   assert.match(pendingScript, /handoff === 'face' \? '回収までの準備' : '荷物の置き方・準備'/);
   assert.match(backend, /if \( 'contactless' === \$detail\['visit_type'\] \) \{\s*\$application\['pickup_code'\]/);

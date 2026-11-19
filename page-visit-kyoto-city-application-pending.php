@@ -181,12 +181,12 @@ get_header();
     <section class="visit-pending-section visit-pending-packing" aria-labelledby="pending-packing-title">
       <div class="visit-container">
         <div class="visit-pending-section__heading"><p class="visit-pending-eyebrow">PICKUP PREPARATION</p><h2 id="pending-packing-title" data-pending-packing-heading>荷物の置き方・準備</h2><p data-pending-packing-intro>受け渡し方法に応じた荷物の準備内容をご確認ください。</p></div>
-        <div class="visit-pending-place-card" data-pending-handoff="contactless" hidden><span class="visit-pending-place-card__icon" aria-hidden="true">⌖</span><div><strong>荷物を指定の場所に置く</strong><p>申込時に指定した場所へ荷物を置いてください。可能な限り回収時間の直前に置いてください。回収時、スタッフは玄関ドアを開けず、お客様と対面せずに指定場所から回収します。</p></div></div>
         <ol class="visit-pending-packing-list">
           <li><span>01</span><div><strong>回収時間までに荷物を梱包する</strong><p>商品はお客様ご自身で段ボール箱・紙袋・ビニール袋に入れ、回収時間までに梱包を済ませてください。</p></div></li>
           <li><span>02</span><div><strong>中身が出ない状態にする</strong><p>ふたや袋の口を閉じ、商品が飛び出さず、持ち上げても落ちない状態にしてください。</p></div></li>
           <li data-pending-handoff="face" hidden><span>03</span><div><strong>本人確認書類の原本を準備する</strong><p>回収当日にスタッフへ提示してください。スタッフが内容を確認し、本人確認書類を撮影します。</p></div></li>
           <li data-pending-handoff="contactless" hidden><span>03</span><div><strong>すべての荷物に回収コードを付ける</strong><p>荷物ごとに同じコードを、外側から確認できる分かりやすい位置に記載してください。コードは開封せずに確認でき、文字が隠れていない状態にしてください。</p></div></li>
+          <li class="visit-pending-place-card" data-pending-handoff="contactless" hidden><span>04</span><div><strong>荷物を指定の場所に置く</strong><p>申込時に指定した場所へ荷物を置いてください。可能な限り回収時間の直前に置いてください。回収時、スタッフは玄関ドアを開けず、お客様と対面せずに指定場所から回収します。</p></div></li>
         </ol>
       </div>
     </section>
