@@ -11,6 +11,8 @@ const stagingMailGuard = readFileSync(join(root, 'visit-lp-draft/plugin/visit-st
 const functions = readFileSync(join(root, 'functions.php'), 'utf8');
 const bookingScript = readFileSync(join(root, 'visit-lp-draft/visit-booking.js'), 'utf8');
 const bookingWidget = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/booking-widget.html'), 'utf8');
+const landingPage = readFileSync(join(root, 'page-visit.php'), 'utf8');
+const landingCss = readFileSync(join(root, 'visit-lp-draft/visit.css'), 'utf8');
 const page = readFileSync(join(root, 'page-visit-kyoto-city.php'), 'utf8');
 const pendingPage = readFileSync(join(root, 'page-visit-kyoto-city-application-pending.php'), 'utf8');
 const pendingScript = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/application-pending/pending.js'), 'utf8');
@@ -189,6 +191,15 @@ test('application pending page shows only requested summary fields with Japanese
   assert.match(pendingScript, /dataset\.pendingHandoff !== handoff/);
   assert.match(pendingScript, /handoff === 'face' \? '回収までの準備' : '荷物の置き方・準備'/);
   assert.match(backend, /if \( 'contactless' === \$detail\['visit_type'\] \) \{\s*\$application\['pickup_code'\]/);
+});
+
+test('supported municipality cards link to their configured regional pages visibly', () => {
+  assert.match(landingPage, /'url' => home_url\( '\/visit\/' \. rawurlencode\( \(string\) \$visit_region_slug \) \. '\/' \)/);
+  assert.match(landingPage, /if \( ! empty\( \$visit_city\['url'\] \) \) : \?>[\s\S]*?<a class="visit-city-detail-link" href="<\?php echo esc_url\( \$visit_city\['url'\] \); \?>"[\s\S]*?対応地域ページを見る/);
+  assert.match(landingPage, /else : \?>\s*<\?php echo esc_html\( \$visit_city\['name'\] \. '（' \. \$visit_city\['coverage'\] \. '）' \); \?>/);
+  assert.match(landingPage, /ouchi-visit-lp'.*'1\.0\.2'/);
+  assert.match(landingCss, /\.visit-city-detail-link::after\s*\{[^}]*content:\s*"→"/);
+  assert.match(landingCss, /\.visit-city-detail-link:focus-visible/);
 });
 
 test('visit terms agreement displays the existing WordPress terms post 57 in place', () => {

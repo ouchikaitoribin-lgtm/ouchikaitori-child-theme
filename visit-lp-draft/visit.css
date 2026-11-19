@@ -129,8 +129,10 @@
 .visit-municipality { padding-top: 16px; }
 .visit-municipality__heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .visit-municipality__heading strong { font-size: 14px; }
-.visit-city-detail-link { color: var(--visit-green-dark); text-decoration: underline !important; text-decoration-color: #afc2b0 !important; text-underline-offset: 4px; }
-.visit-city-detail-link:hover { color: var(--visit-coral) !important; }
+.visit-city-detail-link { display: inline-flex; align-items: center; gap: 5px; color: var(--visit-green-dark); font-weight: 750; text-decoration: underline !important; text-decoration-color: #afc2b0 !important; text-underline-offset: 4px; }
+.visit-city-detail-link::after { color: var(--visit-green); content: "→"; text-decoration: none; }
+.visit-city-detail-link:hover { color: var(--visit-coral) !important; text-decoration-color: currentColor !important; }
+.visit-city-detail-link:focus-visible { border-radius: 3px; outline: 3px solid #f4a45f; outline-offset: 4px; }
 .visit-municipality__heading span { padding: 3px 9px; border-radius: 99px; background: #edf5ed; color: #4d8057; font-size: 9px; font-weight: 700; }
 .visit-municipality p { margin: 5px 0 13px; color: var(--visit-muted); font-size: 11px; }
 .visit-municipality ul { display: flex; flex-wrap: wrap; gap: 7px; margin: 0; padding: 0; list-style: none; }

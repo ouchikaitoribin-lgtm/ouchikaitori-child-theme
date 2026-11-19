@@ -44,7 +44,7 @@ add_action( 'wp_enqueue_scripts', static function () {
     }
 
     $visit_asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
-    wp_enqueue_style( 'ouchi-visit-lp', $visit_asset_uri . 'visit.css', array(), '1.0.1' );
+    wp_enqueue_style( 'ouchi-visit-lp', $visit_asset_uri . 'visit.css', array(), '1.0.2' );
     wp_enqueue_script( 'ouchi-visit-lp', $visit_asset_uri . 'visit.js', array(), '1.0.0', true );
 } );
 
@@ -179,11 +179,10 @@ get_header();
                   <div class="visit-municipality__heading">
                     <strong>
                       <?php if ( ! empty( $visit_city['url'] ) ) : ?>
-                        <a href="<?php echo esc_url( $visit_city['url'] ); ?>"><?php echo esc_html( $visit_city['name'] ); ?></a>
+                        <a class="visit-city-detail-link" href="<?php echo esc_url( $visit_city['url'] ); ?>" aria-label="<?php echo esc_attr( $visit_city['name'] . '（' . $visit_city['coverage'] . '）の対応地域ページを見る' ); ?>"><?php echo esc_html( $visit_city['name'] . '（' . $visit_city['coverage'] . '）の対応地域ページを見る' ); ?></a>
                       <?php else : ?>
-                        <?php echo esc_html( $visit_city['name'] ); ?>
+                        <?php echo esc_html( $visit_city['name'] . '（' . $visit_city['coverage'] . '）' ); ?>
                       <?php endif; ?>
-                      （<?php echo esc_html( $visit_city['coverage'] ); ?>）
                     </strong>
                     <span><?php echo esc_html( $visit_city['status'] ); ?></span>
                   </div>
