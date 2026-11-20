@@ -168,7 +168,7 @@ final class Ouchi_Visit_Application_Backend {
 			return $this->readiness_result;
 		}
 		$this->readiness_checked = true;
-		if ( ! $this->enabled() || $this->slot_capacity() < 1 || empty( $this->service_weekdays() ) ) {
+		if ( ! $this->enabled() || ! $this->has_configured_region() ) {
 			return false;
 		}
 		try {
@@ -181,14 +181,9 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	public function register_capacity_setting() {
-		register_setting( 'visit_slot_capacity_settings', 'visit_booking_slot_capacity', array(
-			'type'              => 'integer',
-			'sanitize_callback' => array( $this, 'sanitize_slot_capacity' ),
-			'default'           => 0,
-		) );
-		register_setting( 'visit_slot_capacity_settings', 'visit_booking_service_weekdays', array(
+		register_setting( 'visit_slot_capacity_settings', 'visit_booking_region_schedules', array(
 			'type'              => 'array',
-			'sanitize_callback' => array( $this, 'sanitize_service_weekdays' ),
+			'sanitize_callback' => array( $this, 'sanitize_region_schedules' ),
 			'default'           => array(),
 		) );
 	}
@@ -201,8 +196,10 @@ final class Ouchi_Visit_Application_Backend {
 		return false === $capacity || $capacity < 1 ? 0 : (int) $capacity;
 	}
 
-	private function slot_capacity() {
-		return max( 0, (int) get_option( 'visit_booking_slot_capacity', 0 ) );
+	private function regions_config() {
+		$path = get_stylesheet_directory() . '/visit-lp-draft/visit/regions.php';
+		$regions = is_readable( $path ) ? require $path : array();
+		return is_array( $regions ) ? $regions : array();
 	}
 
 	public function sanitize_service_weekdays( $value ) {
@@ -219,15 +216,66 @@ final class Ouchi_Visit_Application_Backend {
 		return $days;
 	}
 
-	private function service_weekdays() {
-		$value = get_option( 'visit_booking_service_weekdays', array() );
-		return $this->sanitize_service_weekdays( $value );
+	public function sanitize_region_schedules( $input ) {
+		$input = is_array( $input ) ? $input : array();
+		$clean = array();
+		foreach ( $this->regions_config() as $slug => $region ) {
+			$row = isset( $input[ $slug ] ) && is_array( $input[ $slug ] ) ? $input[ $slug ] : array();
+			$capacity = isset( $row['slot_capacity'] ) && is_scalar( $row['slot_capacity'] ) ? filter_var( $row['slot_capacity'], FILTER_VALIDATE_INT ) : false;
+			$clean[ $slug ] = array(
+				'slot_capacity' => false === $capacity || $capacity < 0 ? 0 : min( 10000, (int) $capacity ),
+				'service_weekdays' => $this->sanitize_service_weekdays( isset( $row['service_weekdays'] ) ? $row['service_weekdays'] : array() ),
+			);
+		}
+		return $clean;
 	}
 
-	private function is_service_date( $date ) {
+	private function region_schedule( $region_slug ) {
+		$regions = $this->regions_config();
+		if ( ! isset( $regions[ $region_slug ] ) ) {
+			return array( 'slot_capacity' => 0, 'service_weekdays' => array() );
+		}
+		$schedules = get_option( 'visit_booking_region_schedules', array() );
+		if ( is_array( $schedules ) && isset( $schedules[ $region_slug ] ) && is_array( $schedules[ $region_slug ] ) ) {
+			$row = $schedules[ $region_slug ];
+			return array(
+				'slot_capacity' => max( 0, (int) ( isset( $row['slot_capacity'] ) ? $row['slot_capacity'] : 0 ) ),
+				'service_weekdays' => $this->sanitize_service_weekdays( isset( $row['service_weekdays'] ) ? $row['service_weekdays'] : array() ),
+			);
+		}
+		// Keep the existing Kyoto configuration active until it is explicitly saved in the new regional form.
+		if ( 'kyoto-city' === $region_slug ) {
+			return array(
+				'slot_capacity' => max( 0, (int) get_option( 'visit_booking_slot_capacity', 0 ) ),
+				'service_weekdays' => $this->sanitize_service_weekdays( get_option( 'visit_booking_service_weekdays', array() ) ),
+			);
+		}
+		return array( 'slot_capacity' => 0, 'service_weekdays' => array() );
+	}
+
+	private function slot_capacity( $region_slug ) {
+		$schedule = $this->region_schedule( $region_slug );
+		return $schedule['slot_capacity'];
+	}
+
+	private function service_weekdays( $region_slug ) {
+		$schedule = $this->region_schedule( $region_slug );
+		return $schedule['service_weekdays'];
+	}
+
+	private function has_configured_region() {
+		foreach ( $this->regions_config() as $slug => $region ) {
+			if ( $this->slot_capacity( $slug ) > 0 && ! empty( $this->service_weekdays( $slug ) ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private function is_service_date( $date, $region_slug ) {
 		$earliest = function_exists( 'visit_booking_get_earliest_date' ) ? visit_booking_get_earliest_date() : ( new DateTimeImmutable( 'tomorrow', wp_timezone() ) )->format( 'Y-m-d' );
 		$parsed = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $date, wp_timezone() );
-		return $parsed && $parsed->format( 'Y-m-d' ) === $date && $date >= $earliest && in_array( (int) $parsed->format( 'w' ), $this->service_weekdays(), true );
+		return $parsed && $parsed->format( 'Y-m-d' ) === $date && $date >= $earliest && $this->slot_capacity( $region_slug ) > 0 && in_array( (int) $parsed->format( 'w' ), $this->service_weekdays( $region_slug ), true );
 	}
 
 	public function register_capacity_page() {
@@ -241,19 +289,23 @@ final class Ouchi_Visit_Application_Backend {
 		?>
 		<div class="wrap">
 			<h1>出張買取の予約枠上限</h1>
-			<p>全対応エリア共通で、各時間帯に受け付ける申込数と受付曜日を設定します。上限未設定または受付曜日が未選択の場合、出張買取APIと空き枠表示は無効です。</p>
+			<p>地域ごとに、各時間帯の受付上限と受付曜日を設定します。上限が0または受付曜日が未選択の場合、その地域の空き枠は表示されません。受付時間帯と最短予約日は既存の共通設定を使用します。</p>
 			<form action="options.php" method="post">
 				<?php settings_fields( 'visit_slot_capacity_settings' ); ?>
-				<label for="visit-booking-slot-capacity">各時間帯の受付上限</label>
-				<input id="visit-booking-slot-capacity" name="visit_booking_slot_capacity" type="number" min="1" step="1" value="<?php echo esc_attr( (string) $this->slot_capacity() ); ?>">
-				<fieldset>
-					<legend>受付曜日</legend>
-					<input type="hidden" name="visit_booking_service_weekdays[]" value="">
-					<?php foreach ( array( 0 => '日', 1 => '月', 2 => '火', 3 => '水', 4 => '木', 5 => '金', 6 => '土' ) as $day_number => $day_label ) : ?>
-						<label><input type="checkbox" name="visit_booking_service_weekdays[]" value="<?php echo esc_attr( (string) $day_number ); ?>" <?php checked( in_array( $day_number, $this->service_weekdays(), true ) ); ?>><?php echo esc_html( $day_label ); ?></label>
-					<?php endforeach; ?>
-				</fieldset>
-				<p class="description">単一時間帯を選択した申込は、メール確認後に空きがあれば1枠を確保します。複数時間帯を選択した申込は希望として記録し、枠は確保しません。</p>
+				<?php foreach ( $this->regions_config() as $region_slug => $region ) : $schedule = $this->region_schedule( $region_slug ); ?>
+					<fieldset style="max-width:900px;margin:18px 0;padding:16px;border:1px solid #c3c4c7;background:#fff">
+						<legend style="padding:0 8px;font-size:1.15em;font-weight:600"><?php echo esc_html( $region['city'] ); ?></legend>
+						<input type="hidden" name="visit_booking_region_schedules[<?php echo esc_attr( $region_slug ); ?>][service_weekdays][]" value="">
+						<p><label for="visit-booking-capacity-<?php echo esc_attr( $region_slug ); ?>">各時間帯の受付上限</label>
+						<input id="visit-booking-capacity-<?php echo esc_attr( $region_slug ); ?>" name="visit_booking_region_schedules[<?php echo esc_attr( $region_slug ); ?>][slot_capacity]" type="number" min="0" max="10000" step="1" value="<?php echo esc_attr( (string) $schedule['slot_capacity'] ); ?>"> 件</p>
+						<p>受付曜日：
+						<?php foreach ( array( 0 => '日', 1 => '月', 2 => '火', 3 => '水', 4 => '木', 5 => '金', 6 => '土' ) as $day_number => $day_label ) : ?>
+							<label style="margin-right:10px"><input type="checkbox" name="visit_booking_region_schedules[<?php echo esc_attr( $region_slug ); ?>][service_weekdays][]" value="<?php echo esc_attr( (string) $day_number ); ?>" <?php checked( in_array( $day_number, $schedule['service_weekdays'], true ) ); ?>><?php echo esc_html( $day_label ); ?></label>
+						<?php endforeach; ?>
+						</p>
+					</fieldset>
+				<?php endforeach; ?>
+				<p class="description">地域ごとに設定します。受付上限が0、または受付曜日が未選択の地域は空き枠を表示しません。単一時間帯を選択した申込はメール確認後に1枠を確保し、複数時間帯は希望として記録します。</p>
 				<?php submit_button( '設定を保存' ); ?>
 			</form>
 		</div>
@@ -321,9 +373,18 @@ final class Ouchi_Visit_Application_Backend {
 		}
 	}
 
-	private function reserved_count( PDO $pdo, $start_at, $end_at ) {
-		$stmt = $pdo->prepare( 'SELECT COUNT(*) FROM visit_purchase_details WHERE confirmed_start_at < ? AND confirmed_end_at > ?' );
-		$stmt->execute( array( $end_at, $start_at ) );
+	private function reserved_count( PDO $pdo, $start_at, $end_at, $region_slug ) {
+		$regions = $this->regions_config();
+		if ( ! isset( $regions[ $region_slug ] ) || empty( $regions[ $region_slug ]['areas'] ) ) {
+			return 0;
+		}
+		$cities = array_map( static function ( $area ) use ( $regions, $region_slug ) {
+			return (string) $regions[ $region_slug ]['city'] . (string) $area;
+		}, $regions[ $region_slug ]['areas'] );
+		$placeholders = implode( ',', array_fill( 0, count( $cities ), '?' ) );
+		$sql = 'SELECT COUNT(*) FROM visit_purchase_details v INNER JOIN purchase_requests p ON p.public_token = v.public_token WHERE v.confirmed_start_at < ? AND v.confirmed_end_at > ? AND p.application_prefecture = ? AND p.application_city IN (' . $placeholders . ')';
+		$stmt = $pdo->prepare( $sql );
+		$stmt->execute( array_merge( array( $end_at, $start_at, $regions[ $region_slug ]['prefecture'] ), $cities ) );
 		return (int) $stmt->fetchColumn();
 	}
 
@@ -331,10 +392,14 @@ final class Ouchi_Visit_Application_Backend {
 		if ( $lock_date ) {
 			$this->lock_service_date( $pdo, $data['pickup_date'] );
 		}
-		$capacity = $this->slot_capacity();
+		$region_slug = sanitize_key( (string) $data['visit_region_slug'] );
+		$capacity = $this->slot_capacity( $region_slug );
+		if ( $capacity < 1 || empty( $this->service_weekdays( $region_slug ) ) ) {
+			throw new DomainException( 'この地域の予約枠は現在設定されていません。' );
+		}
 		foreach ( $data['pickup_times'] as $slot ) {
 			list( $start_at, $end_at ) = $this->slot_range_utc( $data['pickup_date'], $slot );
-			if ( $this->reserved_count( $pdo, $start_at, $end_at ) >= $capacity ) {
+			if ( $this->reserved_count( $pdo, $start_at, $end_at, $region_slug ) >= $capacity ) {
 				throw new DomainException( '選択した時間帯は満枠になりました。空きのある時間帯を選び直してください。' );
 			}
 		}
@@ -373,8 +438,12 @@ final class Ouchi_Visit_Application_Backend {
 			$utc = new DateTimeZone( 'UTC' );
 			$month_start_utc = $month_start->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
 			$month_end_utc = $month_start->modify( 'first day of next month' )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
-			$reservations_query = $pdo->prepare( 'SELECT confirmed_start_at, confirmed_end_at FROM visit_purchase_details WHERE confirmed_start_at < ? AND confirmed_end_at > ?' );
-			$reservations_query->execute( array( $month_end_utc, $month_start_utc ) );
+			$region = $regions[ $region_slug ];
+			$region_cities = array_map( static function ( $area ) use ( $region ) { return (string) $region['city'] . (string) $area; }, $region['areas'] );
+			$city_placeholders = implode( ',', array_fill( 0, count( $region_cities ), '?' ) );
+			$reservations_sql = 'SELECT v.confirmed_start_at, v.confirmed_end_at FROM visit_purchase_details v INNER JOIN purchase_requests p ON p.public_token = v.public_token WHERE v.confirmed_start_at < ? AND v.confirmed_end_at > ? AND p.application_prefecture = ? AND p.application_city IN (' . $city_placeholders . ')';
+			$reservations_query = $pdo->prepare( $reservations_sql );
+			$reservations_query->execute( array_merge( array( $month_end_utc, $month_start_utc, $region['prefecture'] ), $region_cities ) );
 			$reservations = $reservations_query->fetchAll();
 			$last_day = (int) $month_start->modify( 'last day of this month' )->format( 'j' );
 			$days = array();
@@ -389,9 +458,9 @@ final class Ouchi_Visit_Application_Backend {
 							$reserved++;
 						}
 					}
-					$day_slots[] = array( 'time' => $slot, 'available' => $this->is_service_date( $date ) && $reserved < $this->slot_capacity() );
+					$day_slots[] = array( 'time' => $slot, 'available' => $this->is_service_date( $date, $region_slug ) && $reserved < $this->slot_capacity( $region_slug ) );
 				}
-				$days[ $date ] = array( 'available' => $this->is_service_date( $date ) && count( array_filter( $day_slots, static function ( $entry ) { return $entry['available']; } ) ) > 0, 'slots' => $day_slots );
+				$days[ $date ] = array( 'available' => $this->is_service_date( $date, $region_slug ) && count( array_filter( $day_slots, static function ( $entry ) { return $entry['available']; } ) ) > 0, 'slots' => $day_slots );
 			}
 			return rest_ensure_response( array( 'month' => $month, 'days' => $days ) );
 		} catch ( Throwable $e ) {
@@ -577,7 +646,7 @@ final class Ouchi_Visit_Application_Backend {
 		$data['branch_name'] = sanitize_text_field( $data['branch_name'] );
 		$data['pickup_date'] = sanitize_text_field( $data['pickup_date'] );
 		$date = DateTimeImmutable::createFromFormat( '!Y-m-d', $data['pickup_date'], wp_timezone() );
-		if ( ! $date || $date->format( 'Y-m-d' ) !== $data['pickup_date'] || ! $this->is_service_date( $data['pickup_date'] ) ) {
+		if ( ! $date || $date->format( 'Y-m-d' ) !== $data['pickup_date'] || ! $this->is_service_date( $data['pickup_date'], $data['visit_region_slug'] ) ) {
 			throw new DomainException( '回収希望日を選び直してください。' );
 		}
 		$available_slots = function_exists( 'visit_booking_get_shared_slots' ) ? visit_booking_get_shared_slots() : array( '10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00' );

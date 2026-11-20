@@ -309,6 +309,17 @@ test('regional form passes its slug to live availability requests', () => {
   assert.match(bookingScript, /endpoint\.searchParams\.set\('region_slug', String\(bookingConfig\.regionSlug \|\| ''\)\)/);
   assert.match(bookingScript, /if \(!applicationFlowReady \|\| !bookingConfig\.availabilityEndpoint \|\| !state\.area\) return/);
 });
+
+test('calendar capacity and service weekdays are configured per region', () => {
+  assert.match(backend, /register_setting\(\s*'visit_slot_capacity_settings',\s*'visit_booking_region_schedules'/);
+  assert.match(backend, /foreach \( \$this->regions_config\(\) as \$region_slug => \$region \)/);
+  assert.match(backend, /private function slot_capacity\( \$region_slug \)/);
+  assert.match(backend, /private function service_weekdays\( \$region_slug \)/);
+  assert.match(backend, /\$this->is_service_date\( \$date, \$region_slug \)/);
+  assert.match(backend, /p\.application_prefecture = \? AND p\.application_city IN/);
+  assert.match(backend, /\$this->reserved_count\( \$pdo, \$start_at, \$end_at, \$region_slug \)/);
+  assert.match(backend, /visit_booking_region_schedules\[<\?php echo esc_attr\( \$region_slug \); \?>\]\[slot_capacity\]/);
+});
 test('frontend accepts boolean, numeric, and string staging submission flags', () => {
   assert.match(bookingScript, /submissionFlag === true \|\| submissionFlag === 1 \|\| submissionFlag === '1'/);
   assert.match(bookingScript, /&& isApplicationSubmissionEnabled/);
