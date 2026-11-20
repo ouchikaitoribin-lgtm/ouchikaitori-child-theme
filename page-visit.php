@@ -45,7 +45,7 @@ add_action( 'wp_enqueue_scripts', static function () {
     }
 
     $visit_asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
-    wp_enqueue_style( 'ouchi-visit-lp', $visit_asset_uri . 'visit.css', array(), '1.0.4' );
+    wp_enqueue_style( 'ouchi-visit-lp', $visit_asset_uri . 'visit.css', array(), '1.0.5' );
     wp_enqueue_script( 'ouchi-visit-lp', $visit_asset_uri . 'visit.js', array(), '1.0.0', true );
 } );
 
@@ -101,13 +101,22 @@ get_header();
       <p class="visit-area-cta__note">対応エリアを確認して、地域ページへお進みください。</p>
     </div>
 
-    <!-- 既存トップページの口コミコードを挿入する枠。開発プレビューでのみ表示できます。 -->
-    <section class="visit-insert visit-reviews" aria-labelledby="visit-reviews-title">
-      <div class="visit-container"><p class="visit-eyebrow">CUSTOMER VOICE</p><h2 id="visit-reviews-title">お客様の声</h2>
-        <!-- 既存トップページの口コミ表示コードをここに挿入する -->
-        <div class="visit-content-placeholder">既存の口コミ表示コードを挿入</div>
+    <?php if ( shortcode_exists( 'sc' ) ) : ?>
+    <section class="visit-section visit-reviews" aria-labelledby="visit-reviews-title">
+      <div class="visit-container">
+        <div class="voice-section">
+          <div class="voice-inner">
+            <p class="voice-label">Customer Voice</p>
+            <div class="voice-title" id="visit-reviews-title">おうち買取便を利用した方の口コミ</div>
+            <p class="voice-lead">
+              おうち買取便をご利用いただいたお客様から、うれしいお声をいただいています。
+            </p>
+            <?php echo do_shortcode( '[sc file=review_incert]' ); ?>
+          </div>
+        </div>
       </div>
     </section>
+    <?php endif; ?>
 
     <!-- 既存トップページの作業風景動画コードを挿入する枠。開発プレビューでのみ表示できます。 -->
     <section class="visit-insert visit-video" aria-labelledby="visit-video-title">

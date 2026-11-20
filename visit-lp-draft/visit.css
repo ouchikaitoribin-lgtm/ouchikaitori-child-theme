@@ -68,6 +68,7 @@
 .visit-trust-row i { color: var(--visit-coral); font-size: 9px; font-style: normal; font-weight: 850; letter-spacing: .08em; }
 .visit-section { padding: 94px 0; }
 .visit-contactless { background: white; }
+.visit-reviews { background: var(--visit-cream); }
 .visit-contactless__grid { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: clamp(45px, 8vw, 90px); }
 .visit-contactless__visual { position: relative; width: 100%; max-width: 510px; margin-inline: auto; }
 .visit-contactless__image { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; object-fit: cover; object-position: center; border-radius: 5px 34px 5px 34px; box-shadow: 0 13px 30px rgba(48,61,43,.10); }

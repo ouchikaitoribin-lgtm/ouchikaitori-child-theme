@@ -200,7 +200,7 @@ test('supported municipality cards link to their configured regional pages visib
   assert.match(landingPage, /else : \?>\s*<\?php echo esc_html\( \$visit_city\['name'\] \. '（' \. \$visit_city\['coverage'\] \. '）' \); \?>/);
   assert.match(landingPage, /class="visit-prefecture-link" href="<\?php echo esc_url\( \$visit_area\['municipalities'\]\[0\]\['url'\] \); \?>"/);
   assert.match(landingPage, /class="visit-area-district-link" href="<\?php echo esc_url\( \$visit_city\['url'\] \); \?>"/);
-  assert.match(landingPage, /ouchi-visit-lp'.*'1\.0\.4'/);
+  assert.match(landingPage, /ouchi-visit-lp'.*'1\.0\.5'/);
   assert.match(landingCss, /\.visit-city-detail-link::after\s*\{[^}]*content:\s*"→"/);
   assert.match(landingCss, /\.visit-city-detail-link:focus-visible/);
   assert.match(landingCss, /\.visit-area-district-link:hover/);
@@ -214,6 +214,17 @@ test('application CTA buttons jump to the visit area selector throughout the lan
   assert.match(landingCss, /\.visit-area-cta \{[^}]*align-items:\s*center/);
   assert.match(landingCss, /\.visit-area \{[^}]*scroll-margin-top:\s*24px/);
   assert.match(landingCss, /\.visit-button:focus-visible/);
+});
+
+test('visit review shortcode is rendered in a visible section after the contactless introduction', () => {
+  const reviewsSection = landingPage.match(/<section class="visit-section visit-reviews"[\s\S]*?<\/section>/)?.[0] || '';
+  assert.match(landingPage, /if \( shortcode_exists\( 'sc' \) \) : \?>[\s\S]*?<section class="visit-section visit-reviews"/);
+  assert.match(reviewsSection, /<p class="voice-label">Customer Voice<\/p>/);
+  assert.match(reviewsSection, /おうち買取便を利用した方の口コミ/);
+  assert.match(reviewsSection, /おうち買取便をご利用いただいたお客様から、うれしいお声をいただいています。/);
+  assert.match(reviewsSection, /do_shortcode\( '\[sc file=review_incert\]' \)/);
+  assert.doesNotMatch(reviewsSection, /visit-insert|visit-content-placeholder/);
+  assert.match(landingCss, /\.visit-reviews \{ background: var\(--visit-cream\); \}/);
 });
 
 test('visit and all area pages render common FAQ entries from one shared source', () => {
