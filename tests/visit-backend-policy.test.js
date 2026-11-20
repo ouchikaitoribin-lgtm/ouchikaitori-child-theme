@@ -237,6 +237,17 @@ test('main and regional hero chips include free pickup, free appraisal and next-
   }
 });
 
+test('contactless handoff is the first choice in the application form without changing its value', () => {
+  const handoffOptions = bookingWidget.match(/<fieldset class="visit-handoff-options">([\s\S]*?)<\/fieldset>/)?.[1] || '';
+  const contactlessIndex = handoffOptions.indexOf('value="contactless"');
+  const faceIndex = handoffOptions.indexOf('value="face"');
+  assert.notEqual(contactlessIndex, -1);
+  assert.notEqual(faceIndex, -1);
+  assert.ok(contactlessIndex < faceIndex);
+  assert.match(handoffOptions, /<strong>非対面で受け渡し<\/strong>/);
+  assert.match(handoffOptions, /<strong>対面で受け渡し<\/strong>/);
+});
+
 test('visit and all area pages render common FAQ entries from one shared source', () => {
   for (const template of [landingPage, page]) {
     assert.match(template, /\$visit_common_faq_items = require get_stylesheet_directory\(\) \. '\/visit-lp-draft\/visit\/faq-common\.php'/);
