@@ -30,14 +30,17 @@ test('expired drafts are not automatically deleted', () => {
   assert.match(backend, /UPDATE visit_application_confirmation_outbox SET delivery_status = 'pending'/);
 });
 
-test('visit email is restricted to the staging test recipient', () => {
-  assert.match(backend, /'staging' !== wp_get_environment_type\(\)/);
+test('visit email is restricted in staging and uses the existing parent SMTP only in production', () => {
+  assert.match(backend, /if \( 'staging' === \$environment \)\s*\{\s*return \$this->send_staging_test_mail/s);
   assert.match(backend, /VISIT_CONFIRMATION_TEST_RECIPIENT/);
   assert.match(backend, /ouchi_visit_staging_send_test_mail\(\s*\$recipient/);
   assert.match(stagingMailGuard, /strtolower\(\s*\$allowed\s*\)\s*!==\s*strtolower\(\s*\$recipient\s*\)/);
   assert.equal((stagingMailGuard.match(/\bwp_mail\s*\(/g) || []).length, 1);
-  assert.doesNotMatch(backend, /\bwp_mail\s*\(/);
-  assert.doesNotMatch(backend, /wp_mail\(\s*\$data\[['"]email['"]\]/);
+  assert.match(backend, /wp_mail\(\s*array\(\s*\$recipient\s*\)/);
+  assert.match(backend, /'production' !== \$environment/);
+  assert.match(backend, /has_action\( 'phpmailer_init', 'my_smtp_mailer' \)/);
+  assert.match(backend, /VISIT_PRODUCTION_APPLICATION_API_ENABLED/);
+  assert.match(backend, /VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED/);
 });
 
 test('completion email has a durable outbox record and sends after transaction commit', () => {
@@ -68,13 +71,14 @@ test('email confirmation requires a four-digit code and limits each draft to fiv
   assert.match(backend, /JSON\.stringify\(\{token:this\.elements\.token\.value,code:this\.elements\.code\.value\}\)/);
 });
 
-test('provisional confirmation mail uses production copy with an explicit test marker', () => {
-  assert.match(backend, /send_staging_test_mail\( '【おうち買取便】出張買取のお申し込み確認（テスト）', \$body \)/);
+test('provisional confirmation mail uses production copy and adds a test marker only on staging', () => {
+  assert.match(backend, /\$subject = '【おうち買取便】出張買取のお申し込み確認'/);
+  assert.match(backend, /if \( 'staging' === wp_get_environment_type\(\) \) \{\s*\$subject \.= '（テスト）'/s);
   assert.match(backend, /メールアドレスの確認を完了すると、お申し込み内容が登録されます。/);
   assert.match(backend, /4桁の確認番号を入力して送信してください。/);
   assert.match(backend, /確認番号の有効期限は、お申し込みから5時間です。/);
   assert.match(backend, /メール：support@ouchikaitori\.jp/);
-  assert.match(backend, /これはテストメールです\"/);
+  assert.match(backend, /if \( 'staging' === wp_get_environment_type\(\) \) \{\s*\$subject \.= '（テスト）';\s*\$body \.= "\\n\\nこれはテストメールです"/s);
   assert.doesNotMatch(backend, /ステージング環境の出張買取メール確認テストです。/);
   assert.doesNotMatch(backend, /このメールは固定テスト宛先にのみ送信されています/);
 });
@@ -277,14 +281,20 @@ test('visit terms agreement displays the existing WordPress terms post 57 in pla
   assert.match(bookingScript, /bindPolicyDialog\(visitTermsOpenButton, visitTermsDialog\)/);
 });
 
-test('API registration is staging-gated and does not call collection services', () => {
-  assert.match(backend, /'staging' === wp_get_environment_type\(\)/);
+test('API registration requires explicit environment-specific flags and does not call collection services', () => {
+  assert.match(backend, /private function enabled\(\)/);
+  assert.match(backend, /'staging' === \$environment/);
+  assert.match(backend, /'production' === \$environment/);
+  assert.match(functions, /VISIT_PRODUCTION_APPLICATION_API_ENABLED/);
+  assert.match(functions, /VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED/);
+  assert.match(functions, /'1' === \(string\) \$visit_prod_api && '1' === \(string\) \$visit_prod_email/);
   assert.match(backend, /if \( ! \$this->database_ready\(\) \)\s*\{\s*return;\s*\}/);
   assert.doesNotMatch(backend, /wp_remote_(?:get|post|request)\s*\(|curl_(?:init|exec)\s*\(/);
 });
 
-test('staging only sends explicitly authorized visit mail through the parent SES setup', () => {
-  assert.match(functions, /'staging' === wp_get_environment_type\(\)[\s\S]*?visit-staging-mailpit-transport\.php/);
+test('staging mail stays restricted and production reuses the parent SES setup behind production flags', () => {
+  assert.match(functions, /'staging' === \$visit_environment[\s\S]*?visit-staging-mailpit-transport\.php/);
+  assert.match(functions, /elseif \('production' === \$visit_environment\)[\s\S]*?VISIT_PRODUCTION_APPLICATION_API_ENABLED[\s\S]*?VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED/);
   assert.match(stagingMailGuard, /add_filter\([\s\S]*?'pre_wp_mail'/);
   assert.match(stagingMailGuard, /return false;/);
   assert.match(stagingMailGuard, /ouchi_visit_staging_send_test_mail/);
@@ -294,7 +304,8 @@ test('staging only sends explicitly authorized visit mail through the parent SES
   assert.match(stagingMailGuard, /PHP_INT_MAX/);
   assert.doesNotMatch(stagingMailGuard, /127\.0\.0\.1|Port\s*=\s*1025|->isSMTP\(\)|isMail\s*\(/);
   assert.match(backend, /ouchi_visit_staging_send_test_mail\(\s*\$recipient,\s*\$subject,\s*\$body\s*\)/);
-  assert.doesNotMatch(backend, /OUCHI-VISIT-STAGING|wp_mail\(\s*\$recipient/);
+  assert.doesNotMatch(backend, /OUCHI-VISIT-STAGING/);
+  assert.match(backend, /send_application_mail\(\s*\$recipient,\s*\$subject,\s*\$body\s*\)/);
 });
 
 test('regional form captures the backend readiness flag for frontend submission', () => {

@@ -1,10 +1,10 @@
-# 出張買取申込バックエンド（ステージング専用）
+# 出張買取申込バックエンド
 
 ## 構成
 
-- `visit-application-backend.php` は仮申込、確認リンク、確認後登録の処理です。子テーマの `functions.php` から `WP_ENVIRONMENT_TYPE=staging` の場合だけ読み込まれます。
+- `visit-application-backend.php` は仮申込、確認リンク、確認後登録の処理です。ステージングでは読み込まれます。本番では本番専用API・メールフラグが両方明示された場合だけ読み込まれます。
 - `../migrations/001-visit-application.sql` は新規4テーブル、`../migrations/002-visit-slot-locks.sql` は日単位の同時申込ロックテーブル、`../migrations/003-visit-application-email-outbox.sql` は確認メールと申込完了メールの送信状態を保存する2テーブルを作る手動マイグレーションです。プラグインからDDLを実行しません。
-- 本番環境では `WP_ENVIRONMENT_TYPE=staging` でない限り、受付API・メール確認APIを有効にしません。
+- ステージングと本番で有効化フラグを分離しています。本番では本番専用のフラグが両方 `1` でない限り、バックエンドを読み込みません。
 
 ## 有効化前の確認
 
@@ -14,7 +14,7 @@
 4. 親表と同じ文字コード・照合順序であることを確認した後、未適用のマイグレーションだけをステージングDBへ適用します。既存4テーブルとロックテーブルが作成済みの場合でも、確認メール・完了メールの送信状態テーブルがなければ `003` は別途バックアップ後に適用が必要です。
 5. `OTP_DB_HOST`、`OTP_DB_NAME`、`OTP_DB_USER`、`OTP_DB_PASS`、`OTP_DB_CHARSET` が定義され、`OTP_DB_NAME` が `contact_db` であることを確認します。出張買取は専用の `visit_connect_app_db()` を使って既存定数から接続し、`pdo_connect_app_db()` や親テーマのPHPを読み込みません。
 6. WordPress管理画面の「設定 > 出張買取の予約枠上限」で、地域ごとに各時間帯の受付上限と受付曜日を設定します。地域の受付上限が0、または受付曜日が未選択の場合、その地域の空き枠は表示されません。既存の京都市向け設定は、新しい地域別設定を保存するまで引き継ぎます。
-7. APIは `WP_ENVIRONMENT_TYPE=staging` に加え、`VISIT_APPLICATION_API_ENABLED=1` と `VISIT_APPLICATION_EMAIL_ENABLED=1` が明示された場合だけ有効です。いずれも未設定時は無効です。固定テスト宛先と暗号化キーをWordPress/PHPプロセスに設定し、必要なテーブルの確認が通った後に限り受付画面が接続されます。これらの有効化設定は、明示的な承認なしに追加しないでください。WordPress管理画面から別途プラグインを有効化する必要はありません。
+7. ステージングAPIは `WP_ENVIRONMENT_TYPE=staging` と `VISIT_APPLICATION_API_ENABLED=1`、`VISIT_APPLICATION_EMAIL_ENABLED=1`、固定テスト宛先、暗号化キー、必要なテーブル確認のすべてを満たす場合だけ有効です。ステージングメールは固定テスト宛先へ強制されます。本番APIは `WP_ENVIRONMENT_TYPE=production` と `VISIT_PRODUCTION_APPLICATION_API_ENABLED=1`、`VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED=1`、暗号化キー、既存親テーマの `my_smtp_mailer()` 登録、必要なテーブル確認のすべてを満たす場合だけ有効です。本番メールは既存 `wp_mail()` と親テーマのSES設定を利用し、申込者が入力したメールアドレスへ送信します。どちらの本番フラグも初期状態は未設定で無効です。本番のフラグは、DB・暗号化キー・送信元・予約枠の確認と本番開始承認が完了するまで設定しないでください。WordPress管理画面から別途プラグインを有効化する必要はありません。
 8. 非対面回収では、画面表示とAPIが共有する `visit_booking_get_contactless_terms_text()` と `visit_booking_get_contactless_terms_version()` の戻り値が必須です。どちらかが空の場合、同意内容を記録できないため非対面申込を受け付けません。既存サイト側で正式な共通実装が定義されている場合は、その値を優先します。
 
 必要な環境変数（値はGitやチャットへ登録しないでください）：
@@ -24,6 +24,12 @@
 - `VISIT_APPLICATION_EMAIL_ENABLED=1`（明示的な承認後のみ）
 - `VISIT_CONFIRMATION_TEST_RECIPIENT`（固定のテスト受信先。環境変数、またはステージングの `wp-config.php` に定数として設定）
 - `PAYOUT_ENC_KEY_B64`（既存の32バイトAES鍵をBase64化した値。PHP環境変数または `wp-config.php` の定数）
+
+本番では以下を本番専用の安全な設定として扱います。初期状態は無効で、今回のコード変更では設定していません。
+
+- `WP_ENVIRONMENT_TYPE=production`
+- `VISIT_PRODUCTION_APPLICATION_API_ENABLED=1`（運用開始承認後のみ）
+- `VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED=1`（運用開始承認後のみ）
 
 受付上限・受付曜日は、地域スラッグごとにWordPress管理画面の設定として保存します。新しい地域は `visit-lp-draft/visit/regions.php` に登録した後、同じ設定画面で曜日と受付上限を設定してください。コードや環境変数には秘密情報を追加しません。
 
@@ -35,7 +41,7 @@ DB接続専用の設定は追加せず、既存の `OTP_DB_*` 定数を使用し
 ## データの流れ
 
 1. 仮申込時に入力情報全体をAES-256-GCMで暗号化し、確認トークンと状態確認トークンのハッシュを `visit_application_drafts` に保存します。
-2. 確認メールは固定テスト受信先だけへ送信します。有効期限は5時間です。
+2. ステージングの確認メールは固定テスト受信先だけへ送信します。本番の確認メールは仮申込データ内の申込者アドレスへ送信します。有効期限は5時間です。
 3. メールリンクをGETしただけでは登録しません。表示された確認ボタンのPOSTで、確認トークンを行ロックし、`purchase_requests`、出張詳細、希望時間帯、非対面同意を1トランザクションで登録します。
 4. 受付番号は `VIS-YYYYMMDD-連番`、`shipping_choice` と `shipping_method` は `visit`、支払方法は既存値の `銀行振込` です。銀行情報は既存形式のAES-256-GCMで暗号化します。
 5. 希望時間帯は `visit_pickup_time_slots` へ個別行で保存します。`pickup_time` には保存しません。1枠選択時はメール確認後にその日時を `visit_purchase_details.confirmed_start_at` / `confirmed_end_at` に保存して確保し、複数枠は希望時間帯だけを保存します。
@@ -48,7 +54,7 @@ DB接続専用の設定は追加せず、既存の `OTP_DB_*` 定数を使用し
 - 会員登録要求は `register_flg` に保存しますが、WordPressユーザーや `customers` テーブルの作成・更新はしません。
 - キャンペーンコードは保存しますが、既存のクーポン判定・割引処理は実行しません。
 - 本人確認、査定、振込、回収スタッフ管理、回収記録・写真保存は実行しません。
-- 運用開始前に、マイグレーション `002` の適用、管理画面での上限設定、固定テスト宛先での許可済み統合テストが必要です。外部メール送信とAPIは有効化フラグがない限り停止します。
+- 運用開始前に、対象環境の全マイグレーション・DBスキーマ確認、管理画面での地域別上限設定、送信元・送信経路の確認、許可済みの統合テストが必要です。環境専用のAPI・メール有効化フラグがない限り停止します。
 
 ## 今回の統合作業の状態
 

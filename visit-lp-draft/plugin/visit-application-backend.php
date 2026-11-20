@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: おうち買取便 出張買取申込バックエンド（ステージング専用）
- * Description: 出張買取の仮申込、確認リンク、確認後のDB登録を行います。ステージング環境以外では受付を停止します。
+ * Plugin Name: おうち買取便 出張買取申込バックエンド
+ * Description: 出張買取の仮申込、確認リンク、確認後のDB登録を行います。環境ごとの明示フラグがなければ受付を停止します。
  * Version: 0.2.0
  * Requires at least: 5.6
  * Requires PHP: 7.4
@@ -129,29 +129,38 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function enabled() {
-		$api_enabled = defined( 'VISIT_APPLICATION_API_ENABLED' ) ? VISIT_APPLICATION_API_ENABLED : getenv( 'VISIT_APPLICATION_API_ENABLED' );
-		$mail_enabled = defined( 'VISIT_APPLICATION_EMAIL_ENABLED' ) ? VISIT_APPLICATION_EMAIL_ENABLED : getenv( 'VISIT_APPLICATION_EMAIL_ENABLED' );
+		$environment = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : '';
+		if ( 'staging' === $environment ) {
+			$api_name  = 'VISIT_APPLICATION_API_ENABLED';
+			$mail_name = 'VISIT_APPLICATION_EMAIL_ENABLED';
+		} elseif ( 'production' === $environment ) {
+			$api_name  = 'VISIT_PRODUCTION_APPLICATION_API_ENABLED';
+			$mail_name = 'VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED';
+		} else {
+			return false;
+		}
+		$api_enabled  = defined( $api_name ) ? constant( $api_name ) : getenv( $api_name );
+		$mail_enabled = defined( $mail_name ) ? constant( $mail_name ) : getenv( $mail_name );
 		$key_b64 = defined( 'PAYOUT_ENC_KEY_B64' ) ? PAYOUT_ENC_KEY_B64 : getenv( 'PAYOUT_ENC_KEY_B64' );
 		$key = base64_decode( (string) $key_b64, true );
 		$test_recipient = defined( 'VISIT_CONFIRMATION_TEST_RECIPIENT' ) ? VISIT_CONFIRMATION_TEST_RECIPIENT : getenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
 		return '1' === (string) $api_enabled
 			&& '1' === (string) $mail_enabled
-			&& function_exists( 'wp_get_environment_type' )
-			&& 'staging' === wp_get_environment_type()
 			&& extension_loaded( 'pdo_mysql' )
 			&& function_exists( 'openssl_encrypt' )
 			&& function_exists( 'mb_convert_kana' )
-			&& '' !== (string) $test_recipient
+			&& ( 'staging' !== $environment || '' !== (string) $test_recipient )
+			&& ( 'production' !== $environment || ( function_exists( 'has_action' ) && has_action( 'phpmailer_init', 'my_smtp_mailer' ) ) )
 			&& false !== $key && 32 === strlen( $key );
 	}
 
 	/**
-	 * Completed applications remain readable by their public token while new
-	 * submissions and mail delivery are switched off. Keep this lookup staging-only.
+	 * Completed applications may be read in staging or production when the
+	 * backend is loaded for that environment and the configured DB is contact_db.
 	 */
 	private function public_application_lookup_ready() {
 		return function_exists( 'wp_get_environment_type' )
-			&& 'staging' === wp_get_environment_type()
+			&& in_array( wp_get_environment_type(), array( 'staging', 'production' ), true )
 			&& extension_loaded( 'pdo_mysql' )
 			&& function_exists( 'visit_connect_app_db' )
 			&& defined( 'OTP_DB_NAME' )
@@ -849,15 +858,43 @@ final class Ouchi_Visit_Application_Backend {
 		return (bool) ouchi_visit_staging_send_test_mail( $recipient, $subject, $body );
 	}
 
+	/**
+	 * Stage mail is forced through the fixed test-recipient guard. Production mail
+	 * uses the existing parent-theme PHPMailer configuration via wp_mail().
+	 */
+	private function send_application_mail( $recipient, $subject, $body ) {
+		if ( ! $this->enabled() || ! function_exists( 'wp_get_environment_type' ) || ! function_exists( 'wp_mail' ) ) {
+			return false;
+		}
+		$environment = wp_get_environment_type();
+		if ( 'staging' === $environment ) {
+			return $this->send_staging_test_mail( $subject, $body );
+		}
+		if ( 'production' !== $environment || ! function_exists( 'has_action' ) || ! has_action( 'phpmailer_init', 'my_smtp_mailer' ) ) {
+			return false;
+		}
+		$recipient = sanitize_email( (string) $recipient );
+		if ( ! is_email( $recipient ) ) {
+			return false;
+		}
+		return (bool) wp_mail(
+			array( $recipient ),
+			$subject,
+			$body,
+			array( 'Content-Type: text/plain; charset=UTF-8' ),
+			array()
+		);
+	}
+
 	private function dispatch_confirmation_email( $draft_id ) {
-		if ( ! $this->enabled() || ! function_exists( 'wp_get_environment_type' ) || 'staging' !== wp_get_environment_type() ) {
+		if ( ! $this->enabled() ) {
 			return 'disabled';
 		}
 		$pdo = $this->db();
 		$mail_was_accepted = false;
 		try {
 			$pdo->beginTransaction();
-			$select = $pdo->prepare( 'SELECT o.region_slug, o.confirmation_token_ciphertext, o.confirmation_token_iv, o.confirmation_token_tag, o.delivery_status, o.attempt_count, o.last_attempt_at, d.draft_status, d.expires_at FROM visit_application_confirmation_outbox o INNER JOIN visit_application_drafts d ON d.draft_id = o.draft_id WHERE o.draft_id = ? FOR UPDATE' );
+			$select = $pdo->prepare( 'SELECT o.region_slug, o.confirmation_token_ciphertext, o.confirmation_token_iv, o.confirmation_token_tag, o.delivery_status, o.attempt_count, o.last_attempt_at, d.draft_status, d.expires_at, d.payload_ciphertext, d.payload_iv, d.payload_tag FROM visit_application_confirmation_outbox o INNER JOIN visit_application_drafts d ON d.draft_id = o.draft_id WHERE o.draft_id = ? FOR UPDATE' );
 			$select->execute( array( $draft_id ) );
 			$outbox = $select->fetch();
 			if ( ! $outbox ) {
@@ -898,8 +935,14 @@ final class Ouchi_Visit_Application_Backend {
 			}
 			$pdo->commit();
 			$token = $this->decrypt_private_token( $outbox['confirmation_token_ciphertext'], $outbox['confirmation_token_iv'], $outbox['confirmation_token_tag'] );
-			$body = "おうち買取便の出張買取にお申し込みいただき、ありがとうございます。\n\nメールアドレスの確認を完了すると、お申し込み内容が登録されます。\n\n次の確認ページを開き、メールに記載された4桁の確認番号を入力して送信してください。\n\n確認番号：" . $this->confirmation_code( $token ) . "\n\n確認ページ：\n" . $this->mail_link( $token, $outbox['region_slug'] ) . "\n\n確認番号の有効期限は、お申し込みから5時間です。期限内に確認を完了してください。\n\nこのメールに心当たりがない場合は、確認操作を行わず、このメールを破棄してください。\n\n────────────────────────\nおうち買取便 サポート窓口\nメール：support@ouchikaitori.jp\n受付時間：平日 10:00～17:00\n────────────────────────\n\nこれはテストメールです";
-			$sent = $this->send_staging_test_mail( '【おうち買取便】出張買取のお申し込み確認（テスト）', $body );
+			$payload = $this->decrypt_draft( $outbox['payload_ciphertext'], $outbox['payload_iv'], $outbox['payload_tag'] );
+			$body = "おうち買取便の出張買取にお申し込みいただき、ありがとうございます。\n\nメールアドレスの確認を完了すると、お申し込み内容が登録されます。\n\n次の確認ページを開き、メールに記載された4桁の確認番号を入力して送信してください。\n\n確認番号：" . $this->confirmation_code( $token ) . "\n\n確認ページ：\n" . $this->mail_link( $token, $outbox['region_slug'] ) . "\n\n確認番号の有効期限は、お申し込みから5時間です。期限内に確認を完了してください。\n\nこのメールに心当たりがない場合は、確認操作を行わず、このメールを破棄してください。\n\n────────────────────────\nおうち買取便 サポート窓口\nメール：support@ouchikaitori.jp\n受付時間：平日 10:00～17:00\n────────────────────────";
+			$subject = '【おうち買取便】出張買取のお申し込み確認';
+			if ( 'staging' === wp_get_environment_type() ) {
+				$subject .= '（テスト）';
+				$body .= "\n\nこれはテストメールです";
+			}
+			$sent = $this->send_application_mail( isset( $payload['email'] ) ? $payload['email'] : '', $subject, $body );
 			if ( $sent ) {
 				$mail_was_accepted = true;
 				$finish = $pdo->prepare( "UPDATE visit_application_confirmation_outbox SET delivery_status = 'sent', sent_at = UTC_TIMESTAMP() WHERE draft_id = ? AND delivery_status = 'sending'" );
@@ -1018,7 +1061,7 @@ final class Ouchi_Visit_Application_Backend {
 	}
 
 	private function dispatch_completion_email( $public_token ) {
-		if ( ! $this->enabled() || ! function_exists( 'wp_get_environment_type' ) || 'staging' !== wp_get_environment_type() ) {
+		if ( ! $this->enabled() ) {
 			return 'disabled';
 		}
 		$pdo = $this->db();
@@ -1046,7 +1089,11 @@ final class Ouchi_Visit_Application_Backend {
 			}
 			$pdo->commit();
 			$body = $this->completion_email_body( $pdo, $public_token, $outbox );
-			$sent = $this->send_staging_test_mail( '出張買取のお申し込みを受け付けました', $body );
+			$recipient_query = $pdo->prepare( "SELECT email FROM purchase_requests WHERE public_token = ? AND shipping_choice = 'visit' LIMIT 1" );
+			$recipient_query->execute( array( $public_token ) );
+			$recipient = (string) $recipient_query->fetchColumn();
+			$subject = '【おうち買取便】出張買取のお申し込みを受け付けました';
+			$sent = $this->send_application_mail( $recipient, $subject, $body );
 			if ( $sent ) {
 				$mail_was_accepted = true;
 				$finish = $pdo->prepare( "UPDATE visit_application_email_outbox SET delivery_status = 'sent', sent_at = UTC_TIMESTAMP() WHERE public_token = ? AND delivery_status = 'sending'" );
@@ -1083,10 +1130,13 @@ final class Ouchi_Visit_Application_Backend {
 				return $this->response_error( '送信内容を確認できません。', 400 );
 			}
 			$data = $this->validate_payload( $request );
-			$test_recipient_setting = defined( 'VISIT_CONFIRMATION_TEST_RECIPIENT' ) ? VISIT_CONFIRMATION_TEST_RECIPIENT : getenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
-			$test_recipient = sanitize_email( (string) $test_recipient_setting );
-			if ( ! is_email( $test_recipient ) || strtolower( $test_recipient ) === strtolower( $data['email'] ) ) {
-				return $this->response_error( 'テスト用メール設定を確認できません。', 503 );
+			$environment = wp_get_environment_type();
+			if ( 'staging' === $environment ) {
+				$test_recipient_setting = defined( 'VISIT_CONFIRMATION_TEST_RECIPIENT' ) ? VISIT_CONFIRMATION_TEST_RECIPIENT : getenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
+				$test_recipient = sanitize_email( (string) $test_recipient_setting );
+				if ( ! is_email( $test_recipient ) || strtolower( $test_recipient ) === strtolower( $data['email'] ) ) {
+					return $this->response_error( 'テスト用メール設定を確認できません。', 503 );
+				}
 			}
 			$submission_key = (string) $request->get_header( 'x-visit-submission-key' );
 			if ( ! preg_match( '/^[a-f0-9]{64}$/i', $submission_key ) ) {
@@ -1107,7 +1157,7 @@ final class Ouchi_Visit_Application_Backend {
 				if ( ! in_array( $mail_status, array( 'sent', 'sending' ), true ) ) {
 					return $this->response_error( '確認メールを送信できませんでした。入力内容は保持されています。時間をおいて同じ画面から再度お試しください。', 502 );
 				}
-				return rest_ensure_response( array( 'status' => 'pending', 'poll_token' => $poll_token, 'test_mail_only' => true ) );
+				return rest_ensure_response( array( 'status' => 'pending', 'poll_token' => $poll_token, 'test_mail_only' => 'staging' === $environment ) );
 			}
 			if ( $row && 'confirmed' === $row['draft_status'] && ! empty( $row['public_token'] ) ) {
 				return rest_ensure_response( array( 'status' => 'complete', 'public_token' => $row['public_token'] ) );
@@ -1134,7 +1184,7 @@ final class Ouchi_Visit_Application_Backend {
 			if ( ! in_array( $mail_status, array( 'sent', 'sending' ), true ) ) {
 				return $this->response_error( '確認メールを送信できませんでした。入力内容は保持されています。時間をおいて同じ画面から再度お試しください。', 502 );
 			}
-			return rest_ensure_response( array( 'status' => 'pending', 'poll_token' => $poll_token, 'test_mail_only' => true ) );
+			return rest_ensure_response( array( 'status' => 'pending', 'poll_token' => $poll_token, 'test_mail_only' => 'staging' === $environment ) );
 		} catch ( DomainException $e ) {
 			return $this->response_error( $e->getMessage(), 400 );
 		} catch ( Throwable $e ) {

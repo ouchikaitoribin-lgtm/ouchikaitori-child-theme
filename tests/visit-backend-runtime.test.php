@@ -6,6 +6,7 @@ $GLOBALS['visit_test_mail_filters'] = array();
 $GLOBALS['visit_test_mail_calls'] = array();
 $GLOBALS['visit_test_mail_result'] = true;
 $GLOBALS['visit_test_registered_filters'] = array();
+$GLOBALS['visit_test_parent_mailer_registered'] = false;
 
 class WP_REST_Request {
 	private $method;
@@ -60,6 +61,9 @@ function remove_filter( $hook, $callback, $priority = 10 ) {
 }
 function register_deactivation_hook( $file, $callback ) {}
 function wp_get_environment_type() { return $GLOBALS['visit_test_environment']; }
+function has_action( $hook, $callback = false ) {
+	return 'phpmailer_init' === $hook && 'my_smtp_mailer' === $callback && $GLOBALS['visit_test_parent_mailer_registered'];
+}
 function sanitize_email( $email ) { return filter_var( (string) $email, FILTER_SANITIZE_EMAIL ); }
 function is_email( $email ) { return false !== filter_var( (string) $email, FILTER_VALIDATE_EMAIL ); }
 function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
@@ -137,6 +141,35 @@ $GLOBALS['visit_test_environment'] = 'production';
 $assert( false === $send->invoke( $instance, 'must not send', 'synthetic test message' ), 'mail must be disabled outside staging' );
 $assert( $calls_before_non_staging === count( $GLOBALS['visit_test_mail_calls'] ), 'non-staging call must not invoke wp_mail' );
 
+$GLOBALS['visit_test_environment'] = 'production';
+$GLOBALS['visit_test_parent_mailer_registered'] = true;
+putenv( 'VISIT_APPLICATION_API_ENABLED=1' );
+putenv( 'VISIT_APPLICATION_EMAIL_ENABLED=1' );
+putenv( 'VISIT_PRODUCTION_APPLICATION_API_ENABLED=0' );
+putenv( 'VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED=0' );
+$send_application_mail = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'send_application_mail' );
+$send_application_mail->setAccessible( true );
+$production_recipient = 'synthetic-customer@example.invalid';
+$calls_before_staging_flags_only = count( $GLOBALS['visit_test_mail_calls'] );
+$assert( false === $send_application_mail->invoke( $instance, $production_recipient, 'must not send', 'synthetic body' ), 'staging flags must not enable production delivery' );
+$assert( $calls_before_staging_flags_only === count( $GLOBALS['visit_test_mail_calls'] ), 'staging flags alone must not call wp_mail in production' );
+putenv( 'VISIT_PRODUCTION_APPLICATION_API_ENABLED=1' );
+putenv( 'VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED=1' );
+putenv( 'PAYOUT_ENC_KEY_B64=' . base64_encode( random_bytes( 32 ) ) );
+$assert( true === $send_application_mail->invoke( $instance, $production_recipient, 'production subject', 'synthetic production body' ), 'production mail should use mocked wp_mail only when both production flags and parent mailer are present' );
+$sent_args = end( $GLOBALS['visit_test_mail_calls'] );
+$assert( array( $production_recipient ) === $sent_args['to'], 'production mail should use the supplied validated application email' );
+$assert( array( 'Content-Type: text/plain; charset=UTF-8' ) === $sent_args['headers'], 'production mail should not add CC or BCC headers' );
+$GLOBALS['visit_test_parent_mailer_registered'] = false;
+$calls_before_missing_parent_mailer = count( $GLOBALS['visit_test_mail_calls'] );
+$assert( false === $send_application_mail->invoke( $instance, $production_recipient, 'must not send', 'synthetic body' ), 'production mail must stop if the existing parent SMTP callback is unavailable' );
+$assert( $calls_before_missing_parent_mailer === count( $GLOBALS['visit_test_mail_calls'] ), 'missing parent SMTP callback must not call wp_mail' );
+$GLOBALS['visit_test_parent_mailer_registered'] = true;
+$GLOBALS['visit_test_environment'] = 'local';
+$calls_before_local = count( $GLOBALS['visit_test_mail_calls'] );
+$assert( false === $send_application_mail->invoke( $instance, $production_recipient, 'must not send locally', 'synthetic body' ), 'local environments must never use production delivery' );
+$assert( $calls_before_local === count( $GLOBALS['visit_test_mail_calls'] ), 'local environment must not call wp_mail' );
+
 $GLOBALS['visit_test_environment'] = 'staging';
 putenv( 'PAYOUT_ENC_KEY_B64=' . base64_encode( random_bytes( 32 ) ) );
 $encrypt = new ReflectionMethod( 'Ouchi_Visit_Application_Backend', 'encrypt' );
@@ -168,4 +201,8 @@ $assert( $synthetic_token === $decrypt_private_token->invoke( $instance, $privat
 
 putenv( 'VISIT_CONFIRMATION_TEST_RECIPIENT' );
 putenv( 'PAYOUT_ENC_KEY_B64' );
+putenv( 'VISIT_PRODUCTION_APPLICATION_API_ENABLED' );
+putenv( 'VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED' );
+putenv( 'VISIT_APPLICATION_API_ENABLED' );
+putenv( 'VISIT_APPLICATION_EMAIL_ENABLED' );
 echo "Visit backend runtime mock checks passed.\n";
