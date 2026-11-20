@@ -13,6 +13,7 @@ const bookingScript = readFileSync(join(root, 'visit-lp-draft/visit-booking.js')
 const bookingWidget = readFileSync(join(root, 'visit-lp-draft/visit/kyoto-city/booking-widget.html'), 'utf8');
 const landingPage = readFileSync(join(root, 'page-visit.php'), 'utf8');
 const landingCss = readFileSync(join(root, 'visit-lp-draft/visit.css'), 'utf8');
+const reviewsPartial = readFileSync(join(root, 'visit-lp-draft/visit/reviews-section.php'), 'utf8');
 const sharedVisitFaq = readFileSync(join(root, 'visit-lp-draft/visit/faq-common.php'), 'utf8');
 const page = readFileSync(join(root, 'page-visit-kyoto-city.php'), 'utf8');
 const pendingPage = readFileSync(join(root, 'page-visit-kyoto-city-application-pending.php'), 'utf8');
@@ -217,13 +218,16 @@ test('application CTA buttons jump to the visit area selector throughout the lan
 });
 
 test('visit review shortcode is rendered in a visible section after the contactless introduction', () => {
-  const reviewsSection = landingPage.match(/<section class="visit-section visit-reviews"[\s\S]*?<\/section>/)?.[0] || '';
-  assert.match(landingPage, /if \( shortcode_exists\( 'sc' \) \) : \?>[\s\S]*?<section class="visit-section visit-reviews"/);
-  assert.match(reviewsSection, /<p class="voice-label">Customer Voice<\/p>/);
-  assert.match(reviewsSection, /おうち買取便を利用した方の口コミ/);
-  assert.match(reviewsSection, /おうち買取便をご利用いただいたお客様から、うれしいお声をいただいています。/);
-  assert.match(reviewsSection, /do_shortcode\( '\[sc file=review_incert\]' \)/);
-  assert.doesNotMatch(reviewsSection, /visit-insert|visit-content-placeholder/);
+  const sharedReviewsInclude = /require get_stylesheet_directory\(\) \. '\/visit-lp-draft\/visit\/reviews-section\.php';/;
+  assert.match(landingPage, sharedReviewsInclude);
+  assert.match(page, /id="kyoto-contactless"[\s\S]*?<\/section>\s*<\?php require get_stylesheet_directory\(\) \. '\/visit-lp-draft\/visit\/reviews-section\.php'; \?>/);
+  assert.match(reviewsPartial, /if \( ! shortcode_exists\( 'sc' \) \) \{\s*return;/);
+  assert.match(reviewsPartial, /<section class="visit-section visit-reviews" aria-labelledby="visit-reviews-title">/);
+  assert.match(reviewsPartial, /<p class="voice-label">Customer Voice<\/p>/);
+  assert.match(reviewsPartial, /おうち買取便を利用した方の口コミ/);
+  assert.match(reviewsPartial, /おうち買取便をご利用いただいたお客様から、うれしいお声をいただいています。/);
+  assert.match(reviewsPartial, /do_shortcode\( '\[sc file=review_incert\]' \)/);
+  assert.match(page, /ouchi-visit-lp'.*'1\.3\.6'/);
   assert.match(landingCss, /\.visit-reviews \{ background: var\(--visit-cream\); \}/);
 });
 

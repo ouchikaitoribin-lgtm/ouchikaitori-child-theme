@@ -41,7 +41,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 		return;
 	}
 	$asset_uri = get_stylesheet_directory_uri() . '/visit-lp-draft/';
-	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.3.5' );
+	wp_enqueue_style( 'ouchi-visit-lp', $asset_uri . 'visit.css', array(), '1.3.6' );
 	wp_enqueue_style( 'ouchi-visit-kyoto-city', $asset_uri . 'visit/kyoto-city/kyoto-city.css', array( 'ouchi-visit-lp' ), '1.3.3' );
 	wp_enqueue_style( 'ouchi-visit-booking-ui', $asset_uri . 'visit/kyoto-city/booking.css', array( 'ouchi-visit-kyoto-city' ), '1.6.8' );
 	wp_enqueue_style( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css', array(), '1.9.4' );
@@ -167,6 +167,8 @@ get_header();
         </div>
       </div>
     </section>
+
+    <?php require get_stylesheet_directory() . '/visit-lp-draft/visit/reviews-section.php'; ?>
 
     <section class="visit-section visit-items" id="kyoto-items" aria-labelledby="kyoto-items-title">
       <div class="visit-container"><div class="visit-section-heading"><div><p class="visit-eyebrow">WHAT WE BUY</p><h2 id="kyoto-items-title"><?php echo esc_html( $visit_city_name ); ?>で買取できるもの</h2></div><figure class="visit-items-illustration"><img src="<?php echo esc_url( $asset_uri . 'assets/accepted-items-visit-v2.webp' ); ?>" width="1536" height="1024" alt="本、CD、DVD、ゲーム機、カメラ、スマートフォン、パソコン、美容機器、AV機器、電動工具のイラスト" loading="lazy" decoding="async"></figure></div>
