@@ -156,6 +156,7 @@ $assert( $calls_before_staging_flags_only === count( $GLOBALS['visit_test_mail_c
 putenv( 'VISIT_PRODUCTION_APPLICATION_API_ENABLED=1' );
 putenv( 'VISIT_PRODUCTION_APPLICATION_EMAIL_ENABLED=1' );
 putenv( 'PAYOUT_ENC_KEY_B64=' . base64_encode( random_bytes( 32 ) ) );
+$GLOBALS['visit_test_mail_result'] = true;
 $assert( true === $send_application_mail->invoke( $instance, $production_recipient, 'production subject', 'synthetic production body' ), 'production mail should use mocked wp_mail only when both production flags and parent mailer are present' );
 $sent_args = end( $GLOBALS['visit_test_mail_calls'] );
 $assert( array( $production_recipient ) === $sent_args['to'], 'production mail should use the supplied validated application email' );
