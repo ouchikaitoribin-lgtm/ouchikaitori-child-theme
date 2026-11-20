@@ -363,15 +363,18 @@ test('application submission refreshes the WordPress nonce without using cached 
 });
 
 test('staging application test prefills safe sample data and enables submit only on final step', () => {
-  assert.ok(bookingScript.includes('const isStagingTestDefaults = isStagingFormPreview || applicationFlowReady'));
+  assert.match(page, /'environmentType'\s*=>\s*function_exists\( 'wp_get_environment_type' \) \? wp_get_environment_type\(\) : 'production'/);
+  assert.ok(bookingScript.includes("const isStagingEnvironment = bookingConfig.environmentType === 'staging'"));
+  assert.ok(bookingScript.includes('const isStagingTestDefaults = isStagingEnvironment && (isStagingFormPreview || applicationFlowReady)'));
+  assert.ok(bookingScript.includes('isStagingFormPreview = isStagingEnvironment &&'));
   assert.ok(bookingScript.includes('if (!isStagingTestDefaults) return;'));
-  assert.ok(bookingScript.includes('finalSubmitButton.disabled = step !== 7 || !isStagingTestDefaults'));
+  assert.ok(bookingScript.includes('finalSubmitButton.disabled = step !== 7 || (!applicationFlowReady && !isInteractivePreview)'));
   assert.ok(bookingScript.includes('day && day.available && Array.isArray(day.slots)'));
   assert.ok(bookingScript.includes("new Option('サンプル銀行（テスト用）', '9999')"));
 });
 
 test('visit booking script cache version is bumped for the staging form fix', () => {
-  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.8', true );"));
+  assert.ok(page.includes("wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.9', true );"));
 });
 
 test('bank details use AES-256-GCM with 32-byte keys, 12-byte IVs and 16-byte tags', () => {

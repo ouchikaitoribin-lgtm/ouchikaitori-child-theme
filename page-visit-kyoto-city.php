@@ -48,7 +48,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 	wp_enqueue_script( 'ouchi-visit-yubinbango', 'https://yubinbango.github.io/yubinbango/yubinbango.js', array(), null, true );
 	wp_enqueue_script( 'ouchi-visit-leaflet', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js', array(), '1.9.4', true );
 	$booking_script_dependencies = array( 'ouchi-visit-yubinbango', 'ouchi-visit-leaflet' );
-	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.8', true );
+	wp_enqueue_script( 'ouchi-visit-booking-ui', $asset_uri . 'visit-booking.js', $booking_script_dependencies, '1.8.9', true );
 	$visit_booking_defaults = array(
 		'slots'                   => array( '10:00〜12:00', '12:00〜14:00', '14:00〜16:00', '16:00〜18:00', '18:00〜20:00' ),
 		'multiSlotBonusEnabled'   => true,
@@ -68,6 +68,7 @@ add_action( 'wp_enqueue_scripts', static function () use ( $visit_form_preview_m
 			'availabilityEndpoint' => apply_filters( 'visit_application_availability_endpoint', '' ),
 			'regionSlug' => $visit_region_slug,
 			'applicationConfirmationPageUrl' => home_url( $visit_confirmation_path ),
+			'environmentType' => function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production',
 			'formPreviewMode' => (bool) $visit_form_preview_mode,
 			'applicationSubmissionEnabled' => (bool) $visit_application_backend_enabled,
 			'regionName' => $visit_address_prefix,

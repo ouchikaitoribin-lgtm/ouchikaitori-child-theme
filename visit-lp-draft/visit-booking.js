@@ -19,14 +19,16 @@
     availabilityEndpoint: '',
     regionSlug: '',
     applicationConfirmationPageUrl: defaultConfirmationPageUrl,
+    environmentType: 'production',
     formPreviewMode: false,
     applicationSubmissionEnabled: false
   };
   const regionName = String(bookingConfig.regionName || '');
   const cityName = String(bookingConfig.cityName || regionName);
   // wp_localize_script() serializes scalar values as strings, so PHP true arrives as "1".
+  const isStagingEnvironment = bookingConfig.environmentType === 'staging';
   const previewFlag = bookingConfig.formPreviewMode;
-  const isStagingFormPreview = previewFlag === true || previewFlag === 1 || previewFlag === '1';
+  const isStagingFormPreview = isStagingEnvironment && (previewFlag === true || previewFlag === 1 || previewFlag === '1');
   const isInteractivePreview = isStagingFormPreview;
   const submissionFlag = bookingConfig.applicationSubmissionEnabled;
   const isApplicationSubmissionEnabled = submissionFlag === true || submissionFlag === 1 || submissionFlag === '1';
@@ -34,7 +36,7 @@
     && isApplicationSubmissionEnabled
     && Boolean(bookingConfig.applicationSubmitEndpoint && bookingConfig.applicationStatusEndpoint && bookingConfig.applicationNonceEndpoint);
   // API準備完了はPHPバックエンド側でstagingだけに許可されている。
-  const isStagingTestDefaults = isStagingFormPreview || applicationFlowReady;
+  const isStagingTestDefaults = isStagingEnvironment && (isStagingFormPreview || applicationFlowReady);
   const bonusInfo = widget.querySelector('[data-bonus-info]');
   const bonusMessage = widget.querySelector('[data-bonus-message]');
   const bonusCalculation = widget.querySelector('[data-bonus-calculation]');
@@ -49,7 +51,7 @@
     return;
   }
 
-  demoNotice.hidden = false;
+  demoNotice.hidden = !isStagingEnvironment;
   if (isStagingFormPreview) {
     demoNotice.textContent = 'ステージングの画面確認モードです。入力欄には画面確認用のサンプル値が入っています。住所は国土地理院の住所検索サービスへ送信し、OpenStreetMapの地図タイルを読み込みます。入力内容の保存・申込送信・メール送信・集荷API呼び出しは行いません。';
     widget.classList.add('is-form-preview');
@@ -62,7 +64,7 @@
     }
     widget.querySelector('[data-submit-note]').textContent = 'ステージングの画面確認専用です。ボタンを押すと案内ページを表示しますが、申込送信・保存・予約確定・メール送信は行いません。';
   }
-  if (applicationFlowReady) {
+  if (isStagingEnvironment && applicationFlowReady) {
     demoNotice.textContent = 'ステージングの申込テストです。確認メールは固定テスト宛先だけに送信します。入力されたメールアドレスには送信しません。メール内のリンクをクリックすると、確認後の申込情報がステージングDBへ保存されます。';
     widget.querySelector('[data-submit-note]').textContent = 'ステージング専用テストです。実際の利用者への受付・メール送信は行いません。';
   }
@@ -162,7 +164,7 @@
     }
     state.step = step;
     const finalSubmitButton = widget.querySelector('[data-application-submit]');
-    if (finalSubmitButton) finalSubmitButton.disabled = step !== 7 || !isStagingTestDefaults;
+    if (finalSubmitButton) finalSubmitButton.disabled = step !== 7 || (!applicationFlowReady && !isInteractivePreview);
     widget.querySelectorAll('[data-step]').forEach((panel) => {
       panel.hidden = Number(panel.dataset.step) !== step;
     });
