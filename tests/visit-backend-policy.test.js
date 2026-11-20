@@ -231,6 +231,12 @@ test('visit review shortcode is rendered in a visible section after the contactl
   assert.match(landingCss, /\.visit-reviews \{ background: var\(--visit-cream\); \}/);
 });
 
+test('main and regional hero chips include free pickup, free appraisal and next-day transfer features', () => {
+  for (const template of [landingPage, page]) {
+    assert.match(template, /<div class="visit-hero__chips" aria-label="出張買取の特徴">[\s\S]*?<span>出張料無料<\/span>[\s\S]*?<span>査定無料<\/span>[\s\S]*?<span>最短翌日お振込み<\/span>/);
+  }
+});
+
 test('visit and all area pages render common FAQ entries from one shared source', () => {
   for (const template of [landingPage, page]) {
     assert.match(template, /\$visit_common_faq_items = require get_stylesheet_directory\(\) \. '\/visit-lp-draft\/visit\/faq-common\.php'/);

@@ -98,7 +98,7 @@ get_header();
           <p class="visit-eyebrow"><span></span><?php echo esc_html( $visit_city_name . $visit_coverage_label ); ?>で対応中</p>
           <h1 id="kyoto-hero-title"><?php echo esc_html( $visit_city_name ); ?>の出張買取。<br><em>玄関前に置くだけ。</em></h1>
           <p class="visit-hero__lead">スタッフと会わずに、自宅にいなくても。<br><?php echo esc_html( $visit_city_name ); ?>のご自宅まで伺い、指定場所から商品を回収します。</p>
-          <div class="visit-hero__chips" aria-label="出張買取の特徴"><span>玄関のドアは開けずに回収</span><span>ご不在でも利用可能</span><span>対面も選べます</span></div>
+          <div class="visit-hero__chips" aria-label="出張買取の特徴"><span>玄関のドアは開けずに回収</span><span>ご不在でも利用可能</span><span>対面も選べます</span><span>出張料無料</span><span>査定無料</span><span>最短翌日お振込み</span></div>
           <p class="visit-hero__note"><strong>現在の対応地域：<?php echo esc_html( $visit_city_name . '（' . $visit_coverage_label . '）' ); ?></strong><br>本・漫画・CD・DVD・ゲーム・カメラ・スマートフォン・パソコンなど</p>
           <a class="visit-button visit-button--primary" href="#kyoto-booking">エリア選択へ進む <span aria-hidden="true">↓</span></a>
           <p class="visit-hero__fineprint">対応地域・日時の選択からお客様情報の入力まで、このページ内で行う構成です。メール確認機能は準備中です。</p>

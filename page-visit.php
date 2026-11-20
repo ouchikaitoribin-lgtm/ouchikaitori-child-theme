@@ -61,6 +61,7 @@ get_header();
           <p class="visit-hero__lead">スタッフと会わずに、自宅にいなくても。<br>ご指定の場所から、まとめてお引き取りします。</p>
           <div class="visit-hero__chips" aria-label="出張買取の特徴">
             <span>非対面で受け渡し</span><span>ご不在でも回収</span><span>箱詰め不要</span>
+            <span>出張料無料</span><span>査定無料</span><span>最短翌日お振込み</span>
           </div>
           <p class="visit-hero__note">本・CD・DVD・ゲーム・カメラ・スマートフォン・パソコンなど<br><strong>現在の対応地域：<?php echo esc_html( $visit_area_summary ); ?></strong></p>
           <a class="visit-button visit-button--primary" href="#visit-area">お申し込みはこちらから <span aria-hidden="true">↓</span></a>
